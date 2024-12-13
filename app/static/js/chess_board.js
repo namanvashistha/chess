@@ -1,10 +1,22 @@
 const chessBoard = document.getElementById('chess-board');
+let allowedMoves = []; // To store allowed moves for the clicked piece
+let selectedPiece = null; // Track the currently selected piece
+let selectedSquare = null; // Track the currently selected square
 
 // Mapping pieces to Unicode symbols
 const pieceMap = {
-    wR: "♖", wN: "♘", wB: "♗", wQ: "♕", wK: "♔", wP: "♙",
-    bR: "♜", bN: "♞", bB: "♝", bQ: "♛", bK: "♚", bP: "♟",
-    "---": "",
+    "wP": "static/images/wP.svg",
+    "wR": "static/images/wR.svg",
+    "wN": "static/images/wN.svg",
+    "wB": "static/images/wB.svg",
+    "wQ": "static/images/wQ.svg",
+    "wK": "static/images/wK.svg",
+    "bP": "static/images/bP.svg",
+    "bR": "static/images/bR.svg",
+    "bN": "static/images/bN.svg",
+    "bB": "static/images/bB.svg",
+    "bQ": "static/images/bQ.svg",
+    "bK": "static/images/bK.svg"
 };
 
 // Fetch initial chessboard state from the API
@@ -17,7 +29,7 @@ fetch('/api/chess/state')
     })
     .then(data => {
         if (data && data.data && data.data.board) {
-            renderChessBoard(data.data.board, data.data.board_layout);
+            renderChessBoard(data.data.board, data.data.board_layout, data.data.allowed_moves);
         } else {
             console.error('Unexpected API response:', data);
         }
@@ -25,8 +37,9 @@ fetch('/api/chess/state')
     .catch(err => console.error('Error fetching chess state:', err));
 
 // Render the chessboard with drag-and-drop functionality
-function renderChessBoard(board, boardLayout) {
+function renderChessBoard(board, boardLayout, allowedMovesData) {
     chessBoard.innerHTML = ''; // Clear the chessboard
+    allowedMoves = allowedMovesData; // Store the allowed moves data
 
     boardLayout.forEach((row, i) => {
         row.forEach((cell, j) => {
@@ -36,6 +49,7 @@ function renderChessBoard(board, boardLayout) {
 
             const square = document.createElement('div');
             square.className = `square ${color === 'w' ? 'light' : 'dark'}`;
+            square.dataset.key = squareKey;
             square.dataset.file = squareKey[0]; // File (a-h)
             square.dataset.rank = squareKey[1]; // Rank (1-8)
 
@@ -44,18 +58,33 @@ function renderChessBoard(board, boardLayout) {
             label.className = 'square-label';
             label.textContent = squareKey;
             square.appendChild(label);
-
+            square.addEventListener('dragover', handleDragOver);
+            square.addEventListener('drop', handleDrop);
             // Add the piece if it exists
             if (pieceCode !== "---") {
                 const piece = document.createElement('span');
                 piece.className = 'piece';
-                piece.textContent = pieceMap[pieceCode.slice(0, -1)];
+                console.log('Piece map:', pieceCode.slice(0, -1), pieceMap[pieceCode.slice(0, -1)]);
+                const pieceImage = pieceMap[pieceCode.slice(0, -1)];
+                if (pieceImage) {
+                    const img = document.createElement('img');
+                    img.src = pieceImage; // Assign image source
+                    img.alt = pieceCode;  // Use piece code as alt text for accessibility
+                    img.className = 'piece-image'; // Optional: Add CSS class for styling
+                    piece.appendChild(img);
+                } else {
+                    // Fallback: Render text if no image found
+                    piece.textContent = pieceCode.slice(0, -1);
+                }
+                piece.dataset.code = pieceCode;
                 piece.draggable = true;
+
+                // Add event listener for piece click to highlight allowed moves
+                piece.addEventListener('click', () => handlePieceClick(piece, square));
 
                 // Drag event listeners
                 piece.addEventListener('dragstart', handleDragStart);
-                square.addEventListener('dragover', handleDragOver);
-                square.addEventListener('drop', handleDrop);
+                
 
                 square.appendChild(piece);
             }
@@ -65,13 +94,74 @@ function renderChessBoard(board, boardLayout) {
     });
 }
 
+// Handle piece click - highlight allowed moves
+function handlePieceClick(piece, square) {
+    // Deselect previous selected piece if any
+    if (selectedPiece) {
+        clearHighlightedSquares();
+    }
+    if (selectedSquare) {
+        selectedSquare.style.border = '';
+    }
+
+    // Highlight the clicked piece's allowed moves
+    selectedPiece = piece;
+    selectedSquare = square;
+    console.log('Selected piece:', selectedPiece);
+    console.log('Selected square:', selectedSquare);
+    selectedSquare.style.border = '2px solid red'; // Optional: highlight the selected piece
+    highlightAllowedMoves(selectedPiece);
+}
+
+// Highlight allowed move squares
+function highlightAllowedMoves(selectedPiece) {
+    // const piecePosition = squareKey; // e.g., "b1", "a2", etc.
+    const pieceMoves = allowedMoves[selectedPiece.dataset.code];
+
+    if (!pieceMoves) {
+        console.log("No allowed moves found for piece:", selectedPiece); // Debugging line
+        return;
+    }
+
+    // Clear previously highlighted squares
+    clearHighlightedSquares();
+
+    pieceMoves.forEach(move => {
+        const targetSquare = document.querySelector(
+            `.square[data-file="${move[0]}"][data-rank="${move[1]}"]`
+        );
+        if (targetSquare) {
+            targetSquare.classList.add('highlight');
+        }
+    });
+}
+
+
+// Clear highlighted squares
+function clearHighlightedSquares() {
+    const highlightedSquares = document.querySelectorAll('.highlight');
+    highlightedSquares.forEach(square => {
+        square.classList.remove('highlight');
+    });
+}
+
+// Get piece code from the square
+function getPieceCodeAtSquare(squareKey) {
+    const squareData = chessBoard.querySelector(
+        `.square[data-file="${squareKey[0]}"][data-rank="${squareKey[1]}"]`
+    ).textContent;
+    console.log('Square data:', squareData);
+    return pieceMap[squareData];
+}
+
 // Handle drag start
 function handleDragStart(event) {
     const square = event.target.parentElement;
+    const pieceCode = event.target.dataset.code;
     event.dataTransfer.setData('text/plain', JSON.stringify({
         file: square.dataset.file,
         rank: square.dataset.rank,
-        piece: event.target.textContent
+        pieceCode: pieceCode
     }));
 }
 
@@ -80,36 +170,98 @@ function handleDragOver(event) {
     event.preventDefault(); // Required to allow dropping
 }
 
-// Handle drop
+// Handle drop and make API call
 function handleDrop(event) {
     event.preventDefault();
 
+    // Retrieve the dragged data (file, rank, and piece code)
     const draggedData = JSON.parse(event.dataTransfer.getData('text/plain'));
     const sourceFile = draggedData.file;
     const sourceRank = draggedData.rank;
-    const piece = draggedData.piece;
+    const pieceCode = draggedData.pieceCode;
 
+    // Determine the target square (either directly or via parent element)
     const targetSquare = event.target.classList.contains('square')
         ? event.target
         : event.target.parentElement;
     const targetFile = targetSquare.dataset.file;
     const targetRank = targetSquare.dataset.rank;
 
-    // Clear the source square
+    // Check if the move is allowed (target square is within allowed moves for the piece)
+    if (allowedMoves[pieceCode] && allowedMoves[pieceCode].some(move => move[0] === targetFile && move[1] === targetRank)) {
+        
+        // Check if the target square is empty or contains an opponent's piece
+        const targetPiece = targetSquare.querySelector('.piece');
+        if (targetPiece && targetPiece.dataset.code === pieceCode) {
+            console.log('Cannot move to the square as it already contains your own piece');
+            return; // Can't move to a square containing your own piece
+        }
+
+        // Proceed with the move (move piece visually)
+        movePieceOnBoard(sourceFile, sourceRank, targetFile, targetRank, pieceCode);
+
+        // Make API call to update the game state
+        makeMoveAPICall(pieceCode, sourceFile + sourceRank, targetFile + targetRank);
+    } else {
+        console.log('Move not allowed: '+ (sourceFile + sourceRank) + " -> "+ (targetFile + targetRank));
+    }
+}
+
+
+
+function movePieceOnBoard(sourceFile, sourceRank, targetFile, targetRank, pieceCode) {
     const sourceSquare = document.querySelector(
         `.square[data-file="${sourceFile}"][data-rank="${sourceRank}"]`
     );
+    const targetSquare = document.querySelector(
+        `.square[data-file="${targetFile}"][data-rank="${targetRank}"]`
+    );
+    console.log('Source square:', sourceSquare);
+    console.log('Target square:', targetSquare);
+
+    // Clear the source square
     sourceSquare.innerHTML = '';
 
-    // Place the piece in the target square
+    // Create a new piece element and place it on the target square
     const newPiece = document.createElement('span');
     newPiece.className = 'piece';
-    newPiece.textContent = piece;
-    newPiece.draggable = true;
-
-    // Re-attach drag listeners
-    newPiece.addEventListener('dragstart', handleDragStart);
+    newPiece.textContent = pieceMap[pieceCode.slice(0, -1)];
+    newPiece.dataset.code = pieceCode;
     targetSquare.appendChild(newPiece);
+}
 
-    console.log(`Moved ${piece} from ${sourceFile}${sourceRank} to ${targetFile}${targetRank}`);
+// Make API call to update the game state
+function makeMoveAPICall(pieceCode, sourceSquare, destinationSquare) {
+    fetch('/api/chess/state/move', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            piece: pieceCode,
+            source: sourceSquare,
+            destination: destinationSquare,
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            fetch('/api/chess/state')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.data && data.data.board) {
+                    renderChessBoard(data.data.board, data.data.board_layout, data.data.allowed_moves);
+                } else {
+                    console.error('Unexpected API response:', data);
+                }
+            })
+            .catch(err => console.error('Error fetching chess state:', err));
+                console.log('Move successfully made:', data);
+            })
+        .catch(err => console.log('Error making move:', err));
+    
 }

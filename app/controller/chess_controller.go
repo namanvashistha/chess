@@ -12,6 +12,7 @@ type ChessController interface {
 	GetChessState(c *gin.Context)
 	SaveChessGame(c *gin.Context)
 	CreateChessState(c *gin.Context)
+	MakeMove(c *gin.Context)
 }
 
 type ChessControllerImpl struct {
@@ -36,6 +37,10 @@ func (u ChessControllerImpl) SaveChessGame(c *gin.Context) {
 
 func (u ChessControllerImpl) CreateChessState(c *gin.Context) {
 	u.svc.CreateChessState(c)
+}
+
+func (u ChessControllerImpl) MakeMove(c *gin.Context) {
+	u.svc.MakeMove(c)
 }
 
 func ChessControllerInit(chessService service.ChessService) *ChessControllerImpl {

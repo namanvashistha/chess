@@ -37,6 +37,7 @@ func Init(init *config.Initialization) *gin.Engine {
 			chess.GET("/:chessID", init.ChessCtrl.GetChessById)
 			chess.GET("/state", init.ChessCtrl.GetChessState)
 			chess.GET("/state/init", init.ChessCtrl.CreateChessState)
+			chess.POST("/state/move", init.ChessCtrl.MakeMove)
 		}
 	}
 

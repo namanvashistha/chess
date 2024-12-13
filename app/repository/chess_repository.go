@@ -10,7 +10,7 @@ import (
 type ChessRepository interface {
 	FindAllChess() ([]dao.Chess, error)
 	FindChessById(id int) (dao.Chess, error)
-	GetChessGameState() (dao.ChessGame, error)
+	GetChessGameState(gameId string) (dao.ChessGame, error)
 	SaveChessGame(game *dao.ChessGame) error
 }
 
@@ -43,10 +43,10 @@ func (u ChessRepositoryImpl) FindChessById(id int) (dao.Chess, error) {
 }
 
 // Fetches the current game state
-func (r ChessRepositoryImpl) GetChessGameState() (dao.ChessGame, error) {
+func (r ChessRepositoryImpl) GetChessGameState(gameId string) (dao.ChessGame, error) {
 	var game dao.ChessGame
 	// Assuming we want to get the first ongoing game or the last game
-	if err := r.db.Where("status = ?", "ongoing").First(&game).Error; err != nil {
+	if err := r.db.Where("id = ?", gameId).First(&game).Error; err != nil {
 		log.Println("Error fetching chess game state:", err)
 		return game, err
 	}
