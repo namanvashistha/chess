@@ -13,6 +13,6 @@ type ChessGame struct {
 	Board    json.RawMessage `gorm:"column:board;type:jsonb" json:"board"`    // JSONB column type to store the chessboard state
 	Turn     string          `gorm:"type:varchar(10);not null" json:"turn"`   // "white" or "black"
 	Status   string          `gorm:"type:varchar(20);not null" json:"status"` // "ongoing", "checkmate", etc.
-	LastMove string          `gorm:"type:varchar(10)" json:"lastMove"`        // e.g., "e2e4"
+	LastMove string          `gorm:"type:varchar(10)" json:"last_move"`       // e.g., "e2e4"
 	BaseModel
 }
