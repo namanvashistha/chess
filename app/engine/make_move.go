@@ -69,7 +69,7 @@ func MakeMove(game *dao.ChessGame, move dto.Move) error {
 	// game.MoveHistory = append(game.MoveHistory, move)
 	// game.CurrentTurn = switchTurn(currentTurn)
 	log.Info(move.Source, move.Destination)
-	log.Info(board)
+	// log.Info(board)
 	updatedBoard, err := json.Marshal(board)
 	if err != nil {
 		log.Errorf("failed to marshal board: %v", err)

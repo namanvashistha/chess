@@ -46,7 +46,7 @@ func (u ChessRepositoryImpl) FindChessById(id int) (dao.Chess, error) {
 func (r ChessRepositoryImpl) GetChessGameState(gameId string) (dao.ChessGame, error) {
 	var game dao.ChessGame
 	// Assuming we want to get the first ongoing game or the last game
-	if err := r.db.Where("id = ?", gameId).First(&game).Error; err != nil {
+	if err := r.db.Where("status = ?", "ongoing").Last(&game).Error; err != nil {
 		log.Println("Error fetching chess game state:", err)
 		return game, err
 	}

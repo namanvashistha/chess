@@ -2,10 +2,20 @@ package router
 
 import (
 	"chess-engine/config"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 )
 
+// WebSocket Upgrader: Upgrades HTTP connections to WebSocket connections.
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true // Allow all origins for simplicity; consider tightening this for security.
+	},
+}
+
+// Init initializes the router with routes for API and WebSocket.
 func Init(init *config.Initialization) *gin.Engine {
 
 	router := gin.New()
@@ -19,6 +29,9 @@ func Init(init *config.Initialization) *gin.Engine {
 	router.GET("/chessboard", func(c *gin.Context) {
 		c.File("./app/static/html/chess_board.html")
 	})
+
+	// WebSocket route
+	router.GET("/ws", init.SocketCtrl.HandleWebSocket)
 
 	// API routes
 	api := router.Group("/api")
@@ -43,3 +56,15 @@ func Init(init *config.Initialization) *gin.Engine {
 
 	return router
 }
+
+// // handleWebSocketConnection upgrades the connection and delegates to the WebSocketController.
+// func handleWebSocketConnection(c *gin.Context, websocketController controller.WebSocketController) {
+// 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upgrade connection"})
+// 		return
+// 	}
+// 	defer conn.Close()
+
+// 	websocketController.HandleWebSocket(c)
+// }

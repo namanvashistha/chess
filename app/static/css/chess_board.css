@@ -50,9 +50,21 @@ body {
 }
 
 .square.highlight {
-    background-color: rgba(59, 59, 59, 0.23); /* Light green for highlighted squares */
+    position: relative; /* Ensure the square is the positioning context for the circle */
 }
 
+.square.highlight::after {
+    content: ''; /* Empty content for the pseudo-element */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60%; /* Adjust size of the circle */
+    height: 60%; /* Adjust size of the circle */
+    background-color: rgba(59, 59, 59, 0.2); /* Translucent circle with the same color */
+    border-radius: 50%; /* Make the shape a circle */
+    transform: translate(-50%, -50%); /* Center the circle in the square */
+    pointer-events: none; /* Ensure it doesn't block clicks or interactions */
+}
 
 /* Style for the pieces */
 .piece {
@@ -63,11 +75,15 @@ body {
     align-items: center;
     justify-content: center;
     overflow: hidden; /* Prevents overflow */
+    cursor: pointer;
+    z-index: 100;
+    /* background-color: red; */
 }
 
 /* For the image inside the piece */
 .piece img {
     max-width: 80%;
     max-height: 80%;
+    /* background-color: gren; */
     object-fit: contain; /* Ensures the image scales within the square without distortion */
 }

@@ -42,7 +42,15 @@ var chessSvcSet = wire.NewSet(service.ChessServiceInit,
 	wire.Bind(new(service.ChessService), new(*service.ChessServiceImpl)),
 )
 
+var socketSvcSet = wire.NewSet(service.WebSocketServiceInit,
+	wire.Bind(new(service.WebSocketService), new(*service.WebSocketServiceImpl)),
+)
+
+var socketCtrlSet = wire.NewSet(controller.WebSocketControllerInit,
+	wire.Bind(new(controller.WebSocketController), new(*controller.WebSocketControllerImpl)),
+)
+
 func Init() *Initialization {
-	wire.Build(NewInitialization, db, userCtrlSet, userServiceSet, userRepoSet, roleRepoSet, chessCtrlSet, chessSvcSet, chessRepoSet)
+	wire.Build(NewInitialization, db, userCtrlSet, userServiceSet, userRepoSet, roleRepoSet, chessCtrlSet, chessSvcSet, chessRepoSet, socketCtrlSet, socketSvcSet)
 	return nil
 }

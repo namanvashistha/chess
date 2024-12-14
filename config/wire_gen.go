@@ -24,8 +24,12 @@ func Init() *Initialization {
 	chessRepositoryImpl := repository.ChessRepositoryInit(gormDB)
 	chessServiceImpl := service.ChessServiceInit(chessRepositoryImpl)
 	chessControllerImpl := controller.ChessControllerInit(chessServiceImpl)
+	socketServiceImpl := service.WebSocketServiceInit(chessRepositoryImpl)
+	socketControllerImpl := controller.WebSocketControllerInit(socketServiceImpl)
 
-	initialization := NewInitialization(userRepositoryImpl, userServiceImpl, userControllerImpl, roleRepositoryImpl, chessControllerImpl, chessServiceImpl, chessRepositoryImpl)
+	go service.WebSocketServiceInit(chessRepositoryImpl)
+	
+	initialization := NewInitialization(userRepositoryImpl, userServiceImpl, userControllerImpl, roleRepositoryImpl, chessControllerImpl, chessServiceImpl, chessRepositoryImpl, socketServiceImpl, socketControllerImpl)
 	return initialization
 }
 
@@ -46,3 +50,7 @@ var chessRepoSet = wire.NewSet(repository.ChessRepositoryInit, wire.Bind(new(rep
 var chessCtrlSet = wire.NewSet(controller.ChessControllerInit, wire.Bind(new(controller.ChessController), new(*controller.ChessControllerImpl)))
 
 var chessSvcSet = wire.NewSet(service.ChessServiceInit, wire.Bind(new(service.ChessService), new(*service.ChessServiceImpl)))
+
+var socketSvcSet = wire.NewSet(service.WebSocketServiceInit, wire.Bind(new(service.WebSocketService), new(*service.WebSocketServiceImpl)))
+
+var socketCtrlSet = wire.NewSet(controller.WebSocketControllerInit, wire.Bind(new(controller.WebSocketController), new(*controller.WebSocketControllerImpl)))

@@ -134,9 +134,6 @@ func (u ChessServiceImpl) MakeMove(c *gin.Context) {
 		pkg.PanicException(constant.UnknownError)
 	}
 
-	boardJSON := json.RawMessage(game.Board)
-	log.Info(boardJSON)
-
 	err = u.chessRepository.SaveChessGame(&game)
 	if err != nil {
 		log.Error("Happened error when saving data to database. Error", err)
