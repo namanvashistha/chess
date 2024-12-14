@@ -20,7 +20,8 @@ function sendMove(piece, source, destination) {
         payload: {
             piece: piece,
             source: source,
-            destination: destination
+            destination: destination,
+            game_id: gameId
         }
     }
     console.log("Sending move:", data);

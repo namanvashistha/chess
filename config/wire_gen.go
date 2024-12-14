@@ -17,11 +17,13 @@ import (
 
 func Init() *Initialization {
 	gormDB := ConnectToDB()
+	redisClient := InitRedis() // Initialize Redis
+
 	userRepositoryImpl := repository.UserRepositoryInit(gormDB)
 	userServiceImpl := service.UserServiceInit(userRepositoryImpl)
 	userControllerImpl := controller.UserControllerInit(userServiceImpl)
 	roleRepositoryImpl := repository.RoleRepositoryInit(gormDB)
-	chessRepositoryImpl := repository.ChessRepositoryInit(gormDB)
+	chessRepositoryImpl := repository.ChessRepositoryInit(gormDB, redisClient)
 	chessServiceImpl := service.ChessServiceInit(chessRepositoryImpl)
 	chessControllerImpl := controller.ChessControllerInit(chessServiceImpl)
 	socketServiceImpl := service.WebSocketServiceInit(chessRepositoryImpl)

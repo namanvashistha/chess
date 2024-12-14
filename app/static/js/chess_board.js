@@ -21,8 +21,16 @@ const pieceMap = {
     "bK": "static/images/bK.svg"
 };
 
+function getURLParameter(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+}
+const gameId = getURLParameter('game_id');
+// console.log('gameId:', gameId);
+
+console.log('gameId:', gameId);
 // Fetch initial chessboard state from the API
-fetch('/api/chess/state')
+fetch(`/api/chess/state/${gameId}`)
     .then(response => {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -277,12 +285,13 @@ function makeMoveAPICall(pieceCode, sourceSquare, destinationSquare) {
             piece: pieceCode,
             source: sourceSquare,
             destination: destinationSquare,
+            game_id: gameId
         })
     })
         .then(response => response.json())
         .then(data => {
             sendMove(pieceCode, sourceSquare, destinationSquare);
-            fetch('/api/chess/state')
+            fetch(`/api/chess/state/${gameId}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);

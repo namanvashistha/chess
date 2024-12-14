@@ -3,7 +3,14 @@ module chess-engine
 go 1.18
 
 require (
+	github.com/go-redis/redis/v8 v8.11.5
+	github.com/gorilla/websocket v1.5.3
+)
+
+require (
 	github.com/antonfisher/nested-logrus-formatter v1.3.1 // indirect
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.8.2 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
@@ -12,7 +19,6 @@ require (
 	github.com/goccy/go-json v0.10.0 // indirect
 	github.com/google/subcommands v1.0.1 // indirect
 	github.com/google/wire v0.5.0 // indirect
-	github.com/gorilla/websocket v1.5.3
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	github.com/jackc/pgx/v5 v5.2.0 // indirect

@@ -2,6 +2,7 @@ package service
 
 import (
 	"chess-engine/app/constant"
+	"chess-engine/app/domain/dao"
 	"chess-engine/app/domain/dto"
 	"chess-engine/app/engine"
 	"chess-engine/app/pkg"
@@ -55,29 +56,36 @@ func (ws *WebSocketServiceImpl) BroadcastMessage(message dto.WebSocketMessage) {
 func (ws *WebSocketServiceImpl) ProcessMove(message dto.WebSocketMessage) {
 	log.Info("Processing move via WebSocket", message.Payload)
 
-	// Validate and update the game state
-	// var chessRepository repository.ChessRepositoryImpl
-	// gameId := message.Payload.(map[string]interface{})["game_id"].(string)
-	gameState, err := ws.chessRepository.GetChessGameState("3")
-	if err != nil {
-		log.Error("Happened error when getting chess game state. Error", err)
-		pkg.PanicException(constant.UnknownError)
+	var game dao.ChessGame
+	var err error
+	gameId := message.Payload.(map[string]interface{})["game_id"].(string)
+	log.Info("websocket Game ID:", gameId)
+	// Fetch from cache
+	game, err = ws.chessRepository.GetChessGameStateFromCache(gameId)
+	if err != nil || game.ID == 0 {
+		// Fallback to DB if cache miss
+		log.Info("Cache miss. Fetching from database.")
+		game, err = ws.chessRepository.GetChessGameStateFromDB(gameId)
+		if err != nil {
+			log.Error("Error fetching game state:", err)
+			pkg.PanicException(constant.DataNotFound)
+		}
+		// Save to cache after fetching from DB
+		_ = ws.chessRepository.SaveChessGameToCache(&game)
 	}
 
-	// Get the allowed moves based on the game state
-	allowedMoves := engine.GetAllowedMoves(gameState)
+	// Build response
+	allowedMoves := engine.GetAllowedMoves(game)
 	boardlayout := engine.GetBoardLayout()
 	pieceMap := engine.GetPiecesMap()
-
-	// Build the response with game state and allowed moves
 
 	response := dto.WebSocketMessage{
 		Type: "game_update",
 		Payload: map[string]interface{}{
-			"board":         gameState.Board,
-			"turn":          gameState.Turn,
-			"status":        gameState.Status,
-			"last_move":     gameState.LastMove,
+			"board":         game.Board,
+			"turn":          game.Turn,
+			"status":        game.Status,
+			"last_move":     game.LastMove,
 			"allowed_moves": allowedMoves,
 			"board_layout":  boardlayout,
 			"pieces_map":    pieceMap,
