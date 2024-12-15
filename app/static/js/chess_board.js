@@ -202,7 +202,7 @@ function handleDragStart(event) {
         pieceCode: pieceCode
     }));
 
-    piece.style.opacity = 0.5;
+    // piece.style.opacity = 0.5;
 }
 
 // Allow dropping
@@ -276,38 +276,54 @@ function movePieceOnBoard(sourceFile, sourceRank, targetFile, targetRank, pieceC
 
 // Make API call to update the game state
 function makeMoveAPICall(pieceCode, sourceSquare, destinationSquare) {
-    fetch('/api/chess/state/move', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            piece: pieceCode,
-            source: sourceSquare,
-            destination: destinationSquare,
-            game_id: gameId
-        })
-    })
-        .then(response => response.json())
-        .then(data => {
-            sendMove(pieceCode, sourceSquare, destinationSquare);
-            fetch(`/api/chess/state/${gameId}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data && data.data && data.data.board) {
-                    renderChessBoard(data.data.board, data.data.board_layout, data.data.allowed_moves, data.data.turn);
-                } else {
-                    console.error('Unexpected API response:', data);
-                }
-            })
-            .catch(err => console.error('Error fetching chess state:', err));
-                console.log('Move successfully made:', data);
-            })
-        .catch(err => console.log('Error making move:', err));
+    sendMove(pieceCode, sourceSquare, destinationSquare);
+    // fetch(`/api/chess/state/${gameId}`)
+    // .then(response => {
+    //     if (!response.ok) {
+    //         throw new Error(`HTTP error! status: ${response.status}`);
+    //     }
+    //     return response.json();
+    // })
+    // .then(data => {
+    //     if (data && data.data && data.data.board) {
+    //         renderChessBoard(data.data.board, data.data.board_layout, data.data.allowed_moves, data.data.turn);
+    //     } else {
+    //         console.error('Unexpected API response:', data);
+    //     }
+    // })
+
+    // fetch('/api/chess/state/move', {
+    //     method: 'POST',
+    //     headers: {
+    //         'Content-Type': 'application/json'
+    //     },
+    //     body: JSON.stringify({
+    //         piece: pieceCode,
+    //         source: sourceSquare,
+    //         destination: destinationSquare,
+    //         game_id: gameId
+    //     })
+    // })
+    //     .then(response => response.json())
+    //     .then(data => {
+    //         sendMove(pieceCode, sourceSquare, destinationSquare);
+    //         fetch(`/api/chess/state/${gameId}`)
+    //         .then(response => {
+    //             if (!response.ok) {
+    //                 throw new Error(`HTTP error! status: ${response.status}`);
+    //             }
+    //             return response.json();
+    //         })
+    //         .then(data => {
+    //             if (data && data.data && data.data.board) {
+    //                 renderChessBoard(data.data.board, data.data.board_layout, data.data.allowed_moves, data.data.turn);
+    //             } else {
+    //                 console.error('Unexpected API response:', data);
+    //             }
+    //         })
+    //         .catch(err => console.error('Error fetching chess state:', err));
+    //             console.log('Move successfully made:', data);
+    //         })
+    //     .catch(err => console.log('Error making move:', err));
     
 }

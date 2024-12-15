@@ -7,6 +7,9 @@ socket.onopen = () => {
 socket.onmessage = (event) => {
     const message = JSON.parse(event.data);
     console.log("Move received:", message);
+    if (message.status == "error") {
+        console.log("Error:", message.status);
+    }
     updateChessBoard(message);
 };
 

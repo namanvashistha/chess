@@ -1,11 +1,10 @@
 package engine
 
 import (
-	"chess-engine/app/constant"
 	"chess-engine/app/domain/dao"
 	"chess-engine/app/domain/dto"
-	"chess-engine/app/pkg"
 	"encoding/json"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -15,7 +14,7 @@ func MakeMove(game *dao.ChessGame, move dto.Move) error {
 	var board map[string][]string
 	if err := json.Unmarshal(game.Board, &board); err != nil {
 		log.Errorf("Failed to unmarshal board: %v", err)
-		pkg.PanicException(constant.UnknownError)
+		return fmt.Errorf("failed to unmarshal board: %w", err)
 	}
 	sourcePiece := move.Piece
 	// destinationPiece := board[move.DestinationSquare]
@@ -25,13 +24,13 @@ func MakeMove(game *dao.ChessGame, move dto.Move) error {
 
 	if sourcePiece != board[move.Source][1] {
 		log.Error("Invalid move source piece not matching. please refresh Error")
-		pkg.PanicException(constant.UnknownError)
+		return fmt.Errorf("invalid move source piece not matching")
 	}
 
 	// Validate source square
 	if sourcePiece == "---" {
 		log.Errorf("Invalid move: no piece at source square %s", move.Source)
-		pkg.PanicException(constant.UnknownError)
+		return fmt.Errorf("invalid move: no piece at source square %s", move.Source)
 	}
 
 	// Check if it's the correct player's turn
@@ -39,14 +38,14 @@ func MakeMove(game *dao.ChessGame, move dto.Move) error {
 	pieceColor := string(sourcePiece[0:1]) // Assume the first character indicates color (e.g., 'w' or 'b')
 	if (currentTurn == "white" && pieceColor != "w") || (currentTurn == "black" && pieceColor != "b") {
 		log.Errorf("Invalid move: it's %s's turn", currentTurn)
-		pkg.PanicException(constant.UnknownError)
+		return fmt.Errorf("invalid move: it's %s's turn", currentTurn)
 	}
 
 	// Validate move legality
 	allowedMoves := GetAllowedMoves(*game)
 	if !contains(allowedMoves[move.Piece], move.Destination) {
 		log.Errorf("Invalid move: %s to %s is not allowed", move.Source, move.Destination)
-		pkg.PanicException(constant.UnknownError)
+		return fmt.Errorf("invalid move: %s to %s is not allowed", move.Source, move.Destination)
 	}
 
 	// Handle special moves (e.g., promotion, castling, en passant)
@@ -73,7 +72,7 @@ func MakeMove(game *dao.ChessGame, move dto.Move) error {
 	updatedBoard, err := json.Marshal(board)
 	if err != nil {
 		log.Errorf("failed to marshal board: %v", err)
-		pkg.PanicException(constant.UnknownError)
+		return fmt.Errorf("failed to marshal board: %w", err)
 	}
 	game.Board = json.RawMessage(updatedBoard)
 	game.Turn = switchTurn(currentTurn)

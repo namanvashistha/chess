@@ -73,6 +73,19 @@ func (ws *WebSocketServiceImpl) ProcessMove(message dto.WebSocketMessage) {
 		// Save to cache after fetching from DB
 		_ = ws.chessRepository.SaveChessGameToCache(&game)
 	}
+	var move dto.Move
+	move.Destination = message.Payload.(map[string]interface{})["destination"].(string)
+	move.Source = message.Payload.(map[string]interface{})["source"].(string)
+	move.Piece = message.Payload.(map[string]interface{})["piece"].(string)
+	err = engine.MakeMove(&game, move)
+	status := "success"
+	if err != nil {
+		status = "error"
+		log.Error("Error processing move:", err)
+	} else {
+		_ = ws.chessRepository.SaveChessGameToCache(&game)
+		_ = ws.chessRepository.SaveChessGameToDB(&game)
+	}
 
 	// Build response
 	allowedMoves := engine.GetAllowedMoves(game)
@@ -80,7 +93,8 @@ func (ws *WebSocketServiceImpl) ProcessMove(message dto.WebSocketMessage) {
 	pieceMap := engine.GetPiecesMap()
 
 	response := dto.WebSocketMessage{
-		Type: "game_update",
+		Type:   "game_update",
+		Status: status,
 		Payload: map[string]interface{}{
 			"board":         game.Board,
 			"turn":          game.Turn,
