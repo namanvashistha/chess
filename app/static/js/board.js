@@ -28,7 +28,6 @@ function getGameIdFromURL() {
 }
 
 const gameId = getGameIdFromURL();
-console.log('gameId:', gameId);
 
 // Fetch initial chessboard state from the API
 function fetchChessState() {
@@ -106,7 +105,6 @@ function handleDrop(event) {
     event.preventDefault();
     const data = JSON.parse(event.dataTransfer.getData('text/plain'));
     const targetSquare = event.target.closest('.square');
-    console.log('Drop:', targetSquare);
     if (targetSquare) {
         movePieceOnBoard(data.file, data.rank, targetSquare.dataset.file, targetSquare.dataset.rank, data.pieceCode);
         sendMove(data.pieceCode, data.file + data.rank, targetSquare.dataset.file + targetSquare.dataset.rank);
@@ -115,13 +113,38 @@ function handleDrop(event) {
 
 // Piece click handlers
 function handlePieceClick(piece, square) {
-    if (selectedPiece) {
+    if (selectedPiece === piece) {
+        // If the same piece is clicked again, deselect it
         clearHighlightedSquares();
+        selectedPiece = null;
+        selectedSquare = null;
+        return;
     }
-
-    selectedPiece = piece;
-    selectedSquare = square;
-    highlightAllowedMoves(selectedPiece);
+    if (selectedPiece) {
+        const isHighlighted = square.classList.contains('highlight');
+        if (isHighlighted) {
+            // Move the piece to the clicked square
+            const sourceFile = selectedSquare.dataset.file;
+            const sourceRank = selectedSquare.dataset.rank;
+            const targetFile = square.dataset.file;
+            const targetRank = square.dataset.rank;
+            const pieceCode = selectedPiece.querySelector('img').dataset.code;
+            movePieceOnBoard(sourceFile, sourceRank, targetFile, targetRank, pieceCode);
+            sendMove(pieceCode, sourceFile + sourceRank, targetFile + targetRank);
+            clearHighlightedSquares();
+        } else {
+            // Clear the previously selected piece and highlight the new piece
+            clearHighlightedSquares();
+            selectedPiece = piece;
+            selectedSquare = square;
+            highlightAllowedMoves(selectedPiece);
+        }
+        
+    } else {
+        selectedPiece = piece;
+        selectedSquare = square;
+        highlightAllowedMoves(selectedPiece);
+    }
 }
 
 function highlightAllowedMoves(piece) {
@@ -138,12 +161,38 @@ function highlightAllowedMoves(piece) {
         );
         if (targetSquare) {
             targetSquare.classList.add('highlight');
+            targetSquare.addEventListener('click', handleSquareClick);
         }
     });
 }
 
+// Clear highlighted squares
 function clearHighlightedSquares() {
-    document.querySelectorAll('.highlight').forEach(square => square.classList.remove('highlight'));
+    document.querySelectorAll('.highlight').forEach(square => {
+        square.classList.remove('highlight');
+        square.removeEventListener('click', handleSquareClick);
+    });
+}
+
+// Handle clicking on highlighted squares
+function handleSquareClick(event) {
+    const targetSquare = event.target.closest('.square');
+
+    if (selectedPiece && selectedSquare && targetSquare) {
+        const sourceFile = selectedSquare.dataset.file;
+        const sourceRank = selectedSquare.dataset.rank;
+        const targetFile = targetSquare.dataset.file;
+        const targetRank = targetSquare.dataset.rank;
+        const pieceCode = selectedPiece.querySelector('img').dataset.code;
+
+        movePieceOnBoard(sourceFile, sourceRank, targetFile, targetRank, pieceCode);
+        sendMove(pieceCode, sourceFile + sourceRank, targetFile + targetRank);
+
+        // Clear selection after moving
+        selectedPiece = null;
+        selectedSquare = null;
+        clearHighlightedSquares();
+    }
 }
 
 // Move piece with animation
@@ -152,8 +201,14 @@ function movePieceOnBoard(sourceFile, sourceRank, targetFile, targetRank, pieceC
     const targetSquare = document.querySelector(`.square[data-file="${targetFile}"][data-rank="${targetRank}"]`);
     const pieceElement = sourceSquare.querySelector('.piece');
 
+    // If the target square already has a piece, clear it before placing the new piece
+    // const existingPiece = targetSquare.querySelector('.piece');
+    // if (existingPiece) {
+    //     targetSquare.removeChild(existingPiece); // Remove the existing piece
+    // }
+
     if (pieceElement) {
-        targetSquare.appendChild(pieceElement);
+        // targetSquare.appendChild(pieceElement); // Move the selected piece to the target square
         sourceSquare.innerHTML = ''; // Clear the source square
     }
 }
