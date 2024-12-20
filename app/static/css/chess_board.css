@@ -3,87 +3,123 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: #f0f0f0;
+    background-color: #e8f5e9;
     margin: 0;
     padding: 0;
+    color: #333;
 }
-
 
 
 #chess-board {
     display: grid;
     padding-top: 20px;
-    align-self: center;
-    justify-self: center;
-    grid-template-columns: repeat(8, 100px);
-    grid-template-rows: repeat(8, 100px);
-    width: 800px;
-    height: 800px;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    width: 90vw;
+    max-width: 800px;
+    aspect-ratio: 1;
+    border: 5px solid #388e3c; 
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.3); 
+    border-radius: 10px; 
 }
 
+
 .square {
-    position: relative; /* Enables positioning within the square */
-    width: 100px;
-    height: 100px;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    font-size: calc(2vw + 10px);
     cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease; 
 }
 
 .square.light {
-    background-color: #f0d9b5;
+    background-color: #ffebcd; 
 }
 
 .square.dark {
-    background-color: #b58863;
+    background-color: #8d6e63; 
 }
 
-.square-label {
-    position: absolute; /* Position relative to the square */
-    bottom: 5px; /* Slight padding from the bottom */
-    left: 5px; /* Slight padding from the left */
-    font-size: 12px; /* Smaller text size for the label */
-    color: rgba(0, 0, 0, 0.6); /* Subtle contrast to avoid distraction */
-    pointer-events: none; /* Prevent interaction with the label */
-}
 
 .square.highlight {
-    position: relative; /* Ensure the square is the positioning context for the circle */
+    
+    transform: scale(1.05); 
 }
 
+
+.square-label {
+    position: absolute;
+    bottom: 5%;
+    left: 5%;
+    font-size: calc(1vw + 6px);
+    color: rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+}
+
+
 .square.highlight::after {
-    content: ''; /* Empty content for the pseudo-element */
+    content: '';
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 60%; /* Adjust size of the circle */
-    height: 60%; /* Adjust size of the circle */
-    background-color: rgba(59, 59, 59, 0.2); /* Translucent circle with the same color */
-    border-radius: 50%; /* Make the shape a circle */
-    transform: translate(-50%, -50%); /* Center the circle in the square */
-    pointer-events: none; /* Ensure it doesn't block clicks or interactions */
+    width: 60%;
+    height: 60%;
+    background-color: rgba(255, 204, 128, 0.4);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
 }
 
-/* Style for the pieces */
+
 .piece {
-    position: absolute;  /* Allow the piece to be positioned inside the square */
+    position: absolute;
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden; /* Prevents overflow */
-    cursor: pointer;
     z-index: 100;
-    /* background-color: red; */
+    transition: transform 0.2s ease; 
 }
 
-/* For the image inside the piece */
 .piece img {
     max-width: 80%;
     max-height: 80%;
-    /* background-color: gren; */
-    object-fit: contain; /* Ensures the image scales within the square without distortion */
+    object-fit: contain;
+}
+
+
+.square:hover {
+    background-color: rgba(72, 187, 120, 0.5); 
+    transform: scale(1.02); 
+    transition: transform 0.2s ease, background-color 0.3s ease;
+}
+
+
+@media (max-width: 768px) {
+    #chess-board {
+        width: 95vw;
+    }
+    .square {
+        font-size: calc(1.5vw + 8px);
+    }
+    .square-label {
+        font-size: calc(0.8vw + 4px);
+    }
+}
+
+
+body {
+    animation: fadeIn 1s ease-in-out; 
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }

@@ -236,16 +236,6 @@ func (u ChessServiceImpl) CreateChessState(c *gin.Context) {
 		"g1": {"b", "wN2"},
 		"h1": {"w", "wR2"},
 	}
-	// initialBoard := [8][8]string{
-	// 	{{"rR", "rN", "rB", "rQ", "rK", "rB", "rN", "rR"},
-	// 	{"rP", "rP", "rP", "rP", "rP", "rP", "rP", "rP"},
-	// 	{"", "", "", "", "", "", "", ""},
-	// 	{"", "", "", "", "", "", "", ""},
-	// 	{"", "", "", "", "", "", "", ""},
-	// 	{"", "", "", "", "", "", "", ""},
-	// 	{"", "bP", "bP", "bP", "bP", "bP", "bP", "bP"},
-	// 	{"", "", "bB", "bQ", "bK", "bB", "bN", "bR"},
-	// }
 	boardJSON, err := json.Marshal(initialBoard)
 	if err != nil {
 		log.Error("Error converting board to JSON. Error", err)
@@ -259,8 +249,9 @@ func (u ChessServiceImpl) CreateChessState(c *gin.Context) {
 		LastMove: "",        // No moves yet
 	}
 
-	// Save the initial chess state to the database
+	// Save the initial chess state to the cache and db
 	err = u.chessRepository.SaveChessGameToDB(&initialState)
+	u.chessRepository.SaveChessGameToCache(&initialState)
 	if err != nil {
 		log.Error("Happened error when saving data to database. Error", err)
 		pkg.PanicException(constant.UnknownError)

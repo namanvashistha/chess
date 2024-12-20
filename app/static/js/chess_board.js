@@ -25,7 +25,7 @@ function getURLParameter(name) {
     const params = new URLSearchParams(window.location.search);
     return params.get(name);
 }
-const gameId = getURLParameter('game_id');
+const gameId = getURLParameter('id');
 // console.log('gameId:', gameId);
 
 console.log('gameId:', gameId);
