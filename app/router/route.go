@@ -26,8 +26,8 @@ func Init(init *config.Initialization) *gin.Engine {
 	router.Static("/static", "./app/static")
 
 	// Route to render chessboard
-	router.GET("/game", func(c *gin.Context) {
-		c.File("./app/static/html/chess_board.html")
+	router.GET("/game/:gameId", func(c *gin.Context) {
+		c.File("./app/static/html/board.html")
 	})
 
 	// WebSocket route

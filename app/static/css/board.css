@@ -1,0 +1,142 @@
+/* General body styling */
+body {
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #121212; /* Dark mode background */
+    margin: 0;
+    padding: 0;
+    color: #e0e0e0; /* Light text for dark mode */
+}
+
+/* Chessboard container */
+#chess-board {
+    display: grid;
+    padding-top: 20px;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    width: 90vw;
+    max-width: 800px;
+    aspect-ratio: 1;
+    border: 5px solid #bb86fc; /* Purple border for a vibrant theme */
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.5); /* Enhanced shadow effect */
+    border-radius: 15px;
+}
+
+/* Square styling */
+.square {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(2vw + 10px);
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.square.light {
+    background-color: #444; /* Dark grey for light squares */
+}
+
+.square.dark {
+    background-color: #222; /* Even darker grey for dark squares */
+}
+
+/* Highlight for allowed moves */
+.square.highlight::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 50%; /* Smaller highlight */
+    height: 50%;
+    background-color: rgba(255, 193, 7, 0.7); /* Gold circle */
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+/* Hover effect */
+.square:hover {
+    background-color: rgba(255, 87, 34, 0.6); /* Orange hover effect */
+}
+
+/* Labels for square positions */
+.square-label {
+    position: absolute;
+    bottom: 5%;
+    left: 5%;
+    font-size: calc(1vw + 6px);
+    color: rgba(255, 255, 255, 0.5); /* Subtle white text */
+    pointer-events: none;
+}
+
+.piece {
+    transition: transform 0.3s ease-out; /* Smooth movement */
+    will-change: transform; /* Optimize rendering for animations */
+}
+/* Styling for chess pieces */
+.piece img {
+    max-width: 90%; /* Ensures proper scaling */
+    max-height: 90%;
+    object-fit: contain;
+    transition: transform 0.2s ease; /* Faster movement animation */
+}
+.piece.dragging {
+    opacity: 0.5;
+    transform: scale(1.1); /* Slightly enlarge during drag */
+    pointer-events: none; /* Ignore pointer events during drag */
+}
+
+
+/* Click effect on pieces */
+.piece img:active {
+    transform: scale(0.95); /* Slight click effect */
+}
+
+/* Flip board button */
+button {
+    margin: 10px;
+    padding: 8px 12px;
+    font-size: 16px;
+    color: #ffffff;
+    background-color: #bb86fc;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+button:hover {
+    background-color: #9c5efc; /* Darker purple on hover */
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+    #chess-board {
+        width: 95vw;
+    }
+
+    .square {
+        font-size: calc(1.5vw + 8px);
+    }
+
+    .square-label {
+        font-size: calc(0.8vw + 4px);
+    }
+}
+
+/* Fade-in animation for the entire page */
+body {
+    animation: fadeIn 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
