@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-func GetAllowedMoves(gameState dao.ChessGame) map[string][]string {
+func GetAllowedMoves(gameState dao.ChessState) map[string][]string {
 	allowedMoves := make(map[string][]string)
 
 	var board map[string][]string

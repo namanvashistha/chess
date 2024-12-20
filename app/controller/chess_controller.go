@@ -7,10 +7,11 @@ import (
 )
 
 type ChessController interface {
-	GetAllChess(c *gin.Context)
-	GetChessById(c *gin.Context)
+	GetAllChessGame(c *gin.Context)
+	GetChessGameById(c *gin.Context)
+	CreateChessGame(c *gin.Context)
 	GetChessState(c *gin.Context)
-	SaveChessGame(c *gin.Context)
+	SaveChessState(c *gin.Context)
 	CreateChessState(c *gin.Context)
 	MakeMove(c *gin.Context)
 }
@@ -19,20 +20,24 @@ type ChessControllerImpl struct {
 	svc service.ChessService
 }
 
-func (u ChessControllerImpl) GetAllChess(c *gin.Context) {
-	u.svc.GetAllChess(c)
+func (u ChessControllerImpl) GetAllChessGame(c *gin.Context) {
+	u.svc.GetAllChessGame(c)
 }
 
-func (u ChessControllerImpl) GetChessById(c *gin.Context) {
-	u.svc.GetChessById(c)
+func (u ChessControllerImpl) GetChessGameById(c *gin.Context) {
+	u.svc.GetChessGameById(c)
+}
+
+func (u ChessControllerImpl) CreateChessGame(c *gin.Context) {
+	u.svc.CreateChessGame(c)
 }
 
 func (u ChessControllerImpl) GetChessState(c *gin.Context) {
 	u.svc.GetChessState(c)
 }
 
-func (u ChessControllerImpl) SaveChessGame(c *gin.Context) {
-	u.svc.SaveChessGame(c)
+func (u ChessControllerImpl) SaveChessState(c *gin.Context) {
+	u.svc.SaveChessState(c)
 }
 
 func (u ChessControllerImpl) CreateChessState(c *gin.Context) {

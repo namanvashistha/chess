@@ -26,6 +26,9 @@ func Init(init *config.Initialization) *gin.Engine {
 	router.Static("/static", "./app/static")
 
 	// Route to render chessboard
+	router.GET("", func(c *gin.Context) {
+		c.File("./app/static/html/index.html")
+	})
 	router.GET("/game/:gameId", func(c *gin.Context) {
 		c.File("./app/static/html/board.html")
 	})
@@ -46,10 +49,11 @@ func Init(init *config.Initialization) *gin.Engine {
 		}
 		chess := api.Group("/chess")
 		{
-			chess.GET("", init.ChessCtrl.GetAllChess)
-			chess.GET("/:chessID", init.ChessCtrl.GetChessById)
+			chess.GET("/game", init.ChessCtrl.GetAllChessGame)
+			chess.POST("/game", init.ChessCtrl.CreateChessGame)
+			chess.GET("/game/:gameId", init.ChessCtrl.GetChessGameById)
 			chess.GET("/state/:gameId", init.ChessCtrl.GetChessState)
-			chess.GET("/state/init", init.ChessCtrl.CreateChessState)
+			chess.POST("/state/init", init.ChessCtrl.CreateChessState)
 			chess.POST("/state/move", init.ChessCtrl.MakeMove)
 		}
 	}

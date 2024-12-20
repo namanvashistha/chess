@@ -35,5 +35,8 @@ function sendMove(piece, source, destination) {
 function updateChessBoard(message) {
     // Update the UI based on the move received
     console.log("Updating board for move:", message);
-    renderChessBoard(message.payload.board, message.payload.board_layout, message.payload.allowed_moves, message.payload.turn);
+    chessState = message.payload.chess_state;
+    console.log("chessState");
+    console.log(chessState);
+    renderChessBoard(chessState.board, chessState.board_layout, chessState.allowed_moves, chessState.turn);
 }

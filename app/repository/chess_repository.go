@@ -12,12 +12,13 @@ import (
 )
 
 type ChessRepository interface {
-	FindAllChess() ([]dao.Chess, error)
-	FindChessById(id int) (dao.Chess, error)
-	GetChessGameStateFromCache(gameId string) (dao.ChessGame, error)
-	GetChessGameStateFromDB(gameId string) (dao.ChessGame, error)
-	SaveChessGameToCache(game *dao.ChessGame) error
+	FindAllChessGame() ([]dao.ChessGame, error)
+	FindChessGameById(id string) (dao.ChessGame, error)
 	SaveChessGameToDB(game *dao.ChessGame) error
+	GetChessStateStateFromCache(gameId string) (dao.ChessState, error)
+	GetChessStateStateFromDB(gameId string) (dao.ChessState, error)
+	SaveChessStateToCache(game *dao.ChessState) error
+	SaveChessStateToDB(game *dao.ChessState) error
 }
 
 type ChessRepositoryImpl struct {
@@ -26,6 +27,7 @@ type ChessRepositoryImpl struct {
 }
 
 func ChessRepositoryInit(db *gorm.DB, redisClient *pkg.RedisClient) *ChessRepositoryImpl {
+	db.AutoMigrate(&dao.ChessState{})
 	db.AutoMigrate(&dao.ChessGame{})
 	return &ChessRepositoryImpl{
 		db:          db,
@@ -34,30 +36,38 @@ func ChessRepositoryInit(db *gorm.DB, redisClient *pkg.RedisClient) *ChessReposi
 }
 
 // Find all chess games from the database
-func (r ChessRepositoryImpl) FindAllChess() ([]dao.Chess, error) {
-	var chesss []dao.Chess
-	err := r.db.Find(&chesss).Error
+func (r ChessRepositoryImpl) FindAllChessGame() ([]dao.ChessGame, error) {
+	var chesses []dao.ChessGame
+	err := r.db.Find(&chesses).Error
 	if err != nil {
 		log.Error("Error finding all chess games:", err)
 		return nil, err
 	}
-	return chesss, nil
+	return chesses, nil
 }
 
 // Find chess by ID from the database
-func (r ChessRepositoryImpl) FindChessById(id int) (dao.Chess, error) {
-	var chess dao.Chess
-	err := r.db.First(&chess, id).Error
+func (r ChessRepositoryImpl) FindChessGameById(id string) (dao.ChessGame, error) {
+	var chess dao.ChessGame
+	err := r.db.Preload("ChessState").First(&chess, id).Error
 	if err != nil {
 		log.Error("Error finding chess by ID:", err)
-		return dao.Chess{}, err
+		return dao.ChessGame{}, err
 	}
 	return chess, nil
 }
 
+func (r ChessRepositoryImpl) SaveChessGameToDB(game *dao.ChessGame) error {
+	if err := r.db.Save(game).Error; err != nil {
+		log.Error("Error saving chess game to DB:", err)
+		return err
+	}
+	return nil
+}
+
 // Fetch the chess game state from cache
-func (r ChessRepositoryImpl) GetChessGameStateFromCache(gameId string) (dao.ChessGame, error) {
-	var game dao.ChessGame
+func (r ChessRepositoryImpl) GetChessStateStateFromCache(gameId string) (dao.ChessState, error) {
+	var game dao.ChessState
 	cachedState, err := r.redisClient.Get("game_state:" + gameId)
 	if err != nil || cachedState == "" {
 		return game, err
@@ -71,8 +81,8 @@ func (r ChessRepositoryImpl) GetChessGameStateFromCache(gameId string) (dao.Ches
 }
 
 // Fetch the chess game state from the database
-func (r ChessRepositoryImpl) GetChessGameStateFromDB(gameId string) (dao.ChessGame, error) {
-	var game dao.ChessGame
+func (r ChessRepositoryImpl) GetChessStateStateFromDB(gameId string) (dao.ChessState, error) {
+	var game dao.ChessState
 	err := r.db.Where("id = ?", gameId).First(&game).Error
 	if err != nil {
 		log.Error("Error fetching chess game state from DB:", err)
@@ -82,13 +92,12 @@ func (r ChessRepositoryImpl) GetChessGameStateFromDB(gameId string) (dao.ChessGa
 }
 
 // Save the chess game state to the cache
-func (r ChessRepositoryImpl) SaveChessGameToCache(game *dao.ChessGame) error {
+func (r ChessRepositoryImpl) SaveChessStateToCache(game *dao.ChessState) error {
 	gameStateJSON, err := json.Marshal(game)
 	if err != nil {
 		log.Error("Error marshalling game state for Redis:", err)
 		return err
 	}
-	log.Info("Saving game state to Redis:", fmt.Sprint(game.ID), string(gameStateJSON))
 	err = r.redisClient.Set("game_state:"+fmt.Sprint(game.ID), gameStateJSON, time.Minute*10) // Cache for 10 minutes
 	if err != nil {
 		log.Error("Error saving game state to Redis:", err)
@@ -97,7 +106,7 @@ func (r ChessRepositoryImpl) SaveChessGameToCache(game *dao.ChessGame) error {
 }
 
 // Save the chess game state to the database
-func (r ChessRepositoryImpl) SaveChessGameToDB(game *dao.ChessGame) error {
+func (r ChessRepositoryImpl) SaveChessStateToDB(game *dao.ChessState) error {
 	if err := r.db.Save(game).Error; err != nil {
 		log.Error("Error saving game state to DB:", err)
 		return err

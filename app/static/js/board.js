@@ -31,10 +31,11 @@ const gameId = getGameIdFromURL();
 
 // Fetch initial chessboard state from the API
 function fetchChessState() {
-    fetch(`/api/chess/state/${gameId}`)
+    fetch(`/api/chess/game/${gameId}`)
         .then(response => response.json())
         .then(data => {
-            renderChessBoard(data.data.board, data.data.board_layout, data.data.allowed_moves, data.data.turn);
+            chessState = data.data.chess_state;
+            renderChessBoard(chessState.board, chessState.board_layout, chessState.allowed_moves, chessState.turn);
         })
         .catch(err => console.error('Error fetching chess state:', err));
 }

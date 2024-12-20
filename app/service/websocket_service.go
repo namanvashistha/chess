@@ -7,6 +7,7 @@ import (
 	"chess-engine/app/engine"
 	"chess-engine/app/pkg"
 	"chess-engine/app/repository"
+	"fmt"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -59,51 +60,44 @@ func (ws *WebSocketServiceImpl) ProcessMove(message dto.WebSocketMessage) {
 	var game dao.ChessGame
 	var err error
 	gameId := message.Payload.(map[string]interface{})["game_id"].(string)
-	log.Info("websocket Game ID:", gameId)
+	game, _ = ws.chessRepository.FindChessGameById(gameId)
 	// Fetch from cache
-	game, err = ws.chessRepository.GetChessGameStateFromCache(gameId)
-	if err != nil || game.ID == 0 {
+	gameState, err := ws.chessRepository.GetChessStateStateFromCache(fmt.Sprint(game.ChessStateId))
+	if err != nil || gameState.ID == 0 {
 		// Fallback to DB if cache miss
 		log.Info("Cache miss. Fetching from database.")
-		game, err = ws.chessRepository.GetChessGameStateFromDB(gameId)
+		gameState, err = ws.chessRepository.GetChessStateStateFromDB(fmt.Sprint(game.ChessStateId))
 		if err != nil {
 			log.Error("Error fetching game state:", err)
 			pkg.PanicException(constant.DataNotFound)
 		}
 		// Save to cache after fetching from DB
-		_ = ws.chessRepository.SaveChessGameToCache(&game)
+		_ = ws.chessRepository.SaveChessStateToCache(&gameState)
 	}
 	var move dto.Move
 	move.Destination = message.Payload.(map[string]interface{})["destination"].(string)
 	move.Source = message.Payload.(map[string]interface{})["source"].(string)
 	move.Piece = message.Payload.(map[string]interface{})["piece"].(string)
-	err = engine.MakeMove(&game, move)
+	err = engine.MakeMove(&gameState, move)
 	status := "success"
 	if err != nil {
 		status = "error"
 		log.Error("Error processing move:", err)
 	} else {
-		_ = ws.chessRepository.SaveChessGameToCache(&game)
-		_ = ws.chessRepository.SaveChessGameToDB(&game)
+		_ = ws.chessRepository.SaveChessStateToCache(&gameState)
+		_ = ws.chessRepository.SaveChessStateToDB(&gameState)
 	}
 
 	// Build response
-	allowedMoves := engine.GetAllowedMoves(game)
+	allowedMoves := engine.GetAllowedMoves(gameState)
 	boardlayout := engine.GetBoardLayout()
-	pieceMap := engine.GetPiecesMap()
-
+	gameState.AllowedMoves = allowedMoves
+	gameState.BoardLayout = boardlayout
+	game.ChessState = gameState
 	response := dto.WebSocketMessage{
-		Type:   "game_update",
-		Status: status,
-		Payload: map[string]interface{}{
-			"board":         game.Board,
-			"turn":          game.Turn,
-			"status":        game.Status,
-			"last_move":     game.LastMove,
-			"allowed_moves": allowedMoves,
-			"board_layout":  boardlayout,
-			"pieces_map":    pieceMap,
-		},
+		Type:    "game_update",
+		Status:  status,
+		Payload: game,
 	}
 	ws.BroadcastMessage(response)
 }

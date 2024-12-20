@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Chess Game</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="icon" href="favicon.ico">
+</head>
+
+<body>
+    <div id="home-container">
+        <h1>Welcome to Chess Game</h1>
+        <p>Create or join a game to start playing.</p>
+
+        <div id="action-buttons">
+            <button id="create-game">Create Game</button>
+            <div>
+                <input type="text" id="invite-code" placeholder="Enter Invite Code">
+                <button id="join-game">Join Game</button>
+            </div>
+        </div>
+
+        <div id="games-list"></div>
+        <!-- <div id="game-info">
+            <p>Invite Code: <span id="invite-code-display"></span></p>
+            <p>Status: <span id="game-status">Waiting for a player...</span></p>
+        </div> -->
+    </div>
+
+    <script src="/static/js/index.js"></script>
+</body>
+
+</html>

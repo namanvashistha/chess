@@ -10,7 +10,7 @@ import (
 )
 
 // MakeMove handles the movement of pieces on the chessboard and validates the move.
-func MakeMove(game *dao.ChessGame, move dto.Move) error {
+func MakeMove(game *dao.ChessState, move dto.Move) error {
 	var board map[string][]string
 	if err := json.Unmarshal(game.Board, &board); err != nil {
 		log.Errorf("Failed to unmarshal board: %v", err)

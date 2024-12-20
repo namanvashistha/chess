@@ -1,0 +1,232 @@
+/* General reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body Styles */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+/* Header Section */
+#navbar {
+    background-color: #2C3E50;
+    padding: 15px 0;
+    color: white;
+}
+
+#navbar .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+#logo h2 {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+#nav-links ul {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+}
+
+#nav-links a {
+    color: white;
+    text-decoration: none;
+    font-size: 1.1rem;
+}
+
+#user-info .user-btn {
+    background-color: #3498db;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+}
+
+/* Hero Section */
+#hero {
+    background: url('hero-bg.jpg') no-repeat center center/cover;
+    color: white;
+    text-align: center;
+    padding: 100px 20px;
+}
+
+#hero h1 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+#hero p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+}
+
+.cta-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.cta-btn {
+    background-color: #3498db;
+    color: white;
+    padding: 15px 30px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.cta-btn:hover {
+    background-color: #2980b9;
+}
+
+/* Featured Games Section */
+#games {
+    padding: 50px 20px;
+    background-color: #ecf0f1;
+}
+
+#games h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#game-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+.game-card {
+    background-color: white;
+    padding: 20px;
+    width: 250px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.game-card:hover {
+    transform: scale(1.05);
+}
+
+.game-card p {
+    font-size: 1.1rem;
+}
+
+.game-card button {
+    background-color: #2ecc71;
+    padding: 10px;
+    border: none;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Profile Section */
+#profile {
+    padding: 50px 20px;
+    text-align: center;
+}
+
+#profile-info {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: inline-block;
+}
+
+#profile-info p {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+}
+
+#edit-profile {
+    background-color: #f39c12;
+    padding: 10px 20px;
+    border: none;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Chessboard Section */
+#chessboard {
+    padding: 50px 20px;
+    background-color: #ecf0f1;
+}
+
+#board {
+    width: 400px;
+    height: 400px;
+    background: url('chessboard.png') no-repeat center center/cover;
+    margin: 20px auto;
+}
+
+#start-game {
+    display: block;
+    margin: 20px auto;
+    background-color: #e74c3c;
+    padding: 15px 30px;
+    color: white;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* Footer */
+footer {
+    background-color: #2C3E50;
+    color: white;
+    text-align: center;
+    padding: 20px 0;
+}
+
+footer p {
+    font-size: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #nav-links ul {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    #hero h1 {
+        font-size: 2rem;
+    }
+
+    .cta-btn {
+        width: 100%;
+    }
+
+    #game-cards {
+        flex-direction: column;
+    }
+
+    .game-card {
+        width: 100%;
+        max-width: 300px;
+        margin: 10px 0;
+    }
+
+    #board {
+        width: 100%;
+        height: 100%;
+    }
+}

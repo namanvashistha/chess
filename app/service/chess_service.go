@@ -9,17 +9,17 @@ import (
 	"chess-engine/app/repository"
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
 type ChessService interface {
-	GetAllChess(c *gin.Context)
-	GetChessById(c *gin.Context)
+	GetAllChessGame(c *gin.Context)
+	GetChessGameById(c *gin.Context)
+	CreateChessGame(c *gin.Context)
 	GetChessState(c *gin.Context)
-	SaveChessGame(c *gin.Context)
+	SaveChessState(c *gin.Context)
 	CreateChessState(c *gin.Context)
 	MakeMove(c *gin.Context)
 }
@@ -28,33 +28,156 @@ type ChessServiceImpl struct {
 	chessRepository repository.ChessRepository
 }
 
-func (u ChessServiceImpl) GetChessById(c *gin.Context) {
+func (u ChessServiceImpl) GetChessGameById(c *gin.Context) {
 	defer pkg.PanicHandler(c)
 
 	log.Info("start to execute program get chess by id")
-	chessID, _ := strconv.Atoi(c.Param("chessID"))
-
-	data, err := u.chessRepository.FindChessById(chessID)
+	gameId := c.Param("gameId")
+	log.Info(gameId)
+	game, err := u.chessRepository.FindChessGameById(gameId)
 	if err != nil {
 		log.Error("Happened error when get data from database. Error", err)
 		pkg.PanicException(constant.DataNotFound)
 	}
+	allowedMoves := engine.GetAllowedMoves(game.ChessState)
+	boardlayout := engine.GetBoardLayout()
 
-	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, data))
+	game.ChessState.AllowedMoves = allowedMoves
+	game.ChessState.BoardLayout = boardlayout
+
+	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, game))
 }
 
-func (u ChessServiceImpl) GetAllChess(c *gin.Context) {
+func (u ChessServiceImpl) GetAllChessGame(c *gin.Context) {
 	defer pkg.PanicHandler(c)
 
 	log.Info("start to execute get all data chess")
 
-	data, err := u.chessRepository.FindAllChess()
+	data, err := u.chessRepository.FindAllChessGame()
 	if err != nil {
 		log.Error("Happened Error when find all chess data. Error: ", err)
 		pkg.PanicException(constant.UnknownError)
 	}
 
 	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, data))
+}
+
+func (u ChessServiceImpl) CreateChessGame(c *gin.Context) {
+	defer pkg.PanicHandler(c)
+
+	log.Info("start to execute program create chess state")
+
+	// Initialize the chess state
+	// {"square": {"squareColor", "`pieceColor``pieceType``pieceId"}}
+
+	initialBoard := map[string][]string{
+		//Rank 8
+		"a8": {"w", "bR1"},
+		"b8": {"b", "bN1"},
+		"c8": {"w", "bB1"},
+		"d8": {"b", "bQ1"},
+		"e8": {"w", "bK1"},
+		"f8": {"b", "bB2"},
+		"g8": {"w", "bN2"},
+		"h8": {"b", "bR2"},
+		//Rank 7
+		"a7": {"b", "bP1"},
+		"b7": {"w", "bP2"},
+		"c7": {"b", "bP3"},
+		"d7": {"w", "bP4"},
+		"e7": {"b", "bP5"},
+		"f7": {"w", "bP6"},
+		"g7": {"b", "bP7"},
+		"h7": {"w", "bP8"},
+		//Rank 6
+		"a6": {"w", "---"},
+		"b6": {"b", "---"},
+		"c6": {"w", "---"},
+		"d6": {"b", "---"},
+		"e6": {"w", "---"},
+		"f6": {"b", "---"},
+		"g6": {"w", "---"},
+		"h6": {"b", "---"},
+		//Rank 5
+		"a5": {"b", "---"},
+		"b5": {"w", "---"},
+		"c5": {"b", "---"},
+		"d5": {"w", "---"},
+		"e5": {"b", "---"},
+		"f5": {"w", "---"},
+		"g5": {"b", "---"},
+		"h5": {"w", "---"},
+		//Rank 4
+		"a4": {"w", "---"},
+		"b4": {"b", "---"},
+		"c4": {"w", "---"},
+		"d4": {"b", "---"},
+		"e4": {"w", "---"},
+		"f4": {"b", "---"},
+		"g4": {"w", "---"},
+		"h4": {"b", "---"},
+		//Rank 3
+		"a3": {"b", "---"},
+		"b3": {"w", "---"},
+		"c3": {"b", "---"},
+		"d3": {"w", "---"},
+		"e3": {"b", "---"},
+		"f3": {"w", "---"},
+		"g3": {"b", "---"},
+		"h3": {"w", "---"},
+		//Rank 2
+		"a2": {"w", "wP1"},
+		"b2": {"b", "wP2"},
+		"c2": {"w", "wP3"},
+		"d2": {"b", "wP4"},
+		"e2": {"w", "wP5"},
+		"f2": {"b", "wP6"},
+		"g2": {"w", "wP7"},
+		"h2": {"b", "wP8"},
+		// Rank 1
+		"a1": {"b", "wR1"},
+		"b1": {"w", "wN1"},
+		"c1": {"b", "wB1"},
+		"d1": {"w", "wQ1"},
+		"e1": {"b", "wK1"},
+		"f1": {"w", "wB2"},
+		"g1": {"b", "wN2"},
+		"h1": {"w", "wR2"},
+	}
+	boardJSON, err := json.Marshal(initialBoard)
+	if err != nil {
+		log.Error("Error converting board to JSON. Error", err)
+		pkg.PanicException(constant.UnknownError)
+	}
+	// Create a new ChessState instance
+	initialState := dao.ChessState{
+		Board:    boardJSON,
+		Turn:     "white",
+		Status:   "ongoing",
+		LastMove: "",
+	}
+	newGame := dao.ChessGame{
+		InviteCode:  "123456",
+		WhitePlayer: "White",
+		BlackPlayer: "Black",
+		WhiteScore:  0,
+		BlackScore:  0,
+		Winner:      "",
+		ChessState:  initialState,
+	}
+
+	if err := u.chessRepository.SaveChessStateToDB(&initialState); err != nil {
+		log.Error("Happened error when saving state to database. Error", err)
+		pkg.PanicException(constant.UnknownError)
+	}
+	if err := u.chessRepository.SaveChessGameToDB(&newGame); err != nil {
+		log.Error("Happened error when saving game to database. Error", err)
+		pkg.PanicException(constant.UnknownError)
+	}
+
+	// Return a success response
+	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, newGame.ID))
+
 }
 
 func (u ChessServiceImpl) GetChessState(c *gin.Context) {
@@ -64,27 +187,27 @@ func (u ChessServiceImpl) GetChessState(c *gin.Context) {
 
 	gameId := c.Param("gameId")
 	log.Info(gameId)
-	var game dao.ChessGame
+	var game dao.ChessState
 	var err error
 
 	// Fetch from cache
-	game, err = u.chessRepository.GetChessGameStateFromCache(gameId)
+	game, err = u.chessRepository.GetChessStateStateFromCache(gameId)
 	if err != nil || game.ID == 0 {
 		// Fallback to DB if cache miss
 		log.Info("Cache miss. Fetching from database.")
-		game, err = u.chessRepository.GetChessGameStateFromDB(gameId)
+		game, err = u.chessRepository.GetChessStateStateFromDB(gameId)
 		if err != nil {
 			log.Error("Error fetching game state:", err)
 			pkg.PanicException(constant.DataNotFound)
 		}
 		// Save to cache after fetching from DB
-		_ = u.chessRepository.SaveChessGameToCache(&game)
+		_ = u.chessRepository.SaveChessStateToCache(&game)
 	}
 
 	// Build response
 	allowedMoves := engine.GetAllowedMoves(game)
 	boardlayout := engine.GetBoardLayout()
-	pieceMap := engine.GetPiecesMap()
+	// pieceMap := engine.GetPiecesMap()
 	response := map[string]interface{}{
 		"board":         game.Board,
 		"turn":          game.Turn,
@@ -92,23 +215,23 @@ func (u ChessServiceImpl) GetChessState(c *gin.Context) {
 		"last_move":     game.LastMove,
 		"allowed_moves": allowedMoves,
 		"board_layout":  boardlayout,
-		"pieces_map":    pieceMap,
+		// "pieces_map":    pieceMap,
 	}
 
 	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, response))
 }
 
-func (u ChessServiceImpl) SaveChessGame(c *gin.Context) {
+func (u ChessServiceImpl) SaveChessState(c *gin.Context) {
 	defer pkg.PanicHandler(c)
 
 	log.Info("start to execute program save chess game")
-	var request dao.ChessGame
+	var request dao.ChessState
 	if err := c.ShouldBindJSON(&request); err != nil {
 		log.Error("Happened error when mapping request from FE. Error", err)
 		pkg.PanicException(constant.InvalidRequest)
 	}
 
-	err := u.chessRepository.SaveChessGameToDB(&request)
+	err := u.chessRepository.SaveChessStateToDB(&request)
 	if err != nil {
 		log.Error("Happened error when saving data to database. Error", err)
 		pkg.PanicException(constant.UnknownError)
@@ -129,10 +252,10 @@ func (u ChessServiceImpl) MakeMove(c *gin.Context) {
 
 	// Fetch the current game state
 	gameId := request.GameId
-	game, err := u.chessRepository.GetChessGameStateFromCache(gameId)
+	game, err := u.chessRepository.GetChessStateStateFromCache(gameId)
 	if err != nil || game.ID == 0 {
 		log.Info("Cache miss. Fetching game state from DB.", gameId)
-		game, err = u.chessRepository.GetChessGameStateFromDB(gameId)
+		game, err = u.chessRepository.GetChessStateStateFromDB(gameId)
 		if err != nil {
 			log.Error("Error fetching game state:", err)
 			pkg.PanicException(constant.DataNotFound)
@@ -147,8 +270,8 @@ func (u ChessServiceImpl) MakeMove(c *gin.Context) {
 	}
 
 	// Save to both cache and database
-	if saveErr := u.chessRepository.SaveChessGameToDB(&game); saveErr == nil {
-		_ = u.chessRepository.SaveChessGameToCache(&game)
+	if saveErr := u.chessRepository.SaveChessStateToDB(&game); saveErr == nil {
+		_ = u.chessRepository.SaveChessStateToCache(&game)
 	}
 
 	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, pkg.Null()))
@@ -241,8 +364,8 @@ func (u ChessServiceImpl) CreateChessState(c *gin.Context) {
 		log.Error("Error converting board to JSON. Error", err)
 		pkg.PanicException(constant.UnknownError)
 	}
-	// Create a new ChessGame instance
-	initialState := dao.ChessGame{
+	// Create a new ChessState instance
+	initialState := dao.ChessState{
 		Board:    boardJSON,
 		Turn:     "white",   // Starting with white
 		Status:   "ongoing", // Initial game status
@@ -250,15 +373,15 @@ func (u ChessServiceImpl) CreateChessState(c *gin.Context) {
 	}
 
 	// Save the initial chess state to the cache and db
-	err = u.chessRepository.SaveChessGameToDB(&initialState)
-	u.chessRepository.SaveChessGameToCache(&initialState)
+	err = u.chessRepository.SaveChessStateToDB(&initialState)
+	u.chessRepository.SaveChessStateToCache(&initialState)
 	if err != nil {
 		log.Error("Happened error when saving data to database. Error", err)
 		pkg.PanicException(constant.UnknownError)
 	}
 
 	// Return a success response
-	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, pkg.Null()))
+	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, initialState.ID))
 }
 
 func ChessServiceInit(chessRepository repository.ChessRepository) *ChessServiceImpl {
