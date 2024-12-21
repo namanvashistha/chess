@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/0x6flab/namegenerator"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
@@ -43,10 +43,7 @@ func (u UserServiceImpl) UpdateUserData(c *gin.Context) {
 		pkg.PanicException(constant.DataNotFound)
 	}
 
-	data.RoleID = request.RoleID
-	data.Email = request.Email
-	data.Name = request.Password
-	data.Status = request.Status
+	data.Status = 1
 	u.userRepository.Save(&data)
 
 	if err != nil {
@@ -77,15 +74,10 @@ func (u UserServiceImpl) AddUserData(c *gin.Context) {
 
 	log.Info("start to execute program add data user")
 	var request dao.User
-	if err := c.ShouldBindJSON(&request); err != nil {
-		log.Error("Happened error when mapping request from FE. Error", err)
-		pkg.PanicException(constant.InvalidRequest)
-	}
+	request.Token = pkg.GenerateRandomString(80)
+	request.Name = namegenerator.NewGenerator().WithRandomString(4).Generate()
+	request.Status = 1
 
-	hash, _ := bcrypt.GenerateFromPassword([]byte(request.Password), 15)
-	request.Password = string(hash)
-	log.Info(request.RoleID)
-	log.Info(request.Role)
 	data, err := u.userRepository.Save(&request)
 	if err != nil {
 		log.Error("Happened error when saving data to database. Error", err)

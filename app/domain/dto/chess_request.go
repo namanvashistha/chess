@@ -18,3 +18,7 @@ type ChessRequest struct {
 type ChessResponse struct {
 	Board string `json:"board"`
 }
+
+type CreateChessGameRequest struct {
+	Token string `json:"token"`
+}

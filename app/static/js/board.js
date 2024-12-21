@@ -1,5 +1,5 @@
 const chessBoard = document.getElementById('chess-board');
-const currentTurn = document.getElementById('current-turn');
+// const currentTurn = document.getElementById('current-turn');
 let allowedMoves = []; // To store allowed moves for the clicked piece
 let selectedPiece = null; // Track the currently selected piece
 let selectedSquare = null; // Track the currently selected square
@@ -43,7 +43,7 @@ function fetchChessState() {
 // Render the chessboard
 function renderChessBoard(board, boardLayout, allowedMovesData, turn) {
     chessBoard.innerHTML = ''; // Clear the chessboard
-    currentTurn.innerHTML = `Current Turn: ${turn}`;
+    // currentTurn.innerHTML = `Current Turn: ${turn}`;
 
     allowedMoves = allowedMovesData; // Store the allowed moves
 

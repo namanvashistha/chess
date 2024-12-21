@@ -27,9 +27,12 @@ func Init(init *config.Initialization) *gin.Engine {
 
 	// Route to render chessboard
 	router.GET("", func(c *gin.Context) {
-		c.File("./app/static/html/index.html")
+		c.File("./app/static/html/home.html")
 	})
 	router.GET("/game/:gameId", func(c *gin.Context) {
+		c.File("./app/static/html/board.html")
+	})
+	router.HEAD("/game/:gameId", func(c *gin.Context) {
 		c.File("./app/static/html/board.html")
 	})
 

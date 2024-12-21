@@ -1,0 +1,80 @@
+#chess-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px;
+}
+
+#players-info {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#move-history {
+    max-width: 300px;
+    flex-grow: 1;
+}
+
+#history-list {
+    overflow-y: auto;
+    max-height: 400px; /* Limit height with scrollbar */
+}
+
+#move-history {
+    background-color: #f3f4f6;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+#move-history h3 {
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
+#move-history ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#move-history li {
+    padding: 5px 10px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 1em;
+}
+
+@media (max-width: 768px) {
+    #move-history {
+        max-width: 90vw;
+    }
+
+    #move-history h3 {
+        font-size: 1em;
+    }
+
+    #move-history li {
+        font-size: 0.9em;
+    }
+}
+
+
+#players-info {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 800px;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    #players-info {
+        flex-direction: column;
+        align-items: center;
+        font-size: 1em;
+    }
+}

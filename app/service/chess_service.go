@@ -66,7 +66,11 @@ func (u ChessServiceImpl) CreateChessGame(c *gin.Context) {
 	defer pkg.PanicHandler(c)
 
 	log.Info("start to execute program create chess state")
-
+	var request dto.CreateChessGameRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		log.Error("Happened error when mapping request from FE. Error", err)
+		pkg.PanicException(constant.InvalidRequest)
+	}
 	// Initialize the chess state
 	// {"square": {"squareColor", "`pieceColor``pieceType``pieceId"}}
 
@@ -156,14 +160,18 @@ func (u ChessServiceImpl) CreateChessGame(c *gin.Context) {
 		Status:   "ongoing",
 		LastMove: "",
 	}
+	log.Info("start to execute program create chess game", request.Token)
+	creatorUser, err := u.chessRepository.FindUserByToken(request.Token)
 	newGame := dao.ChessGame{
-		InviteCode:  "123456",
-		WhitePlayer: "White",
-		BlackPlayer: "Black",
-		WhiteScore:  0,
-		BlackScore:  0,
-		Winner:      "",
-		ChessState:  initialState,
+		InviteCode: pkg.GenerateRandomString(20),
+		Winner:     "",
+		ChessState: initialState,
+	}
+
+	if isAssignWhite := pkg.GenerateRandomBool(); isAssignWhite {
+		newGame.WhiteUser = &creatorUser
+	} else {
+		newGame.BlackUser = &creatorUser
 	}
 
 	if err := u.chessRepository.SaveChessStateToDB(&initialState); err != nil {

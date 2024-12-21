@@ -7,24 +7,30 @@
     <title>Chess Board</title>
     <link rel="icon" type="image/png" href="/static/images/wQ.svg"/>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/game.css">
     <link rel="stylesheet" href="/static/css/board.css">
-    <link rel="prefetch" href="/static/images/bB.svg">
-    <link rel="prefetch" href="/static/images/bK.svg">
-    <link rel="prefetch" href="/static/images/bN.svg">
-    <link rel="prefetch" href="/static/images/bP.svg">
-    <link rel="prefetch" href="/static/images/bQ.svg">
-    <link rel="prefetch" href="/static/images/bR.svg">
-    <link rel="prefetch" href="/static/images/wB.svg">
-    <link rel="prefetch" href="/static/images/wK.svg">
-    <link rel="prefetch" href="/static/images/wN.svg">
-    <link rel="prefetch" href="/static/images/wP.svg">
-    <link rel="prefetch" href="/static/images/wQ.svg">
-    <link rel="prefetch" href="/static/images/wR.svg">
 </head>
 
 <body>
-    <div id="chess-board"></div>
-    <div id="current-turn"></div>
+    <div id="chess-container">
+        <!-- Players Information -->
+        <div class="players-info">
+            <div id="player-black">Player 2 (Black)</div>
+            <div id="player-white">Player 1 (White)</div>
+        </div>
+        
+        <!-- Chess Board -->
+        <div id="chess-board">
+            <!-- Chess squares dynamically rendered by JavaScript -->
+        </div>
+
+        <!-- Move History -->
+        <div id="move-history">
+            <h3>Move History</h3>
+            <ul id="history-list"></ul>
+        </div>
+    </div>
+    <script src="/static/js/index.js"></script>
     <script src="/static/js/board.js"></script>
     <script src="/static/js/socket.js"></script>
 </body>

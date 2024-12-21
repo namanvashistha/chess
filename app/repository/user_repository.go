@@ -34,7 +34,7 @@ func (u UserRepositoryImpl) FindUserById(id int) (dao.User, error) {
 	user := dao.User{
 		ID: id,
 	}
-	err := u.db.Preload("Role").First(&user).Error
+	err := u.db.First(&user).Error
 	if err != nil {
 		log.Error("Got and error when find user by id. Error: ", err)
 		return dao.User{}, err
@@ -66,7 +66,7 @@ func (u UserRepositoryImpl) DeleteUserById(id int) error {
 }
 
 func UserRepositoryInit(db *gorm.DB) *UserRepositoryImpl {
-	//db.AutoMigrate(&dao.User{})
+	db.AutoMigrate(&dao.User{})
 	return &UserRepositoryImpl{
 		db: db,
 	}

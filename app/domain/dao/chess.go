@@ -5,13 +5,13 @@ import "encoding/json"
 type ChessGame struct {
 	ID           int        `gorm:"column:id;primaryKey;autoIncrement;not null" json:"id"`
 	InviteCode   string     `gorm:"column:invite_code" json:"invite_code"`
-	WhitePlayer  string     `gorm:"column:white_player" json:"white_player"`
-	BlackPlayer  string     `gorm:"column:black_player" json:"black_player"`
-	WhiteScore   int        `gorm:"column:white_score" json:"white_score"`
-	BlackScore   int        `gorm:"column:black_score" json:"black_score"`
 	Winner       string     `gorm:"column:winner" json:"winner"`
 	ChessStateId int        `gorm:"column:chess_state_id;not null" json:"chess_state_id"`
 	ChessState   ChessState `gorm:"foreignKey:ChessStateId" json:"chess_state"`
+	WhiteUserId  *int       `gorm:"column:white_user_id" json:"white_user_id"`
+	BlackUserId  *int       `gorm:"column:black_user_id" json:"black_user_id"`
+	WhiteUser    *User      `gorm:"foreignKey:WhiteUserId" json:"white_user"`
+	BlackUser    *User      `gorm:"foreignKey:BlackUserId" json:"black_user"`
 	BaseModel
 }
 

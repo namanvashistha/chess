@@ -19,6 +19,7 @@ type ChessRepository interface {
 	GetChessStateStateFromDB(gameId string) (dao.ChessState, error)
 	SaveChessStateToCache(game *dao.ChessState) error
 	SaveChessStateToDB(game *dao.ChessState) error
+	FindUserByToken(token string) (dao.User, error)
 }
 
 type ChessRepositoryImpl struct {
@@ -38,7 +39,13 @@ func ChessRepositoryInit(db *gorm.DB, redisClient *pkg.RedisClient) *ChessReposi
 // Find all chess games from the database
 func (r ChessRepositoryImpl) FindAllChessGame() ([]dao.ChessGame, error) {
 	var chesses []dao.ChessGame
-	err := r.db.Find(&chesses).Error
+	err := r.db.
+		Preload("WhiteUser", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, name")
+		}).
+		Preload("BlackUser", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, name")
+		}).Order("id desc").Find(&chesses).Error
 	if err != nil {
 		log.Error("Error finding all chess games:", err)
 		return nil, err
@@ -112,4 +119,14 @@ func (r ChessRepositoryImpl) SaveChessStateToDB(game *dao.ChessState) error {
 		return err
 	}
 	return nil
+}
+
+func (u ChessRepositoryImpl) FindUserByToken(token string) (dao.User, error) {
+	var user dao.User
+	err := u.db.Where("token = ?", token).First(&user).Error
+	if err != nil {
+		log.Error("Got and error when find user by token. Error: ", err)
+		return dao.User{}, err
+	}
+	return user, nil
 }

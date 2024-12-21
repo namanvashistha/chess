@@ -1,93 +1,34 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const createGameButton = document.getElementById('create-game');
-    const joinGameButton = document.getElementById('join-game');
-    const inviteCodeInput = document.getElementById('invite-code');
-    const inviteCodeDisplay = document.getElementById('invite-code-display');
-    const gameStatus = document.getElementById('game-status');
-    const gamesList = document.getElementById('games-list'); // To display active games
+console.log("Hello, World!");
 
-    // Fetch all available games
-    function fetchChessGames() {
-        fetch('/api/chess/game')
+// function to fetch the user anonymous token from the local storage and if not found, create a new one from server
+function fetchUserToken() {
+    let userToken = localStorage.getItem('userToken');
+    if (!userToken) {
+        fetch('/api/user', { method: 'POST' })
             .then(res => res.json())
             .then(data => {
                 if (data.response_key === "SUCCESS") {
-                    const games = data.data;
-                    gamesList.innerHTML = ''; // Clear the previous list
-                    games.forEach(game => {
-                        const gameItem = document.createElement('div');
-                        gameItem.classList.add('game-item');
-                        gameItem.innerHTML = `
-                            <p>Game ID: ${game.id}</p>
-                            <p>Invite Code: ${game.invite_code}</p>
-                            <p>White Player: ${game.white_player}</p>
-                            <p>Black Player: ${game.black_player}</p>
-                            <p>Status: ${game.status || 'Waiting for opponent'}</p>
-                            <button class="join-game-button" data-invite-code="${game.invite_code}">Join Game</button>
-                        `;
-                        gamesList.appendChild(gameItem);
-
-                        // Attach event listener to "Join Game" button
-                        gameItem.querySelector('.join-game-button').addEventListener('click', () => {
-                            const inviteCode = game.invite_code;
-                            localStorage.setItem('inviteCode', inviteCode);
-                            window.location.href = `/game/${game.id}`;
-                        });
-                    });
+                    userToken = data.data.token;
+                    localStorage.setItem('userToken', userToken);
                 } else {
-                    gamesList.innerHTML = '<p>No games available at the moment.</p>';
+                    fetch('/api/user', { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.response_key === "SUCCESS") {
+                            userToken = data.data.token;
+                            localStorage.setItem('userToken', userToken);
+                        } else {
+                            console.error('Error fetching user token:', data);
+                        }
+                    })
+                    .catch(err => console.error('Error fetching user token:', err));
                 }
             })
-            .catch(err => console.error('Error fetching games:', err));
+            .catch(err => console.error('Error fetching user token:', err));
     }
+    console.log("userToken2:", userToken);
+    return userToken;
+}
 
-    // Call the function to load games when the page is loaded
-    fetchChessGames();
-
-    // Create a new game
-    createGameButton.addEventListener('click', () => {
-        fetch('/api/chess/game', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.response_key === "SUCCESS") {
-                inviteCodeDisplay.textContent = data.data;
-                gameStatus.textContent = "Waiting for an opponent...";
-                localStorage.setItem('inviteCode', data.inviteCode);
-                window.location.href = `/game/${data.data}`;
-            }
-        })
-        .catch(err => console.error('Error creating game:', err));
-    });
-
-    // Join an existing game using invite code
-    joinGameButton.addEventListener('click', () => {
-        const inviteCode = inviteCodeInput.value.trim();
-        if (!inviteCode) {
-            alert('Please enter a valid invite code');
-            return;
-        }
-
-        fetch('/api/chess', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ inviteCode }),
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                localStorage.setItem('inviteCode', inviteCode);
-                window.location.href = '/chessboard.html';
-            } else {
-                alert('Invalid invite code!');
-            }
-        })
-        .catch(err => console.error('Error joining game:', err));
-    });
-});
+// Call the function to fetch the user token when the page is loaded
+fetchUserToken();
