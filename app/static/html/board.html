@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess Board</title>
-    <link rel="icon" type="image/png" href="/static/images/wQ.svg"/>
+    <link rel="icon" type="image/png" href="/static/images/wQ.svg" />
     <link rel="stylesheet" href="/static/css/styles.css">
     <link rel="stylesheet" href="/static/css/game.css">
     <link rel="stylesheet" href="/static/css/board.css">
@@ -13,23 +13,53 @@
 
 <body>
     <div id="chess-container">
-        <!-- Players Information -->
-        <div class="players-info">
-            <div id="player-black">Player 2 (Black)</div>
-            <div id="player-white">Player 1 (White)</div>
+        <!-- Player Bar Above Chess Board -->
+        <div class="player-bar" id="player-bar-top">
+            <div class="player-bar-section">
+                <img class="player-dp" src="https://avatar.iran.liara.run/username?username=player+one" alt="Player 2">
+                <span class="player-name">Player 2 (two)</span>
+            </div>
+            <div class="player-bar-section">
+                <span class="player-timer">🟢</span>
+                <span class="turn-indicator" id="turn-indicator-black">Your Turn</span>
+            </div>
         </div>
-        
+
         <!-- Chess Board -->
         <div id="chess-board">
             <!-- Chess squares dynamically rendered by JavaScript -->
         </div>
 
+        <!-- Player Bar Below Chess Board -->
+        <div class="player-bar" id="player-bar-bottom">
+            <div class="player-bar-section">
+                <img class="player-dp" src="https://avatar.iran.liara.run/username?username=player+two" alt="Player 1">
+                <span class="player-name">Player 1 (White)</span>
+            </div>
+            <div class="player-bar-section">
+                <span class="player-timer">⏳</span>
+                <span class="turn-indicator" id="turn-indicator-white">Waiting...</span>
+            </div>
+        </div>
+
         <!-- Move History -->
         <div id="move-history">
             <h3>Move History</h3>
-            <ul id="history-list"></ul>
+            <table id="history-table">
+                <thead>
+                    <tr>
+                        <th>Move #</th>
+                        <th>White</th>
+                        <th>Black</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Moves dynamically added here -->
+                </tbody>
+            </table>
         </div>
     </div>
+
     <script src="/static/js/index.js"></script>
     <script src="/static/js/board.js"></script>
     <script src="/static/js/socket.js"></script>
