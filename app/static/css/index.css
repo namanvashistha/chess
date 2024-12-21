@@ -1,18 +1,4 @@
-/* General reset */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-/* Body Styles */
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
-}
-
-/* Header Section */
+/* Navbar */
 #navbar {
     background-color: #2C3E50;
     padding: 15px 0;
@@ -50,6 +36,27 @@ body {
     border-radius: 5px;
     color: white;
     cursor: pointer;
+}
+
+#home-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #2d3748;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 600px;
+}
+/* Action Buttons */
+#action-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    margin: 30px;
 }
 
 /* Hero Section */
@@ -135,70 +142,40 @@ body {
     cursor: pointer;
 }
 
-/* Profile Section */
-#profile {
-    padding: 50px 20px;
-    text-align: center;
-}
-
-#profile-info {
-    background-color: #ffffff;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    display: inline-block;
-}
-
-#profile-info p {
-    font-size: 1.2rem;
+/* Games List */
+#games-list {
+    width: 100%;
+    max-height: 400px;
+    overflow-y: auto;
     margin-bottom: 20px;
 }
 
-#edit-profile {
-    background-color: #f39c12;
-    padding: 10px 20px;
-    border: none;
-    color: white;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-/* Chessboard Section */
-#chessboard {
-    padding: 50px 20px;
-    background-color: #ecf0f1;
-}
-
-#board {
-    width: 400px;
-    height: 400px;
-    background: url('chessboard.png') no-repeat center center/cover;
-    margin: 20px auto;
-}
-
-#start-game {
-    display: block;
-    margin: 20px auto;
-    background-color: #e74c3c;
-    padding: 15px 30px;
-    color: white;
-    font-size: 1.1rem;
-    border: none;
+.game-item {
+    background-color: #3b3f50;
+    padding: 15px;
+    margin: 10px 0;
     border-radius: 8px;
-    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    color: #e0e0e0;
+    text-align: left;
 }
 
-/* Footer */
-footer {
-    background-color: #2C3E50;
-    color: white;
+.game-item p {
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+#game-info {
     text-align: center;
-    padding: 20px 0;
-}
-
-footer p {
+    margin-top: 20px;
     font-size: 1rem;
 }
+
+#game-info span {
+    font-weight: bold;
+    color: #38bdf8;
+}
+
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -224,9 +201,15 @@ footer p {
         max-width: 300px;
         margin: 10px 0;
     }
+    #games-list {
+        max-height: 300px;
+    }
 
-    #board {
-        width: 100%;
-        height: 100%;
+    .game-item {
+        font-size: 0.9rem;
+    }
+
+    .join-game-button {
+        font-size: 12px;
     }
 }
