@@ -44,6 +44,7 @@
     align-items: center;
     justify-content: center;
     background-color: #2d3748;
+    gap: 10px;
     border-radius: 12px;
     padding: 30px;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);

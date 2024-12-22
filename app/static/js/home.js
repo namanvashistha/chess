@@ -23,13 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
                             <p>
                                 White Player: 
                                 ${game.white_user?.name 
-                                    ? game.white_user.name 
+                                    ? formatUserName(game.white_user.name)
                                     : '<span class="loader">waiting<span class="dots">...</span></span>'}
                             </p>
                             <p>
                                 Black Player: 
                                 ${game.black_user?.name 
-                                    ? game.black_user.name 
+                                    ? formatUserName(game.black_user.name)
                                     : '<span class="loader">waiting<span class="dots">...</span></span>'}
                             </p>
                             <p>Status: ${game.status || 'Waiting for opponent'}</p>
@@ -83,18 +83,20 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        fetch('/api/chess', {
+        fetch('/api/chess/game/join', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ inviteCode }),
+            body: JSON.stringify({ 
+                invite_code: inviteCode,
+                token: localStorage.getItem('userToken'),
+            }),
         })
         .then(res => res.json())
         .then(data => {
-            if (data.success) {
-                localStorage.setItem('inviteCode', inviteCode);
-                window.location.href = '/chessboard.html';
+            if (data.response_key === "SUCCESS") {
+                window.location.href = `/game/${data.data}`;
             } else {
                 alert('Invalid invite code!');
             }

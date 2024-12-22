@@ -36,14 +36,14 @@ function fetchChessState() {
         .then(data => {
             chessState = data.data.chess_state;
             renderChessBoard(chessState.board, chessState.board_layout, chessState.allowed_moves, chessState.turn);
+            renderPlayerInfo(data.data.white_user, data.data.black_user, chessState.turn);
         })
         .catch(err => console.error('Error fetching chess state:', err));
 }
 
 // Render the chessboard
-function renderChessBoard(board, boardLayout, allowedMovesData, turn) {
+function renderChessBoard(board, boardLayout, allowedMovesData) {
     chessBoard.innerHTML = ''; // Clear the chessboard
-    // currentTurn.innerHTML = `Current Turn: ${turn}`;
 
     allowedMoves = allowedMovesData; // Store the allowed moves
 
@@ -86,6 +86,71 @@ function renderChessBoard(board, boardLayout, allowedMovesData, turn) {
         });
     });
 }
+
+
+function renderPlayerInfo(whiteUser, blackUser, turn) {
+
+    let isWhiteAtBottom = true; // Flag to determine board orientation
+
+    // Helper function for avatar URLs
+    const getAvatarUrl = (name) => `https://avatar.iran.liara.run/username?username=${encodeURIComponent(name)}`;
+
+    // Function to render player bar dynamically
+    const renderPlayerBars = () => {
+        const topBar = document.getElementById("player-bar-top");
+        const bottomBar = document.getElementById("player-bar-bottom");
+        console.log("turn", turn);
+        if (isWhiteAtBottom) {
+            // White is at the bottom
+            topBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(blackUser.name));
+            topBar.querySelector(".player-name").textContent = formatUserName(blackUser.name);
+            topBar.querySelector(".turn-indicator").textContent = turn === "black" ? "Your Turn" : "Thinking...";
+            topBar.querySelector(".turn-indicator").style.color = turn === "black" ? "green" : "gray";
+            topBar.querySelector(".player-timer").textContent = turn === "black" ? "🟢" : "⏳";
+
+
+            bottomBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(whiteUser.name));
+            bottomBar.querySelector(".player-name").textContent = formatUserName(whiteUser.name);
+            bottomBar.querySelector(".turn-indicator").textContent = turn === "white" ? "Your Turn" : "Thinking...";
+            bottomBar.querySelector(".turn-indicator").style.color = turn === "white" ? "green" : "gray";
+            bottomBar.querySelector(".player-timer").textContent = turn === "white" ? "🟢" : "⏳";
+
+        } else {
+            // Black is at the bottom
+            topBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(whiteUser.name));
+            topBar.querySelector(".player-name").textContent = formatUserName(whiteUser.name);
+            topBar.querySelector(".turn-indicator").textContent = turn === "white" ? "Your Turn" : "Thinking...";
+            topBar.querySelector(".turn-indicator").style.color = turn === "white" ? "green" : "gray";
+            topBar.querySelector(".player-timer").textContent = turn === "white" ? "🟢" : "⏳";
+
+
+            bottomBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(blackUser.name));
+            bottomBar.querySelector(".player-name").textContent = formatUserName(blackUser.name);
+            bottomBar.querySelector(".turn-indicator").textContent = turn === "black" ? "Your Turn" : "Thinking...";
+            bottomBar.querySelector(".turn-indicator").style.color = turn === "black" ? "green" : "gray";
+            bottomBar.querySelector(".player-timer").textContent = turn === "black" ? "🟢" : "⏳";
+        }
+
+        // Flip the board visually
+        const board = document.getElementById("chess-board");
+        board.style.transform = isWhiteAtBottom ? "rotate(0deg)" : "rotate(180deg)";
+        const squares = board.querySelectorAll(".chess-square");
+        squares.forEach((square) => {
+            square.style.transform = isWhiteAtBottom ? "rotate(0deg)" : "rotate(180deg)";
+        });
+    };
+
+    // Initial setup
+    renderPlayerBars();
+
+    // Simulate dynamic board flipping for demonstration
+    document.getElementById("flip-board").addEventListener("click", () => {
+        isWhiteAtBottom = !isWhiteAtBottom;
+        renderPlayerBars();
+    });
+
+}
+
 
 // Drag event handlers
 function handleDragStart(event) {

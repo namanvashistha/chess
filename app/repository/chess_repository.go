@@ -15,6 +15,7 @@ type ChessRepository interface {
 	FindAllChessGame() ([]dao.ChessGame, error)
 	FindChessGameById(id string) (dao.ChessGame, error)
 	SaveChessGameToDB(game *dao.ChessGame) error
+	FindChessGameByInviteCode(inviteCode string) (dao.ChessGame, error)
 	GetChessStateStateFromCache(gameId string) (dao.ChessState, error)
 	GetChessStateStateFromDB(gameId string) (dao.ChessState, error)
 	SaveChessStateToCache(game *dao.ChessState) error
@@ -56,9 +57,32 @@ func (r ChessRepositoryImpl) FindAllChessGame() ([]dao.ChessGame, error) {
 // Find chess by ID from the database
 func (r ChessRepositoryImpl) FindChessGameById(id string) (dao.ChessGame, error) {
 	var chess dao.ChessGame
-	err := r.db.Preload("ChessState").First(&chess, id).Error
+	err := r.db.
+		Preload("WhiteUser", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, name")
+		}).
+		Preload("BlackUser", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, name")
+		}).Preload("ChessState").First(&chess, id).Error
 	if err != nil {
 		log.Error("Error finding chess by ID:", err)
+		return dao.ChessGame{}, err
+	}
+	return chess, nil
+}
+
+// Find chess game by invite code from the database
+func (r ChessRepositoryImpl) FindChessGameByInviteCode(inviteCode string) (dao.ChessGame, error) {
+	var chess dao.ChessGame
+	err := r.db.
+		Preload("WhiteUser", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, name")
+		}).
+		Preload("BlackUser", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, name")
+		}).Preload("ChessState").First(&chess, "invite_code = ?", inviteCode).Error
+	if err != nil {
+		log.Error("Error finding chess by invite code:", err)
 		return dao.ChessGame{}, err
 	}
 	return chess, nil

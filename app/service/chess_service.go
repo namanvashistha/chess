@@ -18,6 +18,7 @@ type ChessService interface {
 	GetAllChessGame(c *gin.Context)
 	GetChessGameById(c *gin.Context)
 	CreateChessGame(c *gin.Context)
+	JoinChessGame(c *gin.Context)
 	GetChessState(c *gin.Context)
 	SaveChessState(c *gin.Context)
 	CreateChessState(c *gin.Context)
@@ -66,7 +67,7 @@ func (u ChessServiceImpl) CreateChessGame(c *gin.Context) {
 	defer pkg.PanicHandler(c)
 
 	log.Info("start to execute program create chess state")
-	var request dto.CreateChessGameRequest
+	var request dto.TokenGetRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		log.Error("Happened error when mapping request from FE. Error", err)
 		pkg.PanicException(constant.InvalidRequest)
@@ -186,6 +187,45 @@ func (u ChessServiceImpl) CreateChessGame(c *gin.Context) {
 	// Return a success response
 	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, newGame.ID))
 
+}
+
+func (u ChessServiceImpl) JoinChessGame(c *gin.Context) {
+	defer pkg.PanicHandler(c)
+
+	log.Info("start to execute program join chess game")
+	var request dto.JoinChessGameRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		log.Error("Happened error when mapping request from FE. Error", err)
+		pkg.PanicException(constant.InvalidRequest)
+	}
+
+	game, err := u.chessRepository.FindChessGameByInviteCode(request.InviteCode)
+	if err != nil {
+		log.Error("Happened error when get data from database. Error", err)
+		pkg.PanicException(constant.DataNotFound)
+	}
+
+	joinUser, err := u.chessRepository.FindUserByToken(request.Token)
+	if err != nil {
+		log.Error("Happened error when get data from database. Error", err)
+		pkg.PanicException(constant.DataNotFound)
+	}
+
+	if game.WhiteUser == nil {
+		game.WhiteUser = &joinUser
+	} else if game.BlackUser == nil {
+		game.BlackUser = &joinUser
+	} else {
+		log.Error("Game is full. Cannot join.")
+		pkg.PanicException(constant.InvalidRequest)
+	}
+
+	if err := u.chessRepository.SaveChessGameToDB(&game); err != nil {
+		log.Error("Happened error when saving game to database. Error", err)
+		pkg.PanicException(constant.UnknownError)
+	}
+
+	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, game.ID))
 }
 
 func (u ChessServiceImpl) GetChessState(c *gin.Context) {

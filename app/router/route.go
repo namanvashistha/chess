@@ -44,9 +44,9 @@ func Init(init *config.Initialization) *gin.Engine {
 	{
 		user := api.Group("/user")
 		{
-			user.GET("", init.UserCtrl.GetAllUserData)
+			// user.GET("", init.UserCtrl.GetAllUserData)
 			user.POST("", init.UserCtrl.AddUserData)
-			user.GET("/:userID", init.UserCtrl.GetUserById)
+			user.POST("/me", init.UserCtrl.GetUserByToken)
 			user.PUT("/:userID", init.UserCtrl.UpdateUserData)
 			user.DELETE("/:userID", init.UserCtrl.DeleteUser)
 		}
@@ -55,6 +55,7 @@ func Init(init *config.Initialization) *gin.Engine {
 			chess.GET("/game", init.ChessCtrl.GetAllChessGame)
 			chess.POST("/game", init.ChessCtrl.CreateChessGame)
 			chess.GET("/game/:gameId", init.ChessCtrl.GetChessGameById)
+			chess.POST("/game/join", init.ChessCtrl.JoinChessGame)
 			chess.GET("/state/:gameId", init.ChessCtrl.GetChessState)
 			chess.POST("/state/init", init.ChessCtrl.CreateChessState)
 			chess.POST("/state/move", init.ChessCtrl.MakeMove)

@@ -10,6 +10,7 @@ import (
 type UserRepository interface {
 	FindAllUser() ([]dao.User, error)
 	FindUserById(id int) (dao.User, error)
+	FindUserByToken(token string) (dao.User, error)
 	Save(user *dao.User) (dao.User, error)
 	DeleteUserById(id int) error
 }
@@ -37,6 +38,16 @@ func (u UserRepositoryImpl) FindUserById(id int) (dao.User, error) {
 	err := u.db.First(&user).Error
 	if err != nil {
 		log.Error("Got and error when find user by id. Error: ", err)
+		return dao.User{}, err
+	}
+	return user, nil
+}
+
+func (u UserRepositoryImpl) FindUserByToken(token string) (dao.User, error) {
+	var user dao.User
+	err := u.db.Where("token = ?", token).First(&user).Error
+	if err != nil {
+		log.Error("Got and error when find user by token. Error: ", err)
 		return dao.User{}, err
 	}
 	return user, nil

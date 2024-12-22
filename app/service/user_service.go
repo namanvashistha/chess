@@ -3,19 +3,20 @@ package service
 import (
 	"chess-engine/app/constant"
 	"chess-engine/app/domain/dao"
+	"chess-engine/app/domain/dto"
 	"chess-engine/app/pkg"
 	"chess-engine/app/repository"
 	"net/http"
 	"strconv"
 
-	"github.com/0x6flab/namegenerator"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
 type UserService interface {
 	GetAllUser(c *gin.Context)
-	GetUserById(c *gin.Context)
+	// GetUserById(c *gin.Context)
+	GetUserByToken(c *gin.Context)
 	AddUserData(c *gin.Context)
 	UpdateUserData(c *gin.Context)
 	DeleteUser(c *gin.Context)
@@ -54,13 +55,16 @@ func (u UserServiceImpl) UpdateUserData(c *gin.Context) {
 	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, data))
 }
 
-func (u UserServiceImpl) GetUserById(c *gin.Context) {
+func (u UserServiceImpl) GetUserByToken(c *gin.Context) {
 	defer pkg.PanicHandler(c)
 
+	var request dto.TokenGetRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		log.Error("Happened error when mapping request from FE. Error", err)
+		pkg.PanicException(constant.InvalidRequest)
+	}
 	log.Info("start to execute program get user by id")
-	userID, _ := strconv.Atoi(c.Param("userID"))
-
-	data, err := u.userRepository.FindUserById(userID)
+	data, err := u.userRepository.FindUserByToken(request.Token)
 	if err != nil {
 		log.Error("Happened error when get data from database. Error", err)
 		pkg.PanicException(constant.DataNotFound)
@@ -75,7 +79,8 @@ func (u UserServiceImpl) AddUserData(c *gin.Context) {
 	log.Info("start to execute program add data user")
 	var request dao.User
 	request.Token = pkg.GenerateRandomString(80)
-	request.Name = namegenerator.NewGenerator().WithRandomString(4).Generate()
+	// request.Name = namegenerator.NewGenerator().WithRandomString(4).Generate()
+	request.Name = pkg.GenerateRandomUserName()
 	request.Status = 1
 
 	data, err := u.userRepository.Save(&request)
