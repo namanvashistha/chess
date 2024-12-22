@@ -3,6 +3,9 @@ console.log("Hello, World!");
 // function to fetch the user anonymous token from the local storage and if not found, create a new one from server
 
 function formatUserName(name) {
+    if (!name) {
+        return "Anonymous";
+    }
     return name.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).slice(0, 2).join(" ");
 }
 function fetchUserToken() {
@@ -46,7 +49,7 @@ function fetchUserToken() {
             .then(data => {
                 if (data.response_key === "SUCCESS") {
                     const user = data.data;
-                    document.getElementById('user-name').textContent = user.name;
+                    userName = user.name;;
                     //convert data.data to string before storing in local storage
                     localStorage.setItem('userData', JSON.stringify(data.data));
                 } else {
@@ -59,9 +62,10 @@ function fetchUserToken() {
         const user = JSON.parse(userData);
         userName = user.name;
     }
-
-    document.getElementById('user-name').textContent = formatUserName(userName);
-
+    console.log("User Name", userName);
+    if (document.getElementById('user-name') && userName) {
+        document.getElementById('user-name').textContent = formatUserName(userName);
+    }
     return userToken;
 }
 

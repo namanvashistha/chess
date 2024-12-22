@@ -1,13 +1,11 @@
 package service
 
 import (
-	"chess-engine/app/constant"
 	"chess-engine/app/domain/dao"
 	"chess-engine/app/domain/dto"
 	"chess-engine/app/engine"
 	"chess-engine/app/pkg"
 	"chess-engine/app/repository"
-	"fmt"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -59,41 +57,48 @@ func (ws *WebSocketServiceImpl) ProcessMove(message dto.WebSocketMessage) {
 
 	var game dao.ChessGame
 	var err error
+	status := "success"
 	gameId := message.Payload.(map[string]interface{})["game_id"].(string)
-	game, _ = ws.chessRepository.FindChessGameById(gameId)
+	// game, _ = ws.chessRepository.FindChessGameById(gameId)
 	// Fetch from cache
-	gameState, err := ws.chessRepository.GetChessStateStateFromCache(fmt.Sprint(game.ChessStateId))
-	if err != nil || gameState.ID == 0 {
+	game, err = ws.chessRepository.GetChessGameFromCache(gameId)
+	if err != nil || game.ID == 0 {
 		// Fallback to DB if cache miss
 		log.Info("Cache miss. Fetching from database.")
-		gameState, err = ws.chessRepository.GetChessStateStateFromDB(fmt.Sprint(game.ChessStateId))
+		game, err = ws.chessRepository.GetChessGameFromDB(gameId)
 		if err != nil {
 			log.Error("Error fetching game state:", err)
-			pkg.PanicException(constant.DataNotFound)
+			status = "error"
 		}
 		// Save to cache after fetching from DB
-		_ = ws.chessRepository.SaveChessStateToCache(&gameState)
+		_ = ws.chessRepository.SaveChessGameToCache(&game)
+	} else {
+		log.Info("Fetched game state from cache:", game.ID)
 	}
 	var move dto.Move
-	move.Destination = message.Payload.(map[string]interface{})["destination"].(string)
-	move.Source = message.Payload.(map[string]interface{})["source"].(string)
-	move.Piece = message.Payload.(map[string]interface{})["piece"].(string)
-	err = engine.MakeMove(&gameState, move)
-	status := "success"
+	if err = pkg.BindPayloadToStruct(message.Payload.(map[string]interface{}), &move); err != nil {
+		log.Errorf("Failed to unmarshal move: %v", err)
+		status = "error"
+	}
+	user, err := ws.chessRepository.FindUserByToken(move.Token)
 	if err != nil {
+		status = "error"
+		log.Error("Error fetching user by token:", err)
+		status = "error"
+	}
+
+	if err = engine.MakeMove(&game, move, user); err != nil {
 		status = "error"
 		log.Error("Error processing move:", err)
 	} else {
-		_ = ws.chessRepository.SaveChessStateToCache(&gameState)
-		_ = ws.chessRepository.SaveChessStateToDB(&gameState)
+		_ = ws.chessRepository.SaveChessGameToCache(&game)
+		_ = ws.chessRepository.SaveChessGameToDB(&game)
+		_ = ws.chessRepository.SaveChessStateToDB(&game.ChessState)
 	}
 
 	// Build response
-	allowedMoves := engine.GetAllowedMoves(gameState)
-	boardlayout := engine.GetBoardLayout()
-	gameState.AllowedMoves = allowedMoves
-	gameState.BoardLayout = boardlayout
-	game.ChessState = gameState
+	game.ChessState.AllowedMoves = engine.GetAllowedMoves(game)
+	game.ChessState.BoardLayout = engine.GetBoardLayout()
 	response := dto.WebSocketMessage{
 		Type:    "game_update",
 		Status:  status,

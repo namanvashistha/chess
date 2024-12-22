@@ -14,11 +14,12 @@ import (
 type ChessRepository interface {
 	FindAllChessGame() ([]dao.ChessGame, error)
 	FindChessGameById(id string) (dao.ChessGame, error)
-	SaveChessGameToDB(game *dao.ChessGame) error
+
 	FindChessGameByInviteCode(inviteCode string) (dao.ChessGame, error)
-	GetChessStateStateFromCache(gameId string) (dao.ChessState, error)
-	GetChessStateStateFromDB(gameId string) (dao.ChessState, error)
-	SaveChessStateToCache(game *dao.ChessState) error
+	GetChessGameFromCache(gameId string) (dao.ChessGame, error)
+	GetChessGameFromDB(gameId string) (dao.ChessGame, error)
+	SaveChessGameToCache(game *dao.ChessGame) error
+	SaveChessGameToDB(game *dao.ChessGame) error
 	SaveChessStateToDB(game *dao.ChessState) error
 	FindUserByToken(token string) (dao.User, error)
 }
@@ -97,24 +98,30 @@ func (r ChessRepositoryImpl) SaveChessGameToDB(game *dao.ChessGame) error {
 }
 
 // Fetch the chess game state from cache
-func (r ChessRepositoryImpl) GetChessStateStateFromCache(gameId string) (dao.ChessState, error) {
-	var game dao.ChessState
-	cachedState, err := r.redisClient.Get("game_state:" + gameId)
+func (r ChessRepositoryImpl) GetChessGameFromCache(gameId string) (dao.ChessGame, error) {
+	var game dao.ChessGame
+	cachedState, err := r.redisClient.Get("chess_game:" + gameId)
 	if err != nil || cachedState == "" {
 		return game, err
 	}
 	err = json.Unmarshal([]byte(cachedState), &game)
 	if err != nil {
-		log.Error("Error unmarshalling game state from Redis:", err)
+		log.Error("Error unmarshalling game from Redis:", err)
 		return game, err
 	}
 	return game, nil
 }
 
 // Fetch the chess game state from the database
-func (r ChessRepositoryImpl) GetChessStateStateFromDB(gameId string) (dao.ChessState, error) {
-	var game dao.ChessState
-	err := r.db.Where("id = ?", gameId).First(&game).Error
+func (r ChessRepositoryImpl) GetChessGameFromDB(gameId string) (dao.ChessGame, error) {
+	var game dao.ChessGame
+	err := r.db.
+		Preload("WhiteUser", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, name")
+		}).
+		Preload("BlackUser", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, name")
+		}).Preload("ChessState").First(&game, gameId).Error
 	if err != nil {
 		log.Error("Error fetching chess game state from DB:", err)
 		return game, err
@@ -123,15 +130,15 @@ func (r ChessRepositoryImpl) GetChessStateStateFromDB(gameId string) (dao.ChessS
 }
 
 // Save the chess game state to the cache
-func (r ChessRepositoryImpl) SaveChessStateToCache(game *dao.ChessState) error {
-	gameStateJSON, err := json.Marshal(game)
+func (r ChessRepositoryImpl) SaveChessGameToCache(game *dao.ChessGame) error {
+	gameJSON, err := json.Marshal(game)
 	if err != nil {
-		log.Error("Error marshalling game state for Redis:", err)
+		log.Error("Error marshalling game for Redis:", err)
 		return err
 	}
-	err = r.redisClient.Set("game_state:"+fmt.Sprint(game.ID), gameStateJSON, time.Minute*10) // Cache for 10 minutes
+	err = r.redisClient.Set("chess_game:"+fmt.Sprint(game.ID), gameJSON, time.Minute*100) // Cache for 10 minutes
 	if err != nil {
-		log.Error("Error saving game state to Redis:", err)
+		log.Error("Error saving game to Redis:", err)
 	}
 	return err
 }

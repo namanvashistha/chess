@@ -1,9 +1,7 @@
 const chessBoard = document.getElementById('chess-board');
-// const currentTurn = document.getElementById('current-turn');
 let allowedMoves = []; // To store allowed moves for the clicked piece
 let selectedPiece = null; // Track the currently selected piece
 let selectedSquare = null; // Track the currently selected square
-let flip = false;
 
 // Mapping pieces to image paths
 const pieceMap = {
@@ -35,72 +33,86 @@ function fetchChessState() {
         .then(response => response.json())
         .then(data => {
             chessState = data.data.chess_state;
-            renderChessBoard(chessState.board, chessState.board_layout, chessState.allowed_moves, chessState.turn);
-            renderPlayerInfo(data.data.white_user, data.data.black_user, chessState.turn);
+            renderChessBoard(
+                chessState.board,
+                chessState.board_layout,
+                chessState.allowed_moves,
+                data.data.white_user,
+                data.data.black_user,
+                chessState.turn
+            );
         })
         .catch(err => console.error('Error fetching chess state:', err));
 }
 
 // Render the chessboard
-function renderChessBoard(board, boardLayout, allowedMovesData) {
-    chessBoard.innerHTML = ''; // Clear the chessboard
-
+function renderChessBoard(board, boardLayout, allowedMovesData, whiteUser, blackUser, turn) {
     allowedMoves = allowedMovesData; // Store the allowed moves
-
-    if (flip) {
-        boardLayout = boardLayout.map(row => row.reverse()).reverse();
+    userData = JSON.parse(localStorage.getItem("userData"));
+    if (!userData) {
+        fetchUserToken();
+    }
+    if (userData.id === whiteUser.id) {
+        localStorage.setItem("boardPov", "white");
+    } else if (userData.id === blackUser.id){
+        localStorage.setItem("boardPov", "black");
     }
 
-    boardLayout.forEach((row, i) => {
-        row.forEach((squareKey, j) => {
-            const squareData = board[squareKey];
-            const [color, pieceCode] = squareData;
+    const renderBoard = () => {
+        console.log("Rendering board...");
+        
+        chessBoard.innerHTML = ''; // Clear the chessboard
+        if (localStorage.getItem("boardPov") === "black") {
+            boardLayout = boardLayout.map(row => row.reverse()).reverse();
+        }
+        else if (localStorage.getItem("boardPov") === "white" && boardLayout[0][0] == "h1") {
+            boardLayout = boardLayout.map(row => row.reverse()).reverse();
+        }
+        console.log("Board Layout v1", localStorage.getItem("boardPov"), boardLayout);
 
-            const square = document.createElement('div');
-            square.className = `square ${color === 'w' ? 'light' : 'dark'}`;
-            square.dataset.key = squareKey;
-            square.dataset.file = squareKey[0];
-            square.dataset.rank = squareKey[1];
+        boardLayout.forEach((row, i) => {
+            row.forEach((squareKey, j) => {
+                const squareData = board[squareKey];
+                const [color, pieceCode] = squareData;
 
-            if (pieceCode !== "---") {
-                const piece = document.createElement('span');
-                piece.className = 'piece';
-                piece.dataset.code = pieceCode;
-                const img = document.createElement('img');
-                img.src = pieceMap[pieceCode.slice(0, -1)];
-                img.alt = pieceCode;
-                img.className = 'piece-image';
-                img.draggable = true;
-                img.dataset.code = pieceCode;
+                const square = document.createElement('div');
+                square.className = `square ${color === 'w' ? 'light' : 'dark'}`;
+                square.dataset.key = squareKey;
+                square.dataset.file = squareKey[0];
+                square.dataset.rank = squareKey[1];
 
-                img.addEventListener('dragstart', handleDragStart);
-                piece.addEventListener('click', () => handlePieceClick(piece, square));
+                if (pieceCode !== "---") {
+                    const piece = document.createElement('span');
+                    piece.className = 'piece';
+                    piece.dataset.code = pieceCode;
+                    const img = document.createElement('img');
+                    img.src = pieceMap[pieceCode.slice(0, -1)];
+                    img.alt = pieceCode;
+                    img.className = 'piece-image';
+                    img.draggable = true;
+                    img.dataset.code = pieceCode;
 
-                piece.appendChild(img);
-                square.appendChild(piece);
-            }
+                    img.addEventListener('dragstart', handleDragStart);
+                    piece.addEventListener('click', () => handlePieceClick(piece, square));
 
-            square.addEventListener('dragover', handleDragOver);
-            square.addEventListener('drop', handleDrop);
-            chessBoard.appendChild(square);
+                    piece.appendChild(img);
+                    square.appendChild(piece);
+                }
+
+                square.addEventListener('dragover', handleDragOver);
+                square.addEventListener('drop', handleDrop);
+                chessBoard.appendChild(square);
+            });
         });
-    });
-}
+    };
 
-
-function renderPlayerInfo(whiteUser, blackUser, turn) {
-
-    let isWhiteAtBottom = true; // Flag to determine board orientation
-
-    // Helper function for avatar URLs
     const getAvatarUrl = (name) => `https://avatar.iran.liara.run/username?username=${encodeURIComponent(name)}`;
 
-    // Function to render player bar dynamically
     const renderPlayerBars = () => {
         const topBar = document.getElementById("player-bar-top");
         const bottomBar = document.getElementById("player-bar-bottom");
         console.log("turn", turn);
-        if (isWhiteAtBottom) {
+        if ((localStorage.getItem("boardPov") || "white") === "white") {
             // White is at the bottom
             topBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(blackUser.name));
             topBar.querySelector(".player-name").textContent = formatUserName(blackUser.name);
@@ -130,26 +142,19 @@ function renderPlayerInfo(whiteUser, blackUser, turn) {
             bottomBar.querySelector(".turn-indicator").style.color = turn === "black" ? "green" : "gray";
             bottomBar.querySelector(".player-timer").textContent = turn === "black" ? "🟢" : "⏳";
         }
-
-        // Flip the board visually
-        const board = document.getElementById("chess-board");
-        board.style.transform = isWhiteAtBottom ? "rotate(0deg)" : "rotate(180deg)";
-        const squares = board.querySelectorAll(".chess-square");
-        squares.forEach((square) => {
-            square.style.transform = isWhiteAtBottom ? "rotate(0deg)" : "rotate(180deg)";
-        });
     };
 
-    // Initial setup
+    renderBoard();
     renderPlayerBars();
 
-    // Simulate dynamic board flipping for demonstration
     document.getElementById("flip-board").addEventListener("click", () => {
-        isWhiteAtBottom = !isWhiteAtBottom;
+        boardPov = localStorage.getItem("boardPov") === "white";
+        localStorage.setItem("boardPov", boardPov ? "black" : "white");
+        renderBoard();
         renderPlayerBars();
     });
-
 }
+
 
 
 // Drag event handlers

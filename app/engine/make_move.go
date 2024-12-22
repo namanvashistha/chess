@@ -10,9 +10,9 @@ import (
 )
 
 // MakeMove handles the movement of pieces on the chessboard and validates the move.
-func MakeMove(game *dao.ChessState, move dto.Move) error {
+func MakeMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
 	var board map[string][]string
-	if err := json.Unmarshal(game.Board, &board); err != nil {
+	if err := json.Unmarshal(game.ChessState.Board, &board); err != nil {
 		log.Errorf("Failed to unmarshal board: %v", err)
 		return fmt.Errorf("failed to unmarshal board: %w", err)
 	}
@@ -21,7 +21,7 @@ func MakeMove(game *dao.ChessState, move dto.Move) error {
 
 	// Log the move
 	log.Infof("Attempting to move %s from %s to %s", sourcePiece, move.Source, move.Destination)
-
+	log.Info(board)
 	if sourcePiece != board[move.Source][1] {
 		log.Error("Invalid move source piece not matching. please refresh Error")
 		return fmt.Errorf("invalid move source piece not matching")
@@ -33,8 +33,23 @@ func MakeMove(game *dao.ChessState, move dto.Move) error {
 		return fmt.Errorf("invalid move: no piece at source square %s", move.Source)
 	}
 
+	if user.ID != game.WhiteUser.ID && user.ID != game.BlackUser.ID {
+		log.Errorf("Invalid move: user %d is not in the game", user.ID)
+		return fmt.Errorf("invalid move: user %d is not in the game", user.ID)
+	}
+
+	if game.ChessState.Turn == "white" && user.ID != game.WhiteUser.ID {
+		log.Errorf("Invalid move: user %d is not white player", user.ID)
+		return fmt.Errorf("invalid move: user %d is not white player", user.ID)
+	}
+
+	if game.ChessState.Turn == "black" && user.ID != game.BlackUser.ID {
+		log.Errorf("Invalid move: user %d is not black player", user.ID)
+		return fmt.Errorf("invalid move: user %d is not black player", user.ID)
+	}
+
 	// Check if it's the correct player's turn
-	currentTurn := game.Turn
+	currentTurn := game.ChessState.Turn
 	pieceColor := string(sourcePiece[0:1]) // Assume the first character indicates color (e.g., 'w' or 'b')
 	if (currentTurn == "white" && pieceColor != "w") || (currentTurn == "black" && pieceColor != "b") {
 		log.Errorf("Invalid move: it's %s's turn", currentTurn)
@@ -50,10 +65,10 @@ func MakeMove(game *dao.ChessState, move dto.Move) error {
 
 	// Handle special moves (e.g., promotion, castling, en passant)
 	// if isPawnPromotion(sourcePiece, move.DestinationSquare) {
-	// 	game.Board[move.DestinationSquare] = promotePawn(sourcePiece, move.PromotionPiece)
+	// 	game.ChessState.Board[move.DestinationSquare] = promotePawn(sourcePiece, move.PromotionPiece)
 	// } else {
 	// 	// Perform the move
-	// 	game.Board[move.DestinationSquare] = sourcePiece
+	// 	game.ChessState.Board[move.DestinationSquare] = sourcePiece
 	// }
 	board[move.Destination][1] = sourcePiece
 	board[move.Source][1] = "---"
@@ -61,12 +76,12 @@ func MakeMove(game *dao.ChessState, move dto.Move) error {
 	// Capture piece if necessary
 	// if destinationPiece != "---" {
 	// 	log.Infof("Piece captured: %s", destinationPiece)
-	// 	game.CapturedPieces = append(game.CapturedPieces, destinationPiece)
+	// 	game.ChessState.CapturedPieces = append(game.ChessState.CapturedPieces, destinationPiece)
 	// }
 
 	// Update game state
-	// game.MoveHistory = append(game.MoveHistory, move)
-	// game.CurrentTurn = switchTurn(currentTurn)
+	// game.ChessState.MoveHistory = append(game.ChessState.MoveHistory, move)
+	// game.ChessState.CurrentTurn = switchTurn(currentTurn)
 	log.Info(move.Source, move.Destination)
 	// log.Info(board)
 	updatedBoard, err := json.Marshal(board)
@@ -74,8 +89,8 @@ func MakeMove(game *dao.ChessState, move dto.Move) error {
 		log.Errorf("failed to marshal board: %v", err)
 		return fmt.Errorf("failed to marshal board: %w", err)
 	}
-	game.Board = json.RawMessage(updatedBoard)
-	game.Turn = switchTurn(currentTurn)
+	game.ChessState.Board = json.RawMessage(updatedBoard)
+	game.ChessState.Turn = switchTurn(currentTurn)
 	log.Infof("Move successful: %s moved to %s", sourcePiece, move.Destination)
 	return nil
 }

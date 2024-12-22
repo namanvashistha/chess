@@ -7,8 +7,9 @@ type Move struct {
 
 	Piece       string `json:"piece"`
 	Source      string `json:"source"`
-	Destination string `json:"destination`
+	Destination string `json:"destination"`
 	GameId      string `json:"game_id"`
+	Token       string `json:"token"`
 }
 
 type ChessRequest struct {

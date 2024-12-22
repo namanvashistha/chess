@@ -6,12 +6,12 @@ import (
 	"fmt"
 )
 
-func GetAllowedMoves(gameState dao.ChessState) map[string][]string {
+func GetAllowedMoves(game dao.ChessGame) map[string][]string {
 	allowedMoves := make(map[string][]string)
 
 	var board map[string][]string
 
-	err := json.Unmarshal([]byte(gameState.Board), &board)
+	err := json.Unmarshal([]byte(game.ChessState.Board), &board)
 	if err != nil {
 		fmt.Println("Error unmarshaling board:", err)
 		return allowedMoves

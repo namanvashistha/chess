@@ -41,7 +41,8 @@ function sendMove(piece, source, destination) {
             piece: piece,
             source: source,
             destination: destination,
-            game_id: gameId
+            game_id: gameId,
+            token: localStorage.getItem('userToken'),
         }
     };
     console.log("Sending move:", data);
@@ -60,8 +61,14 @@ function updateChessBoard(message) {
     const chessState = message.payload.chess_state;
 
     // Assuming `renderChessBoard` is defined elsewhere in your code
-    renderChessBoard(chessState.board, chessState.board_layout, chessState.allowed_moves, chessState.turn);
-    renderPlayerInfo(message.payload.white_user, message.payload.black_user, chessState.turn);
+    renderChessBoard(
+        chessState.board,
+        chessState.board_layout,
+        chessState.allowed_moves,
+        message.payload.white_user,
+        message.payload.black_user,
+        chessState.turn
+    );
 }
 
 // Initialize WebSocket connection
