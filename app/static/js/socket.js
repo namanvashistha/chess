@@ -1,5 +1,6 @@
 let socket;
 let reconnectInterval = 5000; // 5 seconds
+const moveSound = new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-opponent.mp3');
 
 // Initialize WebSocket connection
 function createWebSocket() {
@@ -69,6 +70,11 @@ function updateChessBoard(message) {
         message.payload.black_user,
         chessState.turn
     );
+    if (message.status === "success") {
+        moveSound.play().catch((err) => {
+            console.error("Error playing move sound:", err);
+        });
+    }
 }
 
 // Initialize WebSocket connection

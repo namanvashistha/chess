@@ -6,7 +6,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameStatus = document.getElementById('game-status');
     const gamesList = document.getElementById('games-list'); // To display active games
 
-    // Fetch all available games
+    // Function to format the user name
+    function renderUserName() {
+        if (document.getElementById('user-name') && localStorage.getItem('userData')) {
+            userName = JSON.parse(localStorage.getItem('userData'))?.name;
+            document.getElementById('user-name').textContent = formatUserName(userName);
+        }
+    }
+    renderUserName();
+
     function fetchChessGames() {
         fetch('/api/chess/game')
             .then(res => res.json())

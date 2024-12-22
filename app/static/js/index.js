@@ -1,6 +1,3 @@
-console.log("Hello, World!");
-
-// function to fetch the user anonymous token from the local storage and if not found, create a new one from server
 
 function formatUserName(name) {
     if (!name) {
@@ -8,64 +5,38 @@ function formatUserName(name) {
     }
     return name.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).slice(0, 2).join(" ");
 }
-function fetchUserToken() {
-    userName = "";
+async function fetchUserToken() {
     let userToken = localStorage.getItem('userToken');
-    if (!userToken) {
-        fetch('/api/user', { method: 'POST' })
-            .then(res => res.json())
-            .then(data => {
-                if (data.response_key === "SUCCESS") {
-                    userToken = data.data.token;
-                    localStorage.setItem('userToken', userToken);
-                    localStorage.setItem('userData', JSON.stringify(data.data));
-                } else {
-                    fetch('/api/user', { method: 'POST' })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.response_key === "SUCCESS") {
-                                userToken = data.data.token;
-                                localStorage.setItem('userToken', userToken);
-                                localStorage.setItem('userData', JSON.stringify(data.data));
-                            } else {
-                                console.error('Error fetching user token:', data);
-                            }
-                        })
-                        .catch(err => console.error('Error fetching user token:', err));
-                }
-            })
-            .catch(err => console.error('Error fetching user token:', err));
+    let userData = localStorage.getItem('userData');
+    let userName = "";
+
+    try {
+        if (!userToken || !userData) {
+            const response = await fetch('/api/user', { method: 'POST' });
+            const data = await response.json();
+            if (data.response_key === "SUCCESS") {
+                userToken = data.data.token;
+                userName = data.data.name;
+                localStorage.setItem('userToken', userToken);
+                localStorage.setItem('userData', JSON.stringify(data.data));
+            } else {
+                console.error('Error fetching user token:', data);
+                return;
+            }
+        } else {
+            const user = JSON.parse(userData);
+            userName = user.name;
+        }
+
+        // Update the DOM after data is fetched
+        const userNameElement = document.getElementById('user-name');
+        if (userNameElement && userName) {
+            userNameElement.textContent = formatUserName(userName);
+        }
+    } catch (error) {
+        console.error('Error fetching user token:', error);
     }
-    userData = localStorage.getItem('userData');
-    if (!userData) {
-        fetch('/api/user/me', {
-            method: 'POST',
-            body: JSON.stringify({ token: userToken }),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.response_key === "SUCCESS") {
-                    const user = data.data;
-                    userName = user.name;;
-                    //convert data.data to string before storing in local storage
-                    localStorage.setItem('userData', JSON.stringify(data.data));
-                } else {
-                    console.error('Error fetching user:', data);
-                }
-            })
-            .catch(err => console.error('Error fetching user:', err));
-    }
-    else {
-        const user = JSON.parse(userData);
-        userName = user.name;
-    }
-    console.log("User Name", userName);
-    if (document.getElementById('user-name') && userName) {
-        document.getElementById('user-name').textContent = formatUserName(userName);
-    }
+
     return userToken;
 }
 

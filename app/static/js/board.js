@@ -49,9 +49,6 @@ function fetchChessState() {
 function renderChessBoard(board, boardLayout, allowedMovesData, whiteUser, blackUser, turn) {
     allowedMoves = allowedMovesData; // Store the allowed moves
     userData = JSON.parse(localStorage.getItem("userData"));
-    if (!userData) {
-        fetchUserToken();
-    }
     if (userData.id === whiteUser.id) {
         localStorage.setItem("boardPov", "white");
     } else if (userData.id === blackUser.id){
@@ -59,7 +56,6 @@ function renderChessBoard(board, boardLayout, allowedMovesData, whiteUser, black
     }
 
     const renderBoard = () => {
-        console.log("Rendering board...");
         
         chessBoard.innerHTML = ''; // Clear the chessboard
         if (localStorage.getItem("boardPov") === "black") {
@@ -68,7 +64,6 @@ function renderChessBoard(board, boardLayout, allowedMovesData, whiteUser, black
         else if (localStorage.getItem("boardPov") === "white" && boardLayout[0][0] == "h1") {
             boardLayout = boardLayout.map(row => row.reverse()).reverse();
         }
-        console.log("Board Layout v1", localStorage.getItem("boardPov"), boardLayout);
 
         boardLayout.forEach((row, i) => {
             row.forEach((squareKey, j) => {
@@ -111,19 +106,18 @@ function renderChessBoard(board, boardLayout, allowedMovesData, whiteUser, black
     const renderPlayerBars = () => {
         const topBar = document.getElementById("player-bar-top");
         const bottomBar = document.getElementById("player-bar-bottom");
-        console.log("turn", turn);
         if ((localStorage.getItem("boardPov") || "white") === "white") {
             // White is at the bottom
             topBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(blackUser.name));
             topBar.querySelector(".player-name").textContent = formatUserName(blackUser.name);
-            topBar.querySelector(".turn-indicator").textContent = turn === "black" ? "Your Turn" : "Thinking...";
+            topBar.querySelector(".turn-indicator").textContent = turn === "black" ? "Move" : "";
             topBar.querySelector(".turn-indicator").style.color = turn === "black" ? "green" : "gray";
             topBar.querySelector(".player-timer").textContent = turn === "black" ? "🟢" : "⏳";
 
 
             bottomBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(whiteUser.name));
             bottomBar.querySelector(".player-name").textContent = formatUserName(whiteUser.name);
-            bottomBar.querySelector(".turn-indicator").textContent = turn === "white" ? "Your Turn" : "Thinking...";
+            bottomBar.querySelector(".turn-indicator").textContent = turn === "white" ? "Move" : "";
             bottomBar.querySelector(".turn-indicator").style.color = turn === "white" ? "green" : "gray";
             bottomBar.querySelector(".player-timer").textContent = turn === "white" ? "🟢" : "⏳";
 
@@ -131,14 +125,14 @@ function renderChessBoard(board, boardLayout, allowedMovesData, whiteUser, black
             // Black is at the bottom
             topBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(whiteUser.name));
             topBar.querySelector(".player-name").textContent = formatUserName(whiteUser.name);
-            topBar.querySelector(".turn-indicator").textContent = turn === "white" ? "Your Turn" : "Thinking...";
+            topBar.querySelector(".turn-indicator").textContent = turn === "white" ? "Move" : "";
             topBar.querySelector(".turn-indicator").style.color = turn === "white" ? "green" : "gray";
             topBar.querySelector(".player-timer").textContent = turn === "white" ? "🟢" : "⏳";
 
 
             bottomBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(blackUser.name));
             bottomBar.querySelector(".player-name").textContent = formatUserName(blackUser.name);
-            bottomBar.querySelector(".turn-indicator").textContent = turn === "black" ? "Your Turn" : "Thinking...";
+            bottomBar.querySelector(".turn-indicator").textContent = turn === "black" ? "Move" : "";
             bottomBar.querySelector(".turn-indicator").style.color = turn === "black" ? "green" : "gray";
             bottomBar.querySelector(".player-timer").textContent = turn === "black" ? "🟢" : "⏳";
         }
