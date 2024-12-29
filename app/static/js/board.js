@@ -1,22 +1,38 @@
 const chessBoard = document.getElementById('chess-board');
-let allowedMoves = []; // To store allowed moves for the clicked piece
+let legalMoves = []; // To store allowed moves for the clicked piece
 let selectedPiece = null; // Track the currently selected piece
 let selectedSquare = null; // Track the currently selected square
 
+function bitboardToBits(title, bitboard) {
+    const bits = [];
+    // Convert BigInt to string, pad it to 64 bits, and split into chunks of 8 bits
+    const bitString = bitboard.toString(2).padStart(64, '0');  // Ensuring 64 bits
+    console.log(title, bitString);
+    // Convert the bit string into an 8x8 grid
+    for (let i = 0; i < 8; i++) {
+        bits.push(bitString.slice(i * 8, (i + 1) * 8));
+    }
+
+    console.table(title, bitboard);
+    return bits;
+}
+
+
+
 // Mapping pieces to image paths
 const pieceMap = {
-    "wP": "/static/images/wP.svg",
-    "wR": "/static/images/wR.svg",
-    "wN": "/static/images/wN.svg",
-    "wB": "/static/images/wB.svg",
-    "wQ": "/static/images/wQ.svg",
-    "wK": "/static/images/wK.svg",
-    "bP": "/static/images/bP.svg",
-    "bR": "/static/images/bR.svg",
-    "bN": "/static/images/bN.svg",
-    "bB": "/static/images/bB.svg",
-    "bQ": "/static/images/bQ.svg",
-    "bK": "/static/images/bK.svg"
+    "P": "/static/images/wP.svg",
+    "R": "/static/images/wR.svg",
+    "N": "/static/images/wN.svg",
+    "B": "/static/images/wB.svg",
+    "Q": "/static/images/wQ.svg",
+    "K": "/static/images/wK.svg",
+    "p": "/static/images/bP.svg",
+    "r": "/static/images/bR.svg",
+    "n": "/static/images/bN.svg",
+    "b": "/static/images/bB.svg",
+    "q": "/static/images/bQ.svg",
+    "k": "/static/images/bK.svg"
 };
 
 // Function to extract gameId from the URL path
@@ -34,6 +50,7 @@ function fetchChessState() {
         .then(data => {
             chessState = data.data.chess_state;
             renderChessBoard(
+                data.data,
                 chessState.board,
                 chessState.board_layout,
                 chessState.allowed_moves,
@@ -46,13 +63,60 @@ function fetchChessState() {
 }
 
 // Render the chessboard
-function renderChessBoard(board, boardLayout, allowedMovesData, whiteUser, blackUser, turn) {
-    allowedMoves = allowedMovesData; // Store the allowed moves
+function renderChessBoard(gameData, board, boardLayout, legalMovesData, whiteUser, blackUser, turn) {
+    legalMoves = gameData.legal_moves; // Store the allowed moves
     userData = JSON.parse(localStorage.getItem("userData"));
     if (userData.id === whiteUser.id) {
         localStorage.setItem("boardPov", "white");
-    } else if (userData.id === blackUser.id){
+    } else if (userData.id === blackUser.id) {
         localStorage.setItem("boardPov", "black");
+    }
+
+    const renderBitBoard = () => {
+
+        chessBoard.innerHTML = ''; // Clear the chessboard
+
+        if (localStorage.getItem("boardPov") === "black") {
+            boardLayout = boardLayout.map(row => row.reverse()).reverse();
+        } else if (localStorage.getItem("boardPov") === "white" && boardLayout[0][0] === "h1") {
+            boardLayout = boardLayout.map(row => row.reverse()).reverse();
+        }
+        currentState = gameData.current_state;
+        boardLayout.forEach((row, _) => {
+            row.forEach((squareInfo, _) => {
+                const [squareKey, color] = squareInfo;
+
+                const square = document.createElement('div');
+                square.className = `square ${color === 'w' ? 'light' : 'dark'}`;
+                square.textContent = squareKey;
+                square.dataset.key = squareKey;
+                square.dataset.file = squareKey[0];
+                square.dataset.rank = squareKey[1];
+
+                const pieceCode = currentState[squareKey];
+                if (pieceCode) {
+                    const piece = document.createElement('span');
+                    piece.className = 'piece';
+                    piece.dataset.code = pieceCode;
+                    const img = document.createElement('img');
+                    img.src = pieceMap[pieceCode];
+                    img.alt = pieceCode;
+                    img.className = 'piece-image';
+                    img.draggable = true;
+                    img.dataset.code = pieceCode;
+
+                    img.addEventListener('dragstart', handleDragStart);
+                    piece.addEventListener('click', () => handlePieceClick(piece, square));
+
+                    piece.appendChild(img);
+                    square.appendChild(piece);
+                }
+
+                square.addEventListener('dragover', handleDragOver);
+                square.addEventListener('drop', handleDrop);
+                chessBoard.appendChild(square);
+            });
+        });
     }
 
     const renderBoard = () => {
@@ -66,9 +130,9 @@ function renderChessBoard(board, boardLayout, allowedMovesData, whiteUser, black
         }
 
         boardLayout.forEach((row, i) => {
-            row.forEach((squareKey, j) => {
-                const squareData = board[squareKey];
-                const [color, pieceCode] = squareData;
+            row.forEach((squareInfo, j) => {
+                const [squareKey, color] = squareInfo;
+                const pieceCode = board[squareKey];
 
                 const square = document.createElement('div');
                 square.className = `square ${color === 'w' ? 'light' : 'dark'}`;
@@ -100,6 +164,52 @@ function renderChessBoard(board, boardLayout, allowedMovesData, whiteUser, black
             });
         });
     };
+
+    // const renderBitBoard = () => {
+
+    //     chessBoard.innerHTML = '';
+    //     if (localStorage.getItem("boardPov") === "black") {
+    //         boardLayout = boardLayout.map(row => row.reverse()).reverse();
+    //     }
+    //     else if (localStorage.getItem("boardPov") === "white" && boardLayout[0][0] == "h1") {
+    //         boardLayout = boardLayout.map(row => row.reverse()).reverse();
+    //     }
+
+    //     boardLayout.forEach((row, i) => {
+    //         row.forEach((squareKey, j) => {
+    //             const squareData = board[squareKey];
+    //             const [color, pieceCode] = squareData;
+
+    //             const square = document.createElement('div');
+    //             square.className = `square ${color === 'w' ? 'light' : 'dark'}`;
+    //             square.dataset.key = squareKey;
+    //             square.dataset.file = squareKey[0];
+    //             square.dataset.rank = squareKey[1];
+
+    //             if (pieceCode !== "---") {
+    //                 const piece = document.createElement('span');
+    //                 piece.className = 'piece';
+    //                 piece.dataset.code = pieceCode;
+    //                 const img = document.createElement('img');
+    //                 img.src = pieceMap[pieceCode.slice(0, -1)];
+    //                 img.alt = pieceCode;
+    //                 img.className = 'piece-image';
+    //                 img.draggable = true;
+    //                 img.dataset.code = pieceCode;
+
+    //                 img.addEventListener('dragstart', handleDragStart);
+    //                 piece.addEventListener('click', () => handlePieceClick(piece, square));
+
+    //                 piece.appendChild(img);
+    //                 square.appendChild(piece);
+    //             }
+
+    //             square.addEventListener('dragover', handleDragOver);
+    //             square.addEventListener('drop', handleDrop);
+    //             chessBoard.appendChild(square);
+    //         });
+    //     });
+    // };
 
     const getAvatarUrl = (name) => `https://avatar.iran.liara.run/username?username=${encodeURIComponent(name)}`;
 
@@ -138,13 +248,14 @@ function renderChessBoard(board, boardLayout, allowedMovesData, whiteUser, black
         }
     };
 
-    renderBoard();
+    renderBitBoard();
+    // renderBoard();
     renderPlayerBars();
 
     document.getElementById("flip-board").addEventListener("click", () => {
         boardPov = localStorage.getItem("boardPov") === "white";
         localStorage.setItem("boardPov", boardPov ? "black" : "white");
-        renderBoard();
+        renderBitBoard();
         renderPlayerBars();
     });
 }
@@ -204,7 +315,7 @@ function handlePieceClick(piece, square) {
             selectedSquare = square;
             highlightAllowedMoves(selectedPiece);
         }
-        
+
     } else {
         selectedPiece = piece;
         selectedSquare = square;
@@ -213,7 +324,7 @@ function handlePieceClick(piece, square) {
 }
 
 function highlightAllowedMoves(piece) {
-    const pieceMoves = allowedMoves[piece.dataset.code];
+    const pieceMoves = legalMoves[piece.parentElement.dataset.key];
 
     if (!pieceMoves) {
         console.log("No allowed moves for this piece.");

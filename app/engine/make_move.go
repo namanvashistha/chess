@@ -11,7 +11,7 @@ import (
 
 // MakeMove handles the movement of pieces on the chessboard and validates the move.
 func MakeMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
-	var board map[string][]string
+	var board map[string]string
 	if err := json.Unmarshal(game.ChessState.Board, &board); err != nil {
 		log.Errorf("Failed to unmarshal board: %v", err)
 		return fmt.Errorf("failed to unmarshal board: %w", err)
@@ -22,7 +22,7 @@ func MakeMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
 	// Log the move
 	log.Infof("Attempting to move %s from %s to %s", sourcePiece, move.Source, move.Destination)
 	log.Info(board)
-	if sourcePiece != board[move.Source][1] {
+	if sourcePiece != board[move.Source] {
 		log.Error("Invalid move source piece not matching. please refresh Error")
 		return fmt.Errorf("invalid move source piece not matching")
 	}
@@ -70,8 +70,8 @@ func MakeMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
 	// 	// Perform the move
 	// 	game.ChessState.Board[move.DestinationSquare] = sourcePiece
 	// }
-	board[move.Destination][1] = sourcePiece
-	board[move.Source][1] = "---"
+	board[move.Destination] = sourcePiece
+	board[move.Source] = "---"
 
 	// Capture piece if necessary
 	// if destinationPiece != "---" {

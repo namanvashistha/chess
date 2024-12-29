@@ -13,52 +13,67 @@ import (
 )
 
 type WebSocketService interface {
-	RegisterClient(conn *websocket.Conn)
-	UnregisterClient(conn *websocket.Conn)
-	BroadcastMessage(message dto.WebSocketMessage)
-	ProcessMove(message dto.WebSocketMessage)
+	RegisterClient(gameId string, conn *websocket.Conn)
+	UnregisterClient(gameId string, conn *websocket.Conn)
+	BroadcastMessage(gameID string, message dto.WebSocketMessage)
+	ProcessMove(gameId string, message dto.WebSocketMessage)
 }
 
 type WebSocketServiceImpl struct {
-	clients         map[*websocket.Conn]bool
-	broadcast       chan dto.WebSocketMessage
-	register        chan *websocket.Conn
-	unregister      chan *websocket.Conn
+	gameClients     map[string]map[*websocket.Conn]bool // Map[gameID] -> Map[Conn] -> bool
+	broadcast       chan gameBroadcastMessage           // Messages tied to a game_id
+	register        chan clientRegistration             // Registration with game_id
+	unregister      chan clientRegistration             // Unregistration with game_id
 	chessRepository repository.ChessRepository
 	mutex           sync.Mutex
 }
 
+type clientRegistration struct {
+	GameID string
+	Conn   *websocket.Conn
+}
+
+type gameBroadcastMessage struct {
+	GameID  string
+	Message dto.WebSocketMessage
+}
+
+// Constructor
 func NewWebSocketService(chessRepository repository.ChessRepository) *WebSocketServiceImpl {
 	service := &WebSocketServiceImpl{
-		clients:         make(map[*websocket.Conn]bool),
-		broadcast:       make(chan dto.WebSocketMessage),
-		register:        make(chan *websocket.Conn),
-		unregister:      make(chan *websocket.Conn),
+		gameClients:     make(map[string]map[*websocket.Conn]bool),
+		broadcast:       make(chan gameBroadcastMessage),
+		register:        make(chan clientRegistration),
+		unregister:      make(chan clientRegistration),
 		chessRepository: chessRepository,
 	}
 	go service.run()
 	return service
 }
 
-func (ws *WebSocketServiceImpl) RegisterClient(conn *websocket.Conn) {
-	ws.register <- conn
+// Register a client to a specific game
+func (ws *WebSocketServiceImpl) RegisterClient(gameID string, conn *websocket.Conn) {
+	ws.register <- clientRegistration{GameID: gameID, Conn: conn}
 }
 
-func (ws *WebSocketServiceImpl) UnregisterClient(conn *websocket.Conn) {
-	ws.unregister <- conn
+// Unregister a client from a specific game
+func (ws *WebSocketServiceImpl) UnregisterClient(gameID string, conn *websocket.Conn) {
+	ws.unregister <- clientRegistration{GameID: gameID, Conn: conn}
 }
 
-func (ws *WebSocketServiceImpl) BroadcastMessage(message dto.WebSocketMessage) {
-	ws.broadcast <- message
+// Broadcast a message to all clients in a specific game
+func (ws *WebSocketServiceImpl) BroadcastMessage(gameID string, message dto.WebSocketMessage) {
+	ws.broadcast <- gameBroadcastMessage{GameID: gameID, Message: message}
 }
 
-func (ws *WebSocketServiceImpl) ProcessMove(message dto.WebSocketMessage) {
+// Internal run loop
+func (ws *WebSocketServiceImpl) ProcessMove(gameId string, message dto.WebSocketMessage) {
 	log.Info("Processing move via WebSocket", message.Payload)
 
 	var game dao.ChessGame
 	var err error
 	status := "success"
-	gameId := message.Payload.(map[string]interface{})["game_id"].(string)
+	// gameId := message.Payload.(map[string]interface{})["game_id"].(string)
 	// game, _ = ws.chessRepository.FindChessGameById(gameId)
 	// Fetch from cache
 	game, err = ws.chessRepository.GetChessGameFromCache(gameId)
@@ -104,35 +119,53 @@ func (ws *WebSocketServiceImpl) ProcessMove(message dto.WebSocketMessage) {
 		Status:  status,
 		Payload: game,
 	}
-	ws.BroadcastMessage(response)
+	ws.BroadcastMessage(gameId, response)
 }
 
 func (ws *WebSocketServiceImpl) run() {
 	for {
 		select {
-		case conn := <-ws.register:
+		case reg := <-ws.register:
 			ws.mutex.Lock()
-			ws.clients[conn] = true
+			if _, exists := ws.gameClients[reg.GameID]; !exists {
+				ws.gameClients[reg.GameID] = make(map[*websocket.Conn]bool)
+			}
+			ws.gameClients[reg.GameID][reg.Conn] = true
 			ws.mutex.Unlock()
-			log.Info("Client connected")
+			log.Infof("Client connected to game %s", reg.GameID)
 
-		case conn := <-ws.unregister:
+		case unreg := <-ws.unregister:
 			ws.mutex.Lock()
-			if _, ok := ws.clients[conn]; ok {
-				delete(ws.clients, conn)
-				conn.Close()
-				log.Info("Client disconnected")
+			if clients, exists := ws.gameClients[unreg.GameID]; exists {
+				if _, ok := clients[unreg.Conn]; ok {
+					delete(clients, unreg.Conn)
+					unreg.Conn.Close()
+					log.Infof("Client disconnected from game %s", unreg.GameID)
+
+					// Cleanup empty game entries
+					if len(clients) == 0 {
+						delete(ws.gameClients, unreg.GameID)
+						log.Infof("No clients left for game %s. Removed from active games.", unreg.GameID)
+					}
+				}
 			}
 			ws.mutex.Unlock()
 
-		case message := <-ws.broadcast:
+		case broadcast := <-ws.broadcast:
 			ws.mutex.Lock()
-			for conn := range ws.clients {
-				err := conn.WriteJSON(message)
-				if err != nil {
-					log.Error("Error broadcasting message: ", err)
-					conn.Close()
-					delete(ws.clients, conn)
+			if clients, exists := ws.gameClients[broadcast.GameID]; exists {
+				for conn := range clients {
+					err := conn.WriteJSON(broadcast.Message)
+					if err != nil {
+						log.Error("Error broadcasting message to client: ", err)
+						conn.Close()
+						delete(clients, conn)
+					}
+				}
+
+				// Cleanup if no clients remain
+				if len(clients) == 0 {
+					delete(ws.gameClients, broadcast.GameID)
 				}
 			}
 			ws.mutex.Unlock()

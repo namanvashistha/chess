@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Bitboard Converter</title>
+    <link rel="icon" type="image/png" href="/static/images/wQ.svg" />
+    <style>
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 50px);
+            grid-template-rows: repeat(8, 50px);
+            gap: 0;
+        }
+
+        .square {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            border: 1px solid black;
+            box-sizing: border-box;
+        }
+
+        .light {
+            background-color: #f0d9b5;
+        }
+
+        .dark {
+            background-color: #b58863;
+        }
+
+        .highlight {
+            background-color: yellow !important;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chess Bitboard Converter</h1>
+    <div>
+        <label for="decimalInput">Decimal:</label>
+        <input type="number" id="decimalInput" placeholder="Enter decimal value">
+        <br><br>
+        <label for="binaryInput">Binary:</label>
+        <input type="text" id="binaryInput" placeholder="Enter binary value">
+    </div>
+    <br>
+    <div class="board" id="board"></div>
+
+    <script>
+        function createBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            for (let rank = 7; rank >= 0; rank--) {
+                for (let file = 0; file < 8; file++) {
+                    const squareIndex = rank * 8 + file;
+                    const square = document.createElement('div');
+                    square.className = `square ${(rank + file) % 2 === 0 ? 'light' : 'dark'}`;
+                    square.dataset.index = squareIndex;
+                    square.textContent = `${String.fromCharCode(97 + file)}${rank + 1}`;
+                    board.appendChild(square);
+                }
+            }
+        }
+
+        function highlightSquares(bitboard) {
+            const squares = document.querySelectorAll('.square');
+            squares.forEach(square => square.classList.remove('highlight'));
+            for (let i = 0; i < 64; i++) {
+                if (bitboard & (1n << BigInt(i))) {
+                    const square = document.querySelector(`.square[data-index="${i}"]`);
+                    if (square) {
+                        square.classList.add('highlight');
+                    }
+                }
+            }
+        }
+
+        function updateInputs() {
+            const decimalInput = document.getElementById('decimalInput');
+            const binaryInput = document.getElementById('binaryInput');
+            const decimalValue = BigInt(decimalInput.value || 0);
+            binaryInput.value = decimalValue.toString(2).padStart(64, '0');
+            highlightSquares(decimalValue);
+        }
+
+        function updateBoard() {
+            const decimalInput = document.getElementById('decimalInput');
+            const binaryInput = document.getElementById('binaryInput');
+            const binaryValue = BigInt(`0b${binaryInput.value || '0'}`);
+            decimalInput.value = binaryValue.toString();
+            highlightSquares(binaryValue);
+        }
+
+        document.getElementById('decimalInput').addEventListener('input', updateInputs);
+        document.getElementById('binaryInput').addEventListener('input', updateBoard);
+
+        createBoard();
+    </script>
+</body>
+</html>

@@ -9,16 +9,16 @@ import (
 func GetAllowedMoves(game dao.ChessGame) map[string][]string {
 	allowedMoves := make(map[string][]string)
 
-	var board map[string][]string
+	var board map[string]string
 
 	err := json.Unmarshal([]byte(game.ChessState.Board), &board)
 	if err != nil {
 		fmt.Println("Error unmarshaling board:", err)
 		return allowedMoves
 	}
-	for square, data := range board {
+	for square, pieceCode := range board {
 		// squareColor := data[0]
-		pieceCode := data[1]
+		// pieceCode := data[1]
 		pieceColor := pieceCode[0:1]
 		pieceType := pieceCode[1:2]
 		// pieceId := pieceCode[2:]
@@ -46,7 +46,7 @@ func GetAllowedMoves(game dao.ChessGame) map[string][]string {
 
 	return allowedMoves
 }
-func GetAllowedMovesPawn(square string, pieceColor string, board map[string][]string) []string {
+func GetAllowedMovesPawn(square string, pieceColor string, board map[string]string) []string {
 	var allowed []string
 	var direction int
 	var startRank int
@@ -67,7 +67,7 @@ func GetAllowedMovesPawn(square string, pieceColor string, board map[string][]st
 	// Check the square directly in front of the pawn
 	frontSquare := fmt.Sprintf("%c%d", squareFile, squareRank+direction)
 	frontSquareData, exists := board[frontSquare]
-	if !exists || frontSquareData[1] == "---" {
+	if !exists || frontSquareData == "---" {
 		// It's an empty square, add it as a valid move
 		allowed = append(allowed, frontSquare)
 	}
@@ -76,7 +76,7 @@ func GetAllowedMovesPawn(square string, pieceColor string, board map[string][]st
 	if squareRank == startRank {
 		frontTwoSquares := fmt.Sprintf("%c%d", squareFile, squareRank+2*direction)
 		frontTwoSquaresData, exists := board[frontTwoSquares]
-		if !exists || frontTwoSquaresData[1] == "---" {
+		if !exists || frontTwoSquaresData == "---" {
 			// It's an empty square, add it as a valid move
 			allowed = append(allowed, frontTwoSquares)
 		}
@@ -88,9 +88,9 @@ func GetAllowedMovesPawn(square string, pieceColor string, board map[string][]st
 		newFile := byte(int(squareFile) + offset)
 		diagonalSquare := fmt.Sprintf("%c%d", newFile, squareRank+direction)
 		diagonalSquareData, exists := board[diagonalSquare]
-		if exists && diagonalSquareData[1] != "---" {
+		if exists && diagonalSquareData != "---" {
 			// If it's an opponent's piece, add it as a valid capture move
-			diagonalPieceColor := diagonalSquareData[1][0:1]
+			diagonalPieceColor := diagonalSquareData[0:1]
 			if diagonalPieceColor != pieceColor {
 				allowed = append(allowed, diagonalSquare)
 			}
@@ -99,7 +99,7 @@ func GetAllowedMovesPawn(square string, pieceColor string, board map[string][]st
 
 	return allowed
 }
-func GetAllowedMovesKnight(square string, pieceColor string, board map[string][]string) []string {
+func GetAllowedMovesKnight(square string, pieceColor string, board map[string]string) []string {
 	var allowed []string
 
 	// Directions the knight can move: L-shaped moves
@@ -138,11 +138,11 @@ func GetAllowedMovesKnight(square string, pieceColor string, board map[string][]
 		newSquareData, exists := board[newSquare]
 
 		// If there's no piece, it's a valid move
-		if !exists || newSquareData[1] == "---" {
+		if !exists || newSquareData == "---" {
 			allowed = append(allowed, newSquare)
 		} else {
 			// If the square is occupied, check if it's the same color or an opponent's piece
-			newPieceColor := newSquareData[1][0:1]
+			newPieceColor := newSquareData[0:1]
 
 			// If it's an opponent's piece (different color), it's a valid capture move
 			if newPieceColor != pieceColor {
@@ -154,7 +154,7 @@ func GetAllowedMovesKnight(square string, pieceColor string, board map[string][]
 	return allowed
 }
 
-func GetAllowedMovesBishop(square string, pieceColor string, board map[string][]string) []string {
+func GetAllowedMovesBishop(square string, pieceColor string, board map[string]string) []string {
 	var allowed []string
 
 	// Directions the bishop can move: top-right, top-left, bottom-right, bottom-left
@@ -190,11 +190,11 @@ func GetAllowedMovesBishop(square string, pieceColor string, board map[string][]
 			newSquareData, exists := board[newSquare]
 
 			// If there's no piece, it's a valid move
-			if !exists || newSquareData[1] == "---" {
+			if !exists || newSquareData == "---" {
 				allowed = append(allowed, newSquare)
 			} else {
 				// If the square is occupied, check if it's the same color or an opponent's piece
-				newPieceColor := newSquareData[1][0:1]
+				newPieceColor := newSquareData[0:1]
 
 				// If it's an opponent's piece (different color), it's a valid capture move
 				if newPieceColor != pieceColor {
@@ -209,7 +209,7 @@ func GetAllowedMovesBishop(square string, pieceColor string, board map[string][]
 	return allowed
 }
 
-func GetAllowedMovesRook(square string, pieceColor string, board map[string][]string) []string {
+func GetAllowedMovesRook(square string, pieceColor string, board map[string]string) []string {
 	var allowed []string
 
 	// Directions the rook can move: up, down, left, right
@@ -245,11 +245,11 @@ func GetAllowedMovesRook(square string, pieceColor string, board map[string][]st
 			newSquareData, exists := board[newSquare]
 
 			// If there's no piece, it's a valid move
-			if !exists || newSquareData[1] == "---" {
+			if !exists || newSquareData == "---" {
 				allowed = append(allowed, newSquare)
 			} else {
 				// If the square is occupied, check if it's the same color or an opponent's piece
-				newPieceColor := newSquareData[1][0:1] // Corrected: piece color is at [1][0]
+				newPieceColor := newSquareData[0:1] // Corrected: piece color is at [1][0]
 
 				// If it's an opponent's piece (different color), it's a valid capture move
 				if newPieceColor != pieceColor {
@@ -263,7 +263,7 @@ func GetAllowedMovesRook(square string, pieceColor string, board map[string][]st
 
 	return allowed
 }
-func GetAllowedMovesQueen(square string, pieceColor string, board map[string][]string) []string {
+func GetAllowedMovesQueen(square string, pieceColor string, board map[string]string) []string {
 	var allowed []string
 
 	// Directions the queen can move: up, down, left, right, top-right, top-left, bottom-right, bottom-left
@@ -303,11 +303,11 @@ func GetAllowedMovesQueen(square string, pieceColor string, board map[string][]s
 			newSquareData, exists := board[newSquare]
 
 			// If there's no piece, it's a valid move
-			if !exists || newSquareData[1] == "---" {
+			if !exists || newSquareData == "---" {
 				allowed = append(allowed, newSquare)
 			} else {
 				// If the square is occupied, check if it's the same color or an opponent's piece
-				newPieceColor := newSquareData[1][0:1]
+				newPieceColor := newSquareData[0:1]
 
 				// If it's an opponent's piece (different color), it's a valid capture move
 				if newPieceColor != pieceColor {
@@ -322,7 +322,7 @@ func GetAllowedMovesQueen(square string, pieceColor string, board map[string][]s
 	return allowed
 }
 
-func GetAllowedMovesKing(square string, pieceColor string, board map[string][]string) []string {
+func GetAllowedMovesKing(square string, pieceColor string, board map[string]string) []string {
 	var allowed []string
 
 	// Directions the king can move: up, down, left, right, top-right, top-left, bottom-right, bottom-left
@@ -361,11 +361,11 @@ func GetAllowedMovesKing(square string, pieceColor string, board map[string][]st
 		newSquareData, exists := board[newSquare]
 
 		// If there's no piece, it's a valid move
-		if !exists || newSquareData[1] == "---" {
+		if !exists || newSquareData == "---" {
 			allowed = append(allowed, newSquare)
 		} else {
 			// If the square is occupied, check if it's the same color or an opponent's piece
-			newPieceColor := newSquareData[1][0:1]
+			newPieceColor := newSquareData[0:1]
 
 			// If it's an opponent's piece (different color), it's a valid capture move
 			if newPieceColor != pieceColor {

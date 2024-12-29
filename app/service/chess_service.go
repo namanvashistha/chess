@@ -42,9 +42,12 @@ func (u ChessServiceImpl) GetChessGameById(c *gin.Context) {
 	}
 	allowedMoves := engine.GetAllowedMoves(game)
 	boardlayout := engine.GetBoardLayout()
+	// bitBoard := engine.GetBitBoard()
 
 	game.ChessState.AllowedMoves = allowedMoves
 	game.ChessState.BoardLayout = boardlayout
+	game.CurrentState = engine.ConvertGameStateToMap(game.State)
+	game.LegalMoves = engine.ConvertLegalMovesToMap(engine.GenerateLegalMovesForAllPositions(game.State))
 
 	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, game))
 }
@@ -75,79 +78,79 @@ func (u ChessServiceImpl) CreateChessGame(c *gin.Context) {
 	// Initialize the chess state
 	// {"square": {"squareColor", "`pieceColor``pieceType``pieceId"}}
 
-	initialBoard := map[string][]string{
+	initialBoard := map[string]string{
 		//Rank 8
-		"a8": {"w", "bR1"},
-		"b8": {"b", "bN1"},
-		"c8": {"w", "bB1"},
-		"d8": {"b", "bQ1"},
-		"e8": {"w", "bK1"},
-		"f8": {"b", "bB2"},
-		"g8": {"w", "bN2"},
-		"h8": {"b", "bR2"},
+		"a8": "bR1",
+		"b8": "bN1",
+		"c8": "bB1",
+		"d8": "bQ1",
+		"e8": "bK1",
+		"f8": "bB2",
+		"g8": "bN2",
+		"h8": "bR2",
 		//Rank 7
-		"a7": {"b", "bP1"},
-		"b7": {"w", "bP2"},
-		"c7": {"b", "bP3"},
-		"d7": {"w", "bP4"},
-		"e7": {"b", "bP5"},
-		"f7": {"w", "bP6"},
-		"g7": {"b", "bP7"},
-		"h7": {"w", "bP8"},
+		"a7": "bP1",
+		"b7": "bP2",
+		"c7": "bP3",
+		"d7": "bP4",
+		"e7": "bP5",
+		"f7": "bP6",
+		"g7": "bP7",
+		"h7": "bP8",
 		//Rank 6
-		"a6": {"w", "---"},
-		"b6": {"b", "---"},
-		"c6": {"w", "---"},
-		"d6": {"b", "---"},
-		"e6": {"w", "---"},
-		"f6": {"b", "---"},
-		"g6": {"w", "---"},
-		"h6": {"b", "---"},
+		"a6": "---",
+		"b6": "---",
+		"c6": "---",
+		"d6": "---",
+		"e6": "---",
+		"f6": "---",
+		"g6": "---",
+		"h6": "---",
 		//Rank 5
-		"a5": {"b", "---"},
-		"b5": {"w", "---"},
-		"c5": {"b", "---"},
-		"d5": {"w", "---"},
-		"e5": {"b", "---"},
-		"f5": {"w", "---"},
-		"g5": {"b", "---"},
-		"h5": {"w", "---"},
+		"a5": "---",
+		"b5": "---",
+		"c5": "---",
+		"d5": "---",
+		"e5": "---",
+		"f5": "---",
+		"g5": "---",
+		"h5": "---",
 		//Rank 4
-		"a4": {"w", "---"},
-		"b4": {"b", "---"},
-		"c4": {"w", "---"},
-		"d4": {"b", "---"},
-		"e4": {"w", "---"},
-		"f4": {"b", "---"},
-		"g4": {"w", "---"},
-		"h4": {"b", "---"},
+		"a4": "---",
+		"b4": "---",
+		"c4": "---",
+		"d4": "---",
+		"e4": "---",
+		"f4": "---",
+		"g4": "---",
+		"h4": "---",
 		//Rank 3
-		"a3": {"b", "---"},
-		"b3": {"w", "---"},
-		"c3": {"b", "---"},
-		"d3": {"w", "---"},
-		"e3": {"b", "---"},
-		"f3": {"w", "---"},
-		"g3": {"b", "---"},
-		"h3": {"w", "---"},
+		"a3": "---",
+		"b3": "---",
+		"c3": "---",
+		"d3": "---",
+		"e3": "---",
+		"f3": "---",
+		"g3": "---",
+		"h3": "---",
 		//Rank 2
-		"a2": {"w", "wP1"},
-		"b2": {"b", "wP2"},
-		"c2": {"w", "wP3"},
-		"d2": {"b", "wP4"},
-		"e2": {"w", "wP5"},
-		"f2": {"b", "wP6"},
-		"g2": {"w", "wP7"},
-		"h2": {"b", "wP8"},
+		"a2": "wP1",
+		"b2": "wP2",
+		"c2": "wP3",
+		"d2": "wP4",
+		"e2": "wP5",
+		"f2": "wP6",
+		"g2": "wP7",
+		"h2": "wP8",
 		// Rank 1
-		"a1": {"b", "wR1"},
-		"b1": {"w", "wN1"},
-		"c1": {"b", "wB1"},
-		"d1": {"w", "wQ1"},
-		"e1": {"b", "wK1"},
-		"f1": {"w", "wB2"},
-		"g1": {"b", "wN2"},
-		"h1": {"w", "wR2"},
+		"a1": "wR1",
+		"b1": "wN1",
+		"c1": "wB1",
+		"d1": "wQ1",
+		"e1": "wK1",
+		"f1": "wB2",
+		"g1": "wN2",
+		"h1": "wR2",
 	}
 	boardJSON, err := json.Marshal(initialBoard)
 	if err != nil {
@@ -161,8 +164,8 @@ func (u ChessServiceImpl) CreateChessGame(c *gin.Context) {
 		Status:   "ongoing",
 		LastMove: "",
 	}
-	log.Info("start to execute program create chess game", request.Token)
-	creatorUser, err := u.chessRepository.FindUserByToken(request.Token)
+
+	creatorUser, _ := u.chessRepository.FindUserByToken(request.Token)
 	newGame := dao.ChessGame{
 		InviteCode: pkg.GenerateRandomString(20),
 		Winner:     "",
@@ -181,6 +184,39 @@ func (u ChessServiceImpl) CreateChessGame(c *gin.Context) {
 	}
 	if err := u.chessRepository.SaveChessGameToDB(&newGame); err != nil {
 		log.Error("Happened error when saving game to database. Error", err)
+		pkg.PanicException(constant.UnknownError)
+	}
+	initialGameState := dao.GameState{
+		GameID:         newGame.ID,
+		WhiteBitboard:  0xFFFF,
+		BlackBitboard:  0xFFFF000000000000,
+		PawnBitboard:   0x00FF00000000FF00,
+		RookBitboard:   0x8100000000000081,
+		KnightBitboard: 0x4200000000000042,
+		BishopBitboard: 0x2400000000000024,
+		QueenBitboard:  0x0800000000000008,
+		KingBitboard:   0x1000000000000010,
+		EnPassant:      0,
+		CastlingRights: "KQkq",
+		Turn:           "w",
+	}
+	// initialGameState := dao.GameState{
+	// 	GameID:         newGame.ID,
+	// 	WhiteBitboard:  0x000000000001F20C, // Positions of white pieces
+	// 	BlackBitboard:  0x01F003C000000000, // Positions of black pieces
+	// 	PawnBitboard:   0x0000000000011200, // Positions of pawns
+	// 	RookBitboard:   0x0100000000000080, // Positions of rooks
+	// 	KnightBitboard: 0x0000000000000042, // Positions of knights
+	// 	BishopBitboard: 0x0000000000000024, // Positions of bishops
+	// 	QueenBitboard:  0x0000000000000008, // Position of queens
+	// 	KingBitboard:   0x0000000000010000, // Position of kings
+	// 	EnPassant:      0x0000000000100000, // Position available for en passant
+	// 	CastlingRights: "Kq",               // Castling rights
+	// 	Turn:           "w",                // White's turn
+	// 	LastMove:       "",                 // No moves yet
+	// }
+	if err := u.chessRepository.SaveGameStateToDB(&initialGameState); err != nil {
+		log.Error("Happened error when saving game state to database. Error", err)
 		pkg.PanicException(constant.UnknownError)
 	}
 
@@ -336,80 +372,80 @@ func (u ChessServiceImpl) CreateChessState(c *gin.Context) {
 	log.Info("start to execute program create chess state")
 
 	// Initialize the chess state
-	// {"square": {"squareColor", "`pieceColor``pieceType``pieceId"}}
-	initialBoard := map[string][]string{
+	// {"square": "squareColor", "`pieceColor``pieceType``pieceId"}}
+	initialBoard := map[string]string{
 		//Rank 8
-		"a8": {"w", "bR1"},
-		"b8": {"b", "bN1"},
-		"c8": {"w", "bB1"},
-		"d8": {"b", "bQ1"},
-		"e8": {"w", "bK1"},
-		"f8": {"b", "bB2"},
-		"g8": {"w", "bN2"},
-		"h8": {"b", "bR2"},
+		"a8": "bR1",
+		"b8": "bN1",
+		"c8": "bB1",
+		"d8": "bQ1",
+		"e8": "bK1",
+		"f8": "bB2",
+		"g8": "bN2",
+		"h8": "bR2",
 		//Rank 7
-		"a7": {"b", "bP1"},
-		"b7": {"w", "bP2"},
-		"c7": {"b", "bP3"},
-		"d7": {"w", "bP4"},
-		"e7": {"b", "bP5"},
-		"f7": {"w", "bP6"},
-		"g7": {"b", "bP7"},
-		"h7": {"w", "bP8"},
+		"a7": "bP1",
+		"b7": "bP2",
+		"c7": "bP3",
+		"d7": "bP4",
+		"e7": "bP5",
+		"f7": "bP6",
+		"g7": "bP7",
+		"h7": "bP8",
 		//Rank 6
-		"a6": {"w", "---"},
-		"b6": {"b", "---"},
-		"c6": {"w", "---"},
-		"d6": {"b", "---"},
-		"e6": {"w", "---"},
-		"f6": {"b", "---"},
-		"g6": {"w", "---"},
-		"h6": {"b", "---"},
+		"a6": "---",
+		"b6": "---",
+		"c6": "---",
+		"d6": "---",
+		"e6": "---",
+		"f6": "---",
+		"g6": "---",
+		"h6": "---",
 		//Rank 5
-		"a5": {"b", "---"},
-		"b5": {"w", "---"},
-		"c5": {"b", "---"},
-		"d5": {"w", "---"},
-		"e5": {"b", "---"},
-		"f5": {"w", "---"},
-		"g5": {"b", "---"},
-		"h5": {"w", "---"},
+		"a5": "---",
+		"b5": "---",
+		"c5": "---",
+		"d5": "---",
+		"e5": "---",
+		"f5": "---",
+		"g5": "---",
+		"h5": "---",
 		//Rank 4
-		"a4": {"w", "---"},
-		"b4": {"b", "---"},
-		"c4": {"w", "---"},
-		"d4": {"b", "---"},
-		"e4": {"w", "---"},
-		"f4": {"b", "---"},
-		"g4": {"w", "---"},
-		"h4": {"b", "---"},
+		"a4": "---",
+		"b4": "---",
+		"c4": "---",
+		"d4": "---",
+		"e4": "---",
+		"f4": "---",
+		"g4": "---",
+		"h4": "---",
 		//Rank 3
-		"a3": {"b", "---"},
-		"b3": {"w", "---"},
-		"c3": {"b", "---"},
-		"d3": {"w", "---"},
-		"e3": {"b", "---"},
-		"f3": {"w", "---"},
-		"g3": {"b", "---"},
-		"h3": {"w", "---"},
+		"a3": "---",
+		"b3": "---",
+		"c3": "---",
+		"d3": "---",
+		"e3": "---",
+		"f3": "---",
+		"g3": "---",
+		"h3": "---",
 		//Rank 2
-		"a2": {"w", "wP1"},
-		"b2": {"b", "wP2"},
-		"c2": {"w", "wP3"},
-		"d2": {"b", "wP4"},
-		"e2": {"w", "wP5"},
-		"f2": {"b", "wP6"},
-		"g2": {"w", "wP7"},
-		"h2": {"b", "wP8"},
+		"a2": "wP1",
+		"b2": "wP2",
+		"c2": "wP3",
+		"d2": "wP4",
+		"e2": "wP5",
+		"f2": "wP6",
+		"g2": "wP7",
+		"h2": "wP8",
 		// Rank 1
-		"a1": {"b", "wR1"},
-		"b1": {"w", "wN1"},
-		"c1": {"b", "wB1"},
-		"d1": {"w", "wQ1"},
-		"e1": {"b", "wK1"},
-		"f1": {"w", "wB2"},
-		"g1": {"b", "wN2"},
-		"h1": {"w", "wR2"},
+		"a1": "wR1",
+		"b1": "wN1",
+		"c1": "wB1",
+		"d1": "wQ1",
+		"e1": "wK1",
+		"f1": "wB2",
+		"g1": "wN2",
+		"h1": "wR2",
 	}
 	boardJSON, err := json.Marshal(initialBoard)
 	if err != nil {

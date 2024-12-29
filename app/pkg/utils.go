@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"strconv"
 	"time"
 
 	petname "github.com/dustinkirkland/golang-petname"
@@ -83,4 +84,32 @@ func BindPayloadToStruct(payload map[string]interface{}, obj interface{}) error 
 	}
 
 	return nil
+}
+
+func ConvertUint64ToString(input interface{}) {
+	// Get the value of the input
+	val := reflect.ValueOf(input)
+
+	// Ensure that input is a pointer to a struct
+	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Struct {
+		fmt.Println("Input must be a pointer to a struct.")
+		return
+	}
+
+	// Get the value of the struct (dereferencing the pointer)
+	val = val.Elem()
+
+	// Iterate over all fields of the struct
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+
+		// If the field is of type uint64, convert it to string
+		if field.Kind() == reflect.Uint64 {
+			strValue := strconv.FormatUint(field.Uint(), 10)
+			// Create a string field to store the converted value
+			stringField := reflect.ValueOf(&strValue).Elem()
+			// Set the field with the string value
+			field.Set(stringField)
+		}
+	}
 }

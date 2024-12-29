@@ -20,6 +20,12 @@ type WebSocketControllerImpl struct {
 
 // HandleWebSocket upgrades HTTP connection to WebSocket and manages communication.
 func (wsCtrl WebSocketControllerImpl) HandleWebSocket(c *gin.Context) {
+	gameID := c.Param("gameId")
+	log.Info("game_id: ", gameID)
+	if gameID == "" {
+		c.JSON(400, gin.H{"error": "game_id is required"})
+		// return
+	}
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			// Allow all connections for simplicity; customize as needed.
@@ -35,9 +41,9 @@ func (wsCtrl WebSocketControllerImpl) HandleWebSocket(c *gin.Context) {
 	}
 
 	// Register the client with the WebSocket service
-	wsCtrl.svc.RegisterClient(conn)
+	wsCtrl.svc.RegisterClient(gameID, conn)
 
-	defer wsCtrl.svc.UnregisterClient(conn) // Ensure cleanup on disconnect
+	defer wsCtrl.svc.UnregisterClient(gameID, conn) // Ensure cleanup on disconnect
 
 	// Listen for messages from the client
 	for {
@@ -52,7 +58,7 @@ func (wsCtrl WebSocketControllerImpl) HandleWebSocket(c *gin.Context) {
 		log.Infof("Received message: %+v", message)
 
 		// Process the received message
-		wsCtrl.svc.ProcessMove(message)
+		wsCtrl.svc.ProcessMove(gameID, message)
 	}
 }
 

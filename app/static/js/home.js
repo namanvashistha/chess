@@ -75,8 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(res => res.json())
         .then(data => {
             if (data.response_key === "SUCCESS") {
-                inviteCodeDisplay.textContent = data.data;
-                gameStatus.textContent = "Waiting for an opponent...";
                 window.location.href = `/game/${data.data}`;
             }
         })

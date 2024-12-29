@@ -32,12 +32,16 @@ func Init(init *config.Initialization) *gin.Engine {
 	router.GET("/game/:gameId", func(c *gin.Context) {
 		c.File("./app/static/html/board.html")
 	})
+
+	router.GET("/bitboard", func(c *gin.Context) {
+		c.File("./app/static/html/bitboard.html")
+	})
 	router.HEAD("/game/:gameId", func(c *gin.Context) {
 		c.File("./app/static/html/board.html")
 	})
 
 	// WebSocket route
-	router.GET("/ws", init.SocketCtrl.HandleWebSocket)
+	router.GET("/ws/:gameId", init.SocketCtrl.HandleWebSocket)
 
 	// API routes
 	api := router.Group("/api")

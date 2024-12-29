@@ -5,7 +5,7 @@ const moveSound = new Audio('https://images.chesscomfiles.com/chess-themes/sound
 // Initialize WebSocket connection
 function createWebSocket() {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    socket = new WebSocket(`${protocol}://${window.location.host}/ws`);
+    socket = new WebSocket(`${protocol}://${window.location.host}/ws/${gameId}`);
 
     socket.onopen = () => {
         console.log("Connected to WebSocket server.");

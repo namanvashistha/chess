@@ -14,11 +14,11 @@ import (
 type ChessRepository interface {
 	FindAllChessGame() ([]dao.ChessGame, error)
 	FindChessGameById(id string) (dao.ChessGame, error)
-
 	FindChessGameByInviteCode(inviteCode string) (dao.ChessGame, error)
 	GetChessGameFromCache(gameId string) (dao.ChessGame, error)
 	GetChessGameFromDB(gameId string) (dao.ChessGame, error)
 	SaveChessGameToCache(game *dao.ChessGame) error
+	SaveGameStateToDB(game *dao.GameState) error
 	SaveChessGameToDB(game *dao.ChessGame) error
 	SaveChessStateToDB(game *dao.ChessState) error
 	FindUserByToken(token string) (dao.User, error)
@@ -31,7 +31,9 @@ type ChessRepositoryImpl struct {
 
 func ChessRepositoryInit(db *gorm.DB, redisClient *pkg.RedisClient) *ChessRepositoryImpl {
 	db.AutoMigrate(&dao.ChessState{})
+	db.AutoMigrate(&dao.GameState{})
 	db.AutoMigrate(&dao.ChessGame{})
+	// gorm.RegisterSerializer("bitboard", serializer.BitboardSerializer{})
 	return &ChessRepositoryImpl{
 		db:          db,
 		redisClient: redisClient,
@@ -64,7 +66,8 @@ func (r ChessRepositoryImpl) FindChessGameById(id string) (dao.ChessGame, error)
 		}).
 		Preload("BlackUser", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, name")
-		}).Preload("ChessState").First(&chess, id).Error
+		}).
+		Preload("State").First(&chess, id).Error
 	if err != nil {
 		log.Error("Error finding chess by ID:", err)
 		return dao.ChessGame{}, err
@@ -141,6 +144,14 @@ func (r ChessRepositoryImpl) SaveChessGameToCache(game *dao.ChessGame) error {
 		log.Error("Error saving game to Redis:", err)
 	}
 	return err
+}
+
+func (r ChessRepositoryImpl) SaveGameStateToDB(game *dao.GameState) error {
+	if err := r.db.Save(game).Error; err != nil {
+		log.Error("Error saving game state to DB:", err)
+		return err
+	}
+	return nil
 }
 
 // Save the chess game state to the database

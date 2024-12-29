@@ -21,6 +21,8 @@
     border-radius: 2px; /* Minimal rounding */
     background-color: #ffffff; /* Neutral base */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Soft shadow */
+    color: black;
+    
 }
 
 .square.light {
@@ -35,6 +37,7 @@
     transform: scale(1.05); /* Gentle hover effect */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Slightly deeper shadow */
     z-index: 1; /* Lift above other squares */
+    cursor: pointer; /* Hover effect */
 }
 
 /* Highlight for allowed moves */
@@ -43,9 +46,10 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 50%;
-    height: 50%;
-    background-color: rgba(138, 138, 138, 0.594);
+    width: 30%;
+    height: 30%;
+    /* background-color: rgba(138, 138, 138, 0.4); */
+    background-color: rgba(0, 128, 0, 0.6);
     border-radius: 50%;
     transform: translate(-50%, -50%);
     pointer-events: none;
