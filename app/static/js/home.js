@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
             if (data.response_key === "SUCCESS") {
                 window.location.href = `/game/${data.data}`;
+                window.location.href = '';
             }
         })
         .catch(err => console.error('Error creating game:', err));
