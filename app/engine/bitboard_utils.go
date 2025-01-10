@@ -3,8 +3,6 @@ package engine
 import (
 	"chess-engine/app/domain/dao"
 	"fmt"
-
-	log "github.com/sirupsen/logrus"
 )
 
 func getPieceCode(bit uint64, isWhite bool, gameState dao.GameState) string {
@@ -92,7 +90,6 @@ func ConvertGameStateToMap(gameState dao.GameState) map[string]string {
 // }
 
 func ConvertLegalMovesToMap(allowedMoves map[uint64]uint64) map[string][]string {
-	log.Info(allowedMoves)
 	moves := make(map[string][]string)
 
 	files := []string{"a", "b", "c", "d", "e", "f", "g", "h"}
@@ -134,4 +131,12 @@ func bitToSquare(bitboard uint64, files, ranks []string) string {
 	file := files[bitIndex%8] // Column (0-7 maps to a-h)
 	rank := ranks[bitIndex/8] // Row (0-7 maps to 1-8, bottom to top)
 	return file + rank
+}
+
+func PositionToIndex(position string) int {
+	// Convert the chessboard position (e.g., "c1") to an index (e.g., 0-63)
+	// This will depend on your bitboard encoding
+	column := position[0] - 'a'
+	row := position[1] - '1'
+	return int(row*8 + column) // Assuming 8x8 board
 }

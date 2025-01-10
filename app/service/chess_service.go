@@ -40,12 +40,12 @@ func (u ChessServiceImpl) GetChessGameById(c *gin.Context) {
 		log.Error("Happened error when get data from database. Error", err)
 		pkg.PanicException(constant.DataNotFound)
 	}
-	allowedMoves := engine.GetAllowedMoves(game)
+	// allowedMoves := engine.GetAllowedMoves(game)
 	boardlayout := engine.GetBoardLayout()
 	// bitBoard := engine.GetBitBoard()
 
-	game.ChessState.AllowedMoves = allowedMoves
-	game.ChessState.BoardLayout = boardlayout
+	// game.ChessState.AllowedMoves = allowedMoves
+	game.BoardLayout = boardlayout
 	game.CurrentState = engine.ConvertGameStateToMap(game.State)
 	game.LegalMoves = engine.ConvertLegalMovesToMap(engine.GenerateLegalMovesForAllPositions(game.State))
 
@@ -169,7 +169,7 @@ func (u ChessServiceImpl) CreateChessGame(c *gin.Context) {
 	newGame := dao.ChessGame{
 		InviteCode: pkg.GenerateRandomString(20),
 		Winner:     "",
-		ChessState: initialState,
+		// ChessState: initialState,
 	}
 
 	if isAssignWhite := pkg.GenerateRandomBool(); isAssignWhite {
@@ -279,7 +279,7 @@ func (u ChessServiceImpl) GetChessState(c *gin.Context) {
 	if err != nil || game.ID == 0 {
 		// Fallback to DB if cache miss
 		log.Info("Cache miss. Fetching from database.")
-		game, err = u.chessRepository.GetChessGameFromDB(gameId)
+		game, err = u.chessRepository.FindChessGameById(gameId)
 		if err != nil {
 			log.Error("Error fetching game state:", err)
 			pkg.PanicException(constant.DataNotFound)
@@ -289,16 +289,16 @@ func (u ChessServiceImpl) GetChessState(c *gin.Context) {
 	}
 
 	// Build response
-	allowedMoves := engine.GetAllowedMoves(game)
-	boardlayout := engine.GetBoardLayout()
+	// allowedMoves := engine.GetAllowedMoves(game)
+	// boardlayout := engine.GetBoardLayout()
 	// pieceMap := engine.GetPiecesMap()
 	response := map[string]interface{}{
-		"board":         game.ChessState.Board,
-		"turn":          game.ChessState.Turn,
-		"status":        game.ChessState.Status,
-		"last_move":     game.ChessState.LastMove,
-		"allowed_moves": allowedMoves,
-		"board_layout":  boardlayout,
+		// "board":         game.ChessState.Board,
+		// "turn":          game.ChessState.Turn,
+		// "status":        game.ChessState.Status,
+		// "last_move":     game.ChessState.LastMove,
+		// "allowed_moves": allowedMoves,
+		// "board_layout":  boardlayout,
 		// "pieces_map":    pieceMap,
 	}
 
@@ -339,7 +339,7 @@ func (u ChessServiceImpl) MakeMove(c *gin.Context) {
 	game, err := u.chessRepository.GetChessGameFromCache(gameId)
 	if err != nil || game.ID == 0 {
 		log.Info("Cache miss. Fetching game state from DB.", gameId)
-		game, err = u.chessRepository.GetChessGameFromDB(gameId)
+		game, err = u.chessRepository.FindChessGameById(gameId)
 		if err != nil {
 			log.Error("Error fetching game state:", err)
 			pkg.PanicException(constant.DataNotFound)

@@ -16,7 +16,7 @@ type ChessRepository interface {
 	FindChessGameById(id string) (dao.ChessGame, error)
 	FindChessGameByInviteCode(inviteCode string) (dao.ChessGame, error)
 	GetChessGameFromCache(gameId string) (dao.ChessGame, error)
-	GetChessGameFromDB(gameId string) (dao.ChessGame, error)
+	// GetChessGameFromDB(gameId string) (dao.ChessGame, error)
 	SaveChessGameToCache(game *dao.ChessGame) error
 	SaveGameStateToDB(game *dao.GameState) error
 	SaveChessGameToDB(game *dao.ChessGame) error
@@ -84,7 +84,7 @@ func (r ChessRepositoryImpl) FindChessGameByInviteCode(inviteCode string) (dao.C
 		}).
 		Preload("BlackUser", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, name")
-		}).Preload("ChessState").First(&chess, "invite_code = ?", inviteCode).Error
+		}).First(&chess, "invite_code = ?", inviteCode).Error
 	if err != nil {
 		log.Error("Error finding chess by invite code:", err)
 		return dao.ChessGame{}, err
@@ -116,21 +116,22 @@ func (r ChessRepositoryImpl) GetChessGameFromCache(gameId string) (dao.ChessGame
 }
 
 // Fetch the chess game state from the database
-func (r ChessRepositoryImpl) GetChessGameFromDB(gameId string) (dao.ChessGame, error) {
-	var game dao.ChessGame
-	err := r.db.
-		Preload("WhiteUser", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id, name")
-		}).
-		Preload("BlackUser", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id, name")
-		}).Preload("ChessState").First(&game, gameId).Error
-	if err != nil {
-		log.Error("Error fetching chess game state from DB:", err)
-		return game, err
-	}
-	return game, nil
-}
+// func (r ChessRepositoryImpl) GetChessGameFromDB(gameId string) (dao.ChessGame, error) {
+// 	var game dao.ChessGame
+// 	err := r.db.
+// 		Preload("WhiteUser", func(db *gorm.DB) *gorm.DB {
+// 			return db.Select("id, name")
+// 		}).
+// 		Preload("BlackUser", func(db *gorm.DB) *gorm.DB {
+// 			return db.Select("id, name")
+// 		}).
+// 		Preload("State").First(&game, id).Error
+// 	if err != nil {
+// 		log.Error("Error fetching chess game state from DB:", err)
+// 		return game, err
+// 	}
+// 	return game, nil
+// }
 
 // Save the chess game state to the cache
 func (r ChessRepositoryImpl) SaveChessGameToCache(game *dao.ChessGame) error {

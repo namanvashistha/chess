@@ -80,7 +80,7 @@ func (ws *WebSocketServiceImpl) ProcessMove(gameId string, message dto.WebSocket
 	if err != nil || game.ID == 0 {
 		// Fallback to DB if cache miss
 		log.Info("Cache miss. Fetching from database.")
-		game, err = ws.chessRepository.GetChessGameFromDB(gameId)
+		game, err = ws.chessRepository.FindChessGameById(gameId)
 		if err != nil {
 			log.Error("Error fetching game state:", err)
 			status = "error"
@@ -102,18 +102,21 @@ func (ws *WebSocketServiceImpl) ProcessMove(gameId string, message dto.WebSocket
 		status = "error"
 	}
 
-	if err = engine.MakeMove(&game, move, user); err != nil {
+	if err = engine.ProcessMove(&game, move, user); err != nil {
 		status = "error"
 		log.Error("Error processing move:", err)
 	} else {
 		_ = ws.chessRepository.SaveChessGameToCache(&game)
 		_ = ws.chessRepository.SaveChessGameToDB(&game)
-		_ = ws.chessRepository.SaveChessStateToDB(&game.ChessState)
+		_ = ws.chessRepository.SaveGameStateToDB(&game.State)
+		// _ = ws.chessRepository.SaveChessStateToDB(&game.ChessState)
 	}
 
 	// Build response
-	game.ChessState.AllowedMoves = engine.GetAllowedMoves(game)
-	game.ChessState.BoardLayout = engine.GetBoardLayout()
+	// game.ChessState.AllowedMoves = engine.GetAllowedMoves(game)
+	game.BoardLayout = engine.GetBoardLayout()
+	game.CurrentState = engine.ConvertGameStateToMap(game.State)
+	game.LegalMoves = engine.ConvertLegalMovesToMap(engine.GenerateLegalMovesForAllPositions(game.State))
 	response := dto.WebSocketMessage{
 		Type:    "game_update",
 		Status:  status,

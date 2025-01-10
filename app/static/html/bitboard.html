@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,13 +36,35 @@
         .highlight {
             background-color: yellow !important;
         }
+
+        #binaryInput {
+            width: 500px;
+        }
+
+        .boards-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .board-container {
+            margin: 20px;
+        }
+
+        .board-title {
+            text-align: center;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
+
 <body>
-    <h1>Chess Bitboard Converter</h1>
     <div>
         <label for="decimalInput">Decimal:</label>
-        <input type="number" id="decimalInput" placeholder="Enter decimal value">
+        <input type="text" id="decimalInput" placeholder="Enter decimal value">
+        <br><br>
+        <label for="hexInput">Hexadecimal:</label>
+        <input type="text" id="hexInput" placeholder="Enter hexadecimal value">
         <br><br>
         <label for="binaryInput">Binary:</label>
         <input type="text" id="binaryInput" placeholder="Enter binary value">
@@ -49,8 +72,125 @@
     <br>
     <div class="board" id="board"></div>
 
+    <div>
+        <h3>Map Input</h3>
+        <textarea id="mapInput" rows="10" cols="50"
+            placeholder='Enter map as JSON, e.g., {"0x1": "0x302", "0x2": "0x705"}'></textarea>
+        <br><br>
+        <button id="generateBoards">Generate Boards</button>
+    </div>
+    <textarea id="mapView" rows="10" cols="50"
+            placeholder=''></textarea>
+
+    <div class="boards-container" id="boardsContainer"></div>
+
     <script>
-        function createBoard() {
+        let bitboard = 0n; // Bitboard representation (BigInt for 64 bits)
+        let mapBoards = {};
+        let counter = 1;
+
+        function createBoard(container, bitboard, title) {
+            const boardContainer = document.createElement('div');
+            boardContainer.className = 'board-container';
+
+            const boardTitle = document.createElement('div');
+            boardTitle.className = 'board-title';
+            boardTitle.textContent = title;
+            boardContainer.appendChild(boardTitle);
+
+            const board = document.createElement('div');
+            board.className = 'board';
+            board.dataset.id = counter++;
+
+            for (let rank = 7; rank >= 0; rank--) {
+                for (let file = 0; file < 8; file++) {
+                    const squareIndex = rank * 8 + file;
+                    const square = document.createElement('div');
+                    square.className = `square ${(rank + file) % 2 === 0 ? 'light' : 'dark'}`;
+                    square.dataset.index = squareIndex;
+
+                    // Highlight based on bitboard value
+                    if (bitboard & (1n << BigInt(squareIndex))) {
+                        square.classList.add('highlight');
+                    }
+
+                    square.textContent = `${String.fromCharCode(97 + file)}${rank + 1}`;
+                    square.addEventListener('click', () => toggleSquareOnBoard(square, board, boardTitle, bitboard));
+                    board.appendChild(square);
+                }
+            }
+            mapBoards[board.dataset.id] = bitboard;
+            boardContainer.appendChild(board);
+            container.appendChild(boardContainer);
+        }
+
+        function toggleSquareOnBoard(square, board, boardTitle, bitboard) {
+            const index = square.dataset.index;
+            // console.log(index);
+            const bitIndex = BigInt(index);
+            mapBoards[board.dataset.id] ^= (1n << bitIndex);
+            console.log(mapBoards);
+            // console.log(square, board, boardTitle, bitboard);;
+            updateMap();
+            highlightBoard(board, mapBoards[board.dataset.id]);
+        }
+
+        function updateMap() {
+            const mapView = document.getElementById('mapView');
+            if (counter%2 != 0) {
+                console.log("odd values");
+            }
+            mapViewValue = {};
+            for (i=1; (i+1) <= counter; i=i+2) {
+                console.log(mapBoards[i], mapBoards[i+1]);
+                mapViewValue[`0x${mapBoards[i].toString(16).toUpperCase()}`] = `0x${mapBoards[i+1].toString(16).toUpperCase()}`;
+            }
+            mapView.value = JSON.stringify(mapViewValue);
+        }
+
+
+        function highlightBoard(board, bitboard) {
+            squares = board.querySelectorAll('.square');
+            squares.forEach(square => square.classList.remove('highlight'));
+            for (square of squares) {
+                if (bitboard & (1n << BigInt(square.dataset.index))) {
+                    square.classList.add('highlight');
+                }
+            }
+        }
+
+        function preprocessGoMap(input) {
+            input = input.replace(/\/\/.*$/gm, "");
+            input = input.replace(/(\b0x[0-9A-Fa-f]+\b):/g, '"$1":');
+            input = input.replace(/(?<=:\s*)(0x[0-9A-Fa-f]+)/g, '"$1"');
+            input = input.replace(/,\s*}/g, "}");
+            return input.trim();
+        }
+
+        function generateBoardsFromMap() {
+            const mapInput = document.getElementById('mapInput').value;
+            const boardsContainer = document.getElementById('boardsContainer');
+            boardsContainer.innerHTML = ''; // Clear existing boards
+
+            let map = {};
+            try {
+                map = JSON.parse(mapInput);
+            } catch (error) {
+                console.log(preprocessGoMap(mapInput));
+                map = JSON.parse(preprocessGoMap(mapInput));
+            }
+
+            for (const [key, value] of Object.entries(map)) {
+                const keyBoardBitboard = BigInt(key);
+                const valueBoardBitboard = BigInt(value);
+                createBoard(boardsContainer, keyBoardBitboard, `Key Board (${key})`);
+                createBoard(boardsContainer, valueBoardBitboard, `Value Board (${value})`);
+            }
+        }
+
+        document.getElementById('generateBoards').addEventListener('click', generateBoardsFromMap);
+
+        function createMainBoard() {
             const board = document.getElementById('board');
             board.innerHTML = '';
             for (let rank = 7; rank >= 0; rank--) {
@@ -60,12 +200,20 @@
                     square.className = `square ${(rank + file) % 2 === 0 ? 'light' : 'dark'}`;
                     square.dataset.index = squareIndex;
                     square.textContent = `${String.fromCharCode(97 + file)}${rank + 1}`;
+                    square.addEventListener('click', () => toggleSquare(squareIndex));
                     board.appendChild(square);
                 }
             }
         }
 
-        function highlightSquares(bitboard) {
+        function toggleSquare(index) {
+            // Toggle the bit at the specified index
+            bitboard ^= 1n << BigInt(index);
+            updateInputsFromBitboard();
+            updateTitle(document.querySelector('.board-title'), bitboard);
+        }
+
+        function highlightSquares() {
             const squares = document.querySelectorAll('.square');
             squares.forEach(square => square.classList.remove('highlight'));
             for (let i = 0; i < 64; i++) {
@@ -78,26 +226,41 @@
             }
         }
 
-        function updateInputs() {
+        function updateInputsFromBitboard() {
             const decimalInput = document.getElementById('decimalInput');
+            const hexInput = document.getElementById('hexInput');
             const binaryInput = document.getElementById('binaryInput');
-            const decimalValue = BigInt(decimalInput.value || 0);
-            binaryInput.value = decimalValue.toString(2).padStart(64, '0');
-            highlightSquares(decimalValue);
+            decimalInput.value = bitboard.toString();
+            hexInput.value = `0x${bitboard.toString(16).toUpperCase()}`;
+            binaryInput.value = bitboard.toString(2).padStart(64, '0');
+            highlightSquares();
         }
 
-        function updateBoard() {
+        function updateBitboardFromDecimal() {
             const decimalInput = document.getElementById('decimalInput');
-            const binaryInput = document.getElementById('binaryInput');
-            const binaryValue = BigInt(`0b${binaryInput.value || '0'}`);
-            decimalInput.value = binaryValue.toString();
-            highlightSquares(binaryValue);
+            bitboard = BigInt(decimalInput.value || 0);
+            updateInputsFromBitboard();
         }
 
-        document.getElementById('decimalInput').addEventListener('input', updateInputs);
-        document.getElementById('binaryInput').addEventListener('input', updateBoard);
+        function updateBitboardFromHex() {
+            const hexInput = document.getElementById('hexInput');
+            bitboard = BigInt(hexInput.value || '0');
+            updateInputsFromBitboard();
+        }
 
-        createBoard();
+        function updateBitboardFromBinary() {
+            const binaryInput = document.getElementById('binaryInput');
+            bitboard = BigInt(`0b${binaryInput.value || '0'}`);
+            updateInputsFromBitboard();
+        }
+
+        document.getElementById('decimalInput').addEventListener('input', updateBitboardFromDecimal);
+        document.getElementById('hexInput').addEventListener('input', updateBitboardFromHex);
+        document.getElementById('binaryInput').addEventListener('input', updateBitboardFromBinary);
+
+        createMainBoard();
+        updateInputsFromBitboard();
     </script>
 </body>
+
 </html>

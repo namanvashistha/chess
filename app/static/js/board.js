@@ -49,26 +49,18 @@ function fetchChessState() {
         .then(response => response.json())
         .then(data => {
             chessState = data.data.chess_state;
-            renderChessBoard(
-                data.data,
-                chessState.board,
-                chessState.board_layout,
-                chessState.allowed_moves,
-                data.data.white_user,
-                data.data.black_user,
-                chessState.turn
-            );
+            renderChessBoard(data.data);
         })
         .catch(err => console.error('Error fetching chess state:', err));
 }
 
 // Render the chessboard
-function renderChessBoard(gameData, board, boardLayout, legalMovesData, whiteUser, blackUser, turn) {
+function renderChessBoard(gameData) {
     legalMoves = gameData.legal_moves; // Store the allowed moves
     userData = JSON.parse(localStorage.getItem("userData"));
-    if (userData.id === whiteUser.id) {
+    if (userData.id === gameData.white_user.id) {
         localStorage.setItem("boardPov", "white");
-    } else if (userData.id === blackUser.id) {
+    } else if (userData.id === gameData.black_user.id) {
         localStorage.setItem("boardPov", "black");
     }
 
@@ -76,22 +68,27 @@ function renderChessBoard(gameData, board, boardLayout, legalMovesData, whiteUse
 
         chessBoard.innerHTML = ''; // Clear the chessboard
 
-        if (localStorage.getItem("boardPov") === "black") {
-            boardLayout = boardLayout.map(row => row.reverse()).reverse();
-        } else if (localStorage.getItem("boardPov") === "white" && boardLayout[0][0] === "h1") {
-            boardLayout = boardLayout.map(row => row.reverse()).reverse();
+        if (localStorage.getItem("boardPov") === "b") {
+            gameData.board_layout = gameData.board_layout.map(row => row.reverse()).reverse();
+        } else if (localStorage.getItem("boardPov") === "w" && gameData.board_layout[0][0] === "h1") {
+            gameData.board_layout = gameData.board_layout.map(row => row.reverse()).reverse();
         }
         currentState = gameData.current_state;
-        boardLayout.forEach((row, _) => {
+        gameData.board_layout.forEach((row, _) => {
             row.forEach((squareInfo, _) => {
                 const [squareKey, color] = squareInfo;
 
                 const square = document.createElement('div');
                 square.className = `square ${color === 'w' ? 'light' : 'dark'}`;
-                square.textContent = squareKey;
+                // square.textContent = squareKey;
                 square.dataset.key = squareKey;
                 square.dataset.file = squareKey[0];
                 square.dataset.rank = squareKey[1];
+
+                const label = document.createElement('span');
+                label.textContent = squareKey;
+                label.className = 'square-label';
+                square.appendChild(label);
 
                 const pieceCode = currentState[squareKey];
                 if (pieceCode) {
@@ -125,7 +122,7 @@ function renderChessBoard(gameData, board, boardLayout, legalMovesData, whiteUse
         if (localStorage.getItem("boardPov") === "black") {
             boardLayout = boardLayout.map(row => row.reverse()).reverse();
         }
-        else if (localStorage.getItem("boardPov") === "white" && boardLayout[0][0] == "h1") {
+        else if (localStorage.getItem("boardPov") === "w" && boardLayout[0][0] == "h1") {
             boardLayout = boardLayout.map(row => row.reverse()).reverse();
         }
 
@@ -171,7 +168,7 @@ function renderChessBoard(gameData, board, boardLayout, legalMovesData, whiteUse
     //     if (localStorage.getItem("boardPov") === "black") {
     //         boardLayout = boardLayout.map(row => row.reverse()).reverse();
     //     }
-    //     else if (localStorage.getItem("boardPov") === "white" && boardLayout[0][0] == "h1") {
+    //     else if (localStorage.getItem("boardPov") === "w" && boardLayout[0][0] == "h1") {
     //         boardLayout = boardLayout.map(row => row.reverse()).reverse();
     //     }
 
@@ -218,33 +215,33 @@ function renderChessBoard(gameData, board, boardLayout, legalMovesData, whiteUse
         const bottomBar = document.getElementById("player-bar-bottom");
         if ((localStorage.getItem("boardPov") || "white") === "white") {
             // White is at the bottom
-            topBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(blackUser.name));
-            topBar.querySelector(".player-name").textContent = formatUserName(blackUser.name);
-            topBar.querySelector(".turn-indicator").textContent = turn === "black" ? "Move" : "";
-            topBar.querySelector(".turn-indicator").style.color = turn === "black" ? "green" : "gray";
-            topBar.querySelector(".player-timer").textContent = turn === "black" ? "🟢" : "⏳";
+            topBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(gameData.black_user.name));
+            topBar.querySelector(".player-name").textContent = formatUserName(gameData.black_user.name);
+            topBar.querySelector(".turn-indicator").textContent = gameData.state.turn === "b" ? "Move" : "";
+            topBar.querySelector(".turn-indicator").style.color = gameData.state.turn === "b" ? "green" : "gray";
+            topBar.querySelector(".player-timer").textContent = gameData.state.turn === "b" ? "🟢" : "⏳";
 
 
-            bottomBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(whiteUser.name));
-            bottomBar.querySelector(".player-name").textContent = formatUserName(whiteUser.name);
-            bottomBar.querySelector(".turn-indicator").textContent = turn === "white" ? "Move" : "";
-            bottomBar.querySelector(".turn-indicator").style.color = turn === "white" ? "green" : "gray";
-            bottomBar.querySelector(".player-timer").textContent = turn === "white" ? "🟢" : "⏳";
+            bottomBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(gameData.white_user.name));
+            bottomBar.querySelector(".player-name").textContent = formatUserName(gameData.white_user.name);
+            bottomBar.querySelector(".turn-indicator").textContent = gameData.state.turn === "w" ? "Move" : "";
+            bottomBar.querySelector(".turn-indicator").style.color = gameData.state.turn === "w" ? "green" : "gray";
+            bottomBar.querySelector(".player-timer").textContent = gameData.state.turn === "w" ? "🟢" : "⏳";
 
         } else {
             // Black is at the bottom
-            topBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(whiteUser.name));
-            topBar.querySelector(".player-name").textContent = formatUserName(whiteUser.name);
-            topBar.querySelector(".turn-indicator").textContent = turn === "white" ? "Move" : "";
-            topBar.querySelector(".turn-indicator").style.color = turn === "white" ? "green" : "gray";
-            topBar.querySelector(".player-timer").textContent = turn === "white" ? "🟢" : "⏳";
+            topBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(gameData.white_user.name));
+            topBar.querySelector(".player-name").textContent = formatUserName(gameData.white_user.name);
+            topBar.querySelector(".turn-indicator").textContent = gameData.state.turn === "w" ? "Move" : "";
+            topBar.querySelector(".turn-indicator").style.color = gameData.state.turn === "w" ? "green" : "gray";
+            topBar.querySelector(".player-timer").textContent = gameData.state.turn === "w" ? "🟢" : "⏳";
 
 
-            bottomBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(blackUser.name));
-            bottomBar.querySelector(".player-name").textContent = formatUserName(blackUser.name);
-            bottomBar.querySelector(".turn-indicator").textContent = turn === "black" ? "Move" : "";
-            bottomBar.querySelector(".turn-indicator").style.color = turn === "black" ? "green" : "gray";
-            bottomBar.querySelector(".player-timer").textContent = turn === "black" ? "🟢" : "⏳";
+            bottomBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(gameData.black_user.name));
+            bottomBar.querySelector(".player-name").textContent = formatUserName(gameData.black_user.name);
+            bottomBar.querySelector(".turn-indicator").textContent = gameData.state.turn === "b" ? "Move" : "";
+            bottomBar.querySelector(".turn-indicator").style.color = gameData.state.turn === "b" ? "green" : "gray";
+            bottomBar.querySelector(".player-timer").textContent = gameData.state.turn === "b" ? "🟢" : "⏳";
         }
     };
 
@@ -254,7 +251,7 @@ function renderChessBoard(gameData, board, boardLayout, legalMovesData, whiteUse
 
     document.getElementById("flip-board").addEventListener("click", () => {
         boardPov = localStorage.getItem("boardPov") === "white";
-        localStorage.setItem("boardPov", boardPov ? "black" : "white");
+        localStorage.setItem("boardPov", boardPov ? "b" : "white");
         renderBitBoard();
         renderPlayerBars();
     });

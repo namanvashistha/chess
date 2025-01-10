@@ -3,7 +3,6 @@ package engine
 import (
 	"chess-engine/app/domain/dao"
 	"chess-engine/app/domain/dto"
-	"encoding/json"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -12,10 +11,10 @@ import (
 // MakeMove handles the movement of pieces on the chessboard and validates the move.
 func MakeMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
 	var board map[string]string
-	if err := json.Unmarshal(game.ChessState.Board, &board); err != nil {
-		log.Errorf("Failed to unmarshal board: %v", err)
-		return fmt.Errorf("failed to unmarshal board: %w", err)
-	}
+	// if err := json.Unmarshal(game., &board); err != nil {
+	// 	log.Errorf("Failed to unmarshal board: %v", err)
+	// 	return fmt.Errorf("failed to unmarshal board: %w", err)
+	// }
 	sourcePiece := move.Piece
 	// destinationPiece := board[move.DestinationSquare]
 
@@ -38,18 +37,18 @@ func MakeMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
 		return fmt.Errorf("invalid move: user %d is not in the game", user.ID)
 	}
 
-	if game.ChessState.Turn == "white" && user.ID != game.WhiteUser.ID {
+	if game.State.Turn == "white" && user.ID != game.WhiteUser.ID {
 		log.Errorf("Invalid move: user %d is not white player", user.ID)
 		return fmt.Errorf("invalid move: user %d is not white player", user.ID)
 	}
 
-	if game.ChessState.Turn == "black" && user.ID != game.BlackUser.ID {
+	if game.State.Turn == "black" && user.ID != game.BlackUser.ID {
 		log.Errorf("Invalid move: user %d is not black player", user.ID)
 		return fmt.Errorf("invalid move: user %d is not black player", user.ID)
 	}
 
 	// Check if it's the correct player's turn
-	currentTurn := game.ChessState.Turn
+	currentTurn := game.State.Turn
 	pieceColor := string(sourcePiece[0:1]) // Assume the first character indicates color (e.g., 'w' or 'b')
 	if (currentTurn == "white" && pieceColor != "w") || (currentTurn == "black" && pieceColor != "b") {
 		log.Errorf("Invalid move: it's %s's turn", currentTurn)
@@ -84,13 +83,13 @@ func MakeMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
 	// game.ChessState.CurrentTurn = switchTurn(currentTurn)
 	log.Info(move.Source, move.Destination)
 	// log.Info(board)
-	updatedBoard, err := json.Marshal(board)
-	if err != nil {
-		log.Errorf("failed to marshal board: %v", err)
-		return fmt.Errorf("failed to marshal board: %w", err)
-	}
-	game.ChessState.Board = json.RawMessage(updatedBoard)
-	game.ChessState.Turn = switchTurn(currentTurn)
+	// updatedBoard, err := json.Marshal(board)
+	// if err != nil {
+	// 	log.Errorf("failed to marshal board: %v", err)
+	// 	return fmt.Errorf("failed to marshal board: %w", err)
+	// }
+	// game.ChessState.Board = json.RawMessage(updatedBoard)
+	game.State.Turn = switchTurn(currentTurn)
 	log.Infof("Move successful: %s moved to %s", sourcePiece, move.Destination)
 	return nil
 }

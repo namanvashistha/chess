@@ -1,5 +1,13 @@
 package engine
 
+import (
+	"chess-engine/app/domain/dao"
+	"chess-engine/app/domain/dto"
+	"fmt"
+
+	log "github.com/sirupsen/logrus"
+)
+
 // import (
 // 	"chess-engine/app/domain/dao"
 // 	"math/bits"
@@ -122,3 +130,100 @@ package engine
 // 	captures := ((pawns<<7) & ^HFile | (pawns<<9) & ^AFile) & occupancy
 // 	return push | captures | enPassant
 // }
+
+func ProcessMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
+
+	if user.ID != game.WhiteUser.ID && user.ID != game.BlackUser.ID {
+		log.Errorf("Invalid move: user %d is not in the game", user.ID)
+		return fmt.Errorf("invalid move: user %d is not in the game", user.ID)
+	}
+	if game.State.Turn == "w" {
+		if user.ID != game.WhiteUser.ID {
+			log.Errorf("Invalid move: user %d is not white", user.ID)
+			return fmt.Errorf("invalid move: user %d is not white", user.ID)
+		} else if !(int(move.Piece[0]) >= 65 && int(move.Piece[0]) <= 90) { // Check for uppercase letters A-Z
+			log.Errorf("Invalid move: user %d is not white", user.ID)
+			return fmt.Errorf("invalid move: user %d is not white", user.ID)
+		}
+	}
+
+	if game.State.Turn == "b" {
+		if user.ID != game.BlackUser.ID {
+			log.Errorf("Invalid move: user %d is not black", user.ID)
+			return fmt.Errorf("invalid move: user %d is not black", user.ID)
+		} else if !(int(move.Piece[0]) >= 97 && int(move.Piece[0]) <= 122) { // Check for lowercase letters a-z
+			log.Errorf("Invalid move: user %d is not black", user.ID)
+			return fmt.Errorf("invalid move: user %d is not black", user.ID)
+		}
+	}
+
+	sourceIdx := PositionToIndex(move.Source)
+	destinationIdx := PositionToIndex(move.Destination)
+
+	switch move.Piece {
+	case "B": // Bishop
+		// Update the bitboard for the bishop (clear source, set destination)
+		game.State.BishopBitboard = UpdateBitboard(game.State.BishopBitboard, sourceIdx, destinationIdx)
+		game.State.WhiteBitboard = UpdateBitboard(game.State.WhiteBitboard, sourceIdx, destinationIdx)
+	case "N": // Knight
+		game.State.KnightBitboard = UpdateBitboard(game.State.KnightBitboard, sourceIdx, destinationIdx)
+		game.State.WhiteBitboard = UpdateBitboard(game.State.WhiteBitboard, sourceIdx, destinationIdx)
+	case "R": // Rook
+		game.State.RookBitboard = UpdateBitboard(game.State.RookBitboard, sourceIdx, destinationIdx)
+		game.State.WhiteBitboard = UpdateBitboard(game.State.WhiteBitboard, sourceIdx, destinationIdx)
+	case "Q": // Queen
+		game.State.QueenBitboard = UpdateBitboard(game.State.QueenBitboard, sourceIdx, destinationIdx)
+		game.State.WhiteBitboard = UpdateBitboard(game.State.WhiteBitboard, sourceIdx, destinationIdx)
+	case "K": // King
+		game.State.KingBitboard = UpdateBitboard(game.State.KingBitboard, sourceIdx, destinationIdx)
+		game.State.WhiteBitboard = UpdateBitboard(game.State.WhiteBitboard, sourceIdx, destinationIdx)
+	case "P": // Pawn
+		game.State.PawnBitboard = UpdateBitboard(game.State.PawnBitboard, sourceIdx, destinationIdx)
+		game.State.WhiteBitboard = UpdateBitboard(game.State.WhiteBitboard, sourceIdx, destinationIdx)
+	case "b": // Bishop
+		game.State.BishopBitboard = UpdateBitboard(game.State.BishopBitboard, sourceIdx, destinationIdx)
+		game.State.BlackBitboard = UpdateBitboard(game.State.BlackBitboard, sourceIdx, destinationIdx)
+	case "n": // Knight
+		game.State.KnightBitboard = UpdateBitboard(game.State.KnightBitboard, sourceIdx, destinationIdx)
+		game.State.BlackBitboard = UpdateBitboard(game.State.BlackBitboard, sourceIdx, destinationIdx)
+	case "r": // Rook
+		game.State.RookBitboard = UpdateBitboard(game.State.RookBitboard, sourceIdx, destinationIdx)
+		game.State.BlackBitboard = UpdateBitboard(game.State.BlackBitboard, sourceIdx, destinationIdx)
+	case "q": // Queen
+		game.State.QueenBitboard = UpdateBitboard(game.State.QueenBitboard, sourceIdx, destinationIdx)
+		game.State.BlackBitboard = UpdateBitboard(game.State.BlackBitboard, sourceIdx, destinationIdx)
+	case "k": // King
+		game.State.KingBitboard = UpdateBitboard(game.State.KingBitboard, sourceIdx, destinationIdx)
+		game.State.BlackBitboard = UpdateBitboard(game.State.BlackBitboard, sourceIdx, destinationIdx)
+	case "p": // Pawn
+		game.State.PawnBitboard = UpdateBitboard(game.State.PawnBitboard, sourceIdx, destinationIdx)
+		game.State.BlackBitboard = UpdateBitboard(game.State.BlackBitboard, sourceIdx, destinationIdx)
+	}
+
+	// Check castling rights or other special conditions (e.g., en passant, promotion)
+
+	// Alternate turns (switch between white and black)
+	game.State.Turn = ToggleTurn(game.State.Turn)
+
+	// Update the last move
+	game.State.LastMove = move.Piece + move.Source + move.Destination
+
+	// Other updates (e.g., en passant, promotion) can be added here
+
+	return nil
+}
+
+func UpdateBitboard(bitboard uint64, sourceIdx, destIdx int) uint64 {
+	// Clear the source square bit
+	bitboard &= ^(1 << sourceIdx)
+	// Set the destination square bit
+	bitboard |= (1 << destIdx)
+	return bitboard
+}
+
+func ToggleTurn(currentTurn string) string {
+	if currentTurn == "w" {
+		return "b"
+	}
+	return "w"
+}

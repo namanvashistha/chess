@@ -2,7 +2,6 @@ package engine
 
 import (
 	"chess-engine/app/domain/dao"
-	"encoding/json"
 	"fmt"
 )
 
@@ -11,11 +10,11 @@ func GetAllowedMoves(game dao.ChessGame) map[string][]string {
 
 	var board map[string]string
 
-	err := json.Unmarshal([]byte(game.ChessState.Board), &board)
-	if err != nil {
-		fmt.Println("Error unmarshaling board:", err)
-		return allowedMoves
-	}
+	// err := json.Unmarshal([]byte(game.ChessState.Board), &board)
+	// if err != nil {
+	// 	fmt.Println("Error unmarshaling board:", err)
+	// 	return allowedMoves
+	// }
 	for square, pieceCode := range board {
 		// squareColor := data[0]
 		// pieceCode := data[1]

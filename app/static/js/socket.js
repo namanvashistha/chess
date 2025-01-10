@@ -62,14 +62,7 @@ function updateChessBoard(message) {
     const chessState = message.payload.chess_state;
 
     // Assuming `renderChessBoard` is defined elsewhere in your code
-    renderChessBoard(
-        chessState.board,
-        chessState.board_layout,
-        chessState.allowed_moves,
-        message.payload.white_user,
-        message.payload.black_user,
-        chessState.turn
-    );
+    renderChessBoard(message.payload);
     if (message.status === "success") {
         moveSound.play().catch((err) => {
             console.error("Error playing move sound:", err);
