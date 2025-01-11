@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(res => res.json())
         .then(data => {
             if (data.response_key === "SUCCESS") {
-                window.location.href = `/game/${data.data}`;
+                // window.location.href = `/game/${data.data}`;
                 window.location.href = '';
             }
         })

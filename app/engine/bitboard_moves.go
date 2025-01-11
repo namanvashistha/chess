@@ -36,6 +36,11 @@ func ProcessMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
 	sourceIdx := PositionToIndex(move.Source)
 	destinationIdx := PositionToIndex(move.Destination)
 
+	if !IsValidMove(*game, (1 << sourceIdx), (1 << destinationIdx)) {
+		log.Errorf("Invalid move: move is not valid")
+		return fmt.Errorf("invalid move: move is not valid")
+	}
+
 	pieceBitboards := map[string]struct {
 		pieceBitboard *uint64
 		colorBitboard *uint64
@@ -55,40 +60,39 @@ func ProcessMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
 	}
 
 	if move.Piece == "K" || move.Piece == "k" {
-		// White kingside castling
+
 		if move.Source == "e1" && move.Destination == "g1" && strings.Contains(game.State.CastlingRights, "K") {
-			// Move rook from h1 to f1
+
 			*pieceBitboards["R"].colorBitboard &= ^(1 << PositionToIndex("h1"))
 			*pieceBitboards["R"].pieceBitboard &= ^(1 << PositionToIndex("h1"))
 			*pieceBitboards["R"].colorBitboard |= (1 << PositionToIndex("f1"))
 			*pieceBitboards["R"].pieceBitboard |= (1 << PositionToIndex("f1"))
 		}
-		// White queenside castling
+
 		if move.Source == "e1" && move.Destination == "c1" && strings.Contains(game.State.CastlingRights, "Q") {
-			// Move rook from a1 to d1
+
 			*pieceBitboards["R"].colorBitboard &= ^(1 << PositionToIndex("a1"))
 			*pieceBitboards["R"].pieceBitboard &= ^(1 << PositionToIndex("a1"))
 			*pieceBitboards["R"].colorBitboard |= (1 << PositionToIndex("d1"))
 			*pieceBitboards["R"].pieceBitboard |= (1 << PositionToIndex("d1"))
 		}
-		// Black kingside castling
+
 		if move.Source == "e8" && move.Destination == "g8" && strings.Contains(game.State.CastlingRights, "k") {
-			// Move rook from h8 to f8
+
 			*pieceBitboards["r"].colorBitboard &= ^(1 << PositionToIndex("h8"))
 			*pieceBitboards["r"].pieceBitboard &= ^(1 << PositionToIndex("h8"))
 			*pieceBitboards["r"].colorBitboard |= (1 << PositionToIndex("f8"))
 			*pieceBitboards["r"].pieceBitboard |= (1 << PositionToIndex("f8"))
 		}
-		// Black queenside castling
+
 		if move.Source == "e8" && move.Destination == "c8" && strings.Contains(game.State.CastlingRights, "q") {
-			// Move rook from a8 to d8
+
 			*pieceBitboards["r"].colorBitboard &= ^(1 << PositionToIndex("a8"))
 			*pieceBitboards["r"].pieceBitboard &= ^(1 << PositionToIndex("a8"))
 			*pieceBitboards["r"].colorBitboard |= (1 << PositionToIndex("d8"))
 			*pieceBitboards["r"].pieceBitboard |= (1 << PositionToIndex("d8"))
 		}
 
-		// Remove all castling rights for this player
 		if game.State.Turn == "w" {
 			game.State.CastlingRights = strings.ReplaceAll(game.State.CastlingRights, "K", "")
 			game.State.CastlingRights = strings.ReplaceAll(game.State.CastlingRights, "Q", "")
@@ -98,7 +102,6 @@ func ProcessMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
 		}
 	}
 
-	// Remove castling rights when a rook moves
 	if move.Piece == "R" {
 		if move.Source == "a1" {
 			game.State.CastlingRights = strings.ReplaceAll(game.State.CastlingRights, "Q", "")
@@ -111,6 +114,31 @@ func ProcessMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
 		} else if move.Source == "h8" {
 			game.State.CastlingRights = strings.ReplaceAll(game.State.CastlingRights, "k", "")
 		}
+	}
+
+	if move.Piece == "P" || move.Piece == "p" { // Handle en passant capture
+		if (game.State.EnPassant > 0) && (1<<destinationIdx&game.State.EnPassant != 0) {
+			captureSquareIdx := PositionToIndex(string(move.Destination[0]) + string(move.Source[1])) // Captured pawn's square
+
+			if move.Piece == "P" { // White pawn captures black pawn
+				*pieceBitboards["p"].colorBitboard &= ^(1 << captureSquareIdx)
+				*pieceBitboards["p"].pieceBitboard &= ^(1 << captureSquareIdx)
+			} else if move.Piece == "p" { // Black pawn captures white pawn
+				*pieceBitboards["P"].colorBitboard &= ^(1 << captureSquareIdx)
+				*pieceBitboards["P"].pieceBitboard &= ^(1 << captureSquareIdx)
+			}
+		}
+
+		// Set en passant square for potential future capture
+		if move.Source[1] == '2' && move.Destination[1] == '4' { // White two-square move
+			game.State.EnPassant = 1 << PositionToIndex(string(move.Destination[0])+"3")
+		} else if move.Source[1] == '7' && move.Destination[1] == '5' { // Black two-square move
+			game.State.EnPassant = 1 << PositionToIndex(string(move.Destination[0])+"6")
+		} else {
+			game.State.EnPassant = 0 // Clear en passant
+		}
+	} else {
+		game.State.EnPassant = 0 // Clear en passant for non-pawn moves
 	}
 
 	if game.State.WhiteBitboard&(1<<destinationIdx) != 0 {
@@ -175,6 +203,22 @@ func ProcessMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
 	*pieceBitboards[move.Piece].pieceBitboard |= (1 << destinationIdx)
 	*pieceBitboards[move.Piece].colorBitboard |= (1 << destinationIdx)
 
+	// Pawn promotion
+	if (move.Piece == "P" && move.Destination[1] == '8') || (move.Piece == "p" && move.Destination[1] == '1') {
+		// Remove pawn from bitboards
+		*pieceBitboards[move.Piece].colorBitboard &= ^(1 << destinationIdx)
+		*pieceBitboards[move.Piece].pieceBitboard &= ^(1 << destinationIdx)
+
+		// Add queen to bitboards
+		if move.Piece == "P" { // Promote white pawn to queen
+			*pieceBitboards["Q"].colorBitboard |= (1 << destinationIdx)
+			*pieceBitboards["Q"].pieceBitboard |= (1 << destinationIdx)
+		} else if move.Piece == "p" { // Promote black pawn to queen
+			*pieceBitboards["q"].colorBitboard |= (1 << destinationIdx)
+			*pieceBitboards["q"].pieceBitboard |= (1 << destinationIdx)
+		}
+	}
+
 	game.State.LastMove = move.Piece + move.Source + move.Destination
 
 	game.State.Turn = ToggleTurn(game.State.Turn)
@@ -182,12 +226,9 @@ func ProcessMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
 	return nil
 }
 
-func UpdateBitboard(bitboard uint64, sourceIdx, destIdx int) uint64 {
-
-	bitboard &= ^(1 << sourceIdx)
-
-	bitboard |= (1 << destIdx)
-	return bitboard
+func IsValidMove(game dao.ChessGame, piece uint64, destination uint64) bool {
+	legalMoves := GenerateLegalMovesForAllPositions(game.State)
+	return legalMoves[piece]&destination != 0
 }
 
 func ToggleTurn(currentTurn string) string {

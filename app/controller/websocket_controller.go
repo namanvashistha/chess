@@ -21,7 +21,6 @@ type WebSocketControllerImpl struct {
 // HandleWebSocket upgrades HTTP connection to WebSocket and manages communication.
 func (wsCtrl WebSocketControllerImpl) HandleWebSocket(c *gin.Context) {
 	gameID := c.Param("gameId")
-	log.Info("game_id: ", gameID)
 	if gameID == "" {
 		c.JSON(400, gin.H{"error": "game_id is required"})
 		// return
@@ -54,8 +53,6 @@ func (wsCtrl WebSocketControllerImpl) HandleWebSocket(c *gin.Context) {
 			log.Info("Closing WebSocket connection Error...")
 			break
 		}
-
-		log.Infof("Received message: %+v", message)
 
 		// Process the received message
 		wsCtrl.svc.ProcessMove(gameID, message)

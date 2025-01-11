@@ -13,9 +13,8 @@ function createWebSocket() {
 
     socket.onmessage = (event) => {
         const message = JSON.parse(event.data);
-        console.log("Move received:", message);
         if (message.status === "error") {
-            console.log("Error:", message.status);
+            console.log("Error:", message.message);
         }
         updateChessBoard(message);
     };
@@ -46,7 +45,6 @@ function sendMove(piece, source, destination) {
             token: localStorage.getItem('userToken'),
         }
     };
-    console.log("Sending move:", data);
 
     if (socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify(data));
@@ -58,7 +56,6 @@ function sendMove(piece, source, destination) {
 // Function to update the chessboard based on the received message
 function updateChessBoard(message) {
     // Update the UI based on the move received
-    console.log("Updating board for move:", message);
     const chessState = message.payload.chess_state;
 
     // Assuming `renderChessBoard` is defined elsewhere in your code

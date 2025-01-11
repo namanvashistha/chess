@@ -59,9 +59,9 @@ function renderChessBoard(gameData) {
     legalMoves = gameData.legal_moves; // Store the allowed moves
     userData = JSON.parse(localStorage.getItem("userData"));
     if (userData.id === gameData.white_user.id) {
-        localStorage.setItem("boardPov", "white");
+        localStorage.setItem("boardPov", "w");
     } else if (userData.id === gameData.black_user.id) {
-        localStorage.setItem("boardPov", "black");
+        localStorage.setItem("boardPov", "b");
     }
 
     const renderBitBoard = () => {
@@ -116,110 +116,20 @@ function renderChessBoard(gameData) {
         });
     }
 
-    const renderBoard = () => {
-        
-        chessBoard.innerHTML = ''; // Clear the chessboard
-        if (localStorage.getItem("boardPov") === "black") {
-            boardLayout = boardLayout.map(row => row.reverse()).reverse();
-        }
-        else if (localStorage.getItem("boardPov") === "w" && boardLayout[0][0] == "h1") {
-            boardLayout = boardLayout.map(row => row.reverse()).reverse();
-        }
-
-        boardLayout.forEach((row, i) => {
-            row.forEach((squareInfo, j) => {
-                const [squareKey, color] = squareInfo;
-                const pieceCode = board[squareKey];
-
-                const square = document.createElement('div');
-                square.className = `square ${color === 'w' ? 'light' : 'dark'}`;
-                square.dataset.key = squareKey;
-                square.dataset.file = squareKey[0];
-                square.dataset.rank = squareKey[1];
-
-                if (pieceCode !== "---") {
-                    const piece = document.createElement('span');
-                    piece.className = 'piece';
-                    piece.dataset.code = pieceCode;
-                    const img = document.createElement('img');
-                    img.src = pieceMap[pieceCode.slice(0, -1)];
-                    img.alt = pieceCode;
-                    img.className = 'piece-image';
-                    img.draggable = true;
-                    img.dataset.code = pieceCode;
-
-                    img.addEventListener('dragstart', handleDragStart);
-                    piece.addEventListener('click', () => handlePieceClick(piece, square));
-
-                    piece.appendChild(img);
-                    square.appendChild(piece);
-                }
-
-                square.addEventListener('dragover', handleDragOver);
-                square.addEventListener('drop', handleDrop);
-                chessBoard.appendChild(square);
-            });
-        });
-    };
-
-    // const renderBitBoard = () => {
-
-    //     chessBoard.innerHTML = '';
-    //     if (localStorage.getItem("boardPov") === "black") {
-    //         boardLayout = boardLayout.map(row => row.reverse()).reverse();
-    //     }
-    //     else if (localStorage.getItem("boardPov") === "w" && boardLayout[0][0] == "h1") {
-    //         boardLayout = boardLayout.map(row => row.reverse()).reverse();
-    //     }
-
-    //     boardLayout.forEach((row, i) => {
-    //         row.forEach((squareKey, j) => {
-    //             const squareData = board[squareKey];
-    //             const [color, pieceCode] = squareData;
-
-    //             const square = document.createElement('div');
-    //             square.className = `square ${color === 'w' ? 'light' : 'dark'}`;
-    //             square.dataset.key = squareKey;
-    //             square.dataset.file = squareKey[0];
-    //             square.dataset.rank = squareKey[1];
-
-    //             if (pieceCode !== "---") {
-    //                 const piece = document.createElement('span');
-    //                 piece.className = 'piece';
-    //                 piece.dataset.code = pieceCode;
-    //                 const img = document.createElement('img');
-    //                 img.src = pieceMap[pieceCode.slice(0, -1)];
-    //                 img.alt = pieceCode;
-    //                 img.className = 'piece-image';
-    //                 img.draggable = true;
-    //                 img.dataset.code = pieceCode;
-
-    //                 img.addEventListener('dragstart', handleDragStart);
-    //                 piece.addEventListener('click', () => handlePieceClick(piece, square));
-
-    //                 piece.appendChild(img);
-    //                 square.appendChild(piece);
-    //             }
-
-    //             square.addEventListener('dragover', handleDragOver);
-    //             square.addEventListener('drop', handleDrop);
-    //             chessBoard.appendChild(square);
-    //         });
-    //     });
-    // };
-
     const getAvatarUrl = (name) => `https://avatar.iran.liara.run/username?username=${encodeURIComponent(name)}`;
 
     const renderPlayerBars = () => {
         const topBar = document.getElementById("player-bar-top");
         const bottomBar = document.getElementById("player-bar-bottom");
-        if ((localStorage.getItem("boardPov") || "white") === "white") {
+        if ((localStorage.getItem("boardPov") || "w") === "w") {
             // White is at the bottom
             topBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(gameData.black_user.name));
             topBar.querySelector(".player-name").textContent = formatUserName(gameData.black_user.name);
             topBar.querySelector(".turn-indicator").textContent = gameData.state.turn === "b" ? "Move" : "";
             topBar.querySelector(".turn-indicator").style.color = gameData.state.turn === "b" ? "green" : "gray";
             topBar.querySelector(".player-timer").textContent = gameData.state.turn === "b" ? "🟢" : "⏳";
+            topBar.style.backgroundColor = "#606c76";
+            topBar.style.color = "#f9f9f9";
 
 
             bottomBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(gameData.white_user.name));
@@ -227,6 +137,8 @@ function renderChessBoard(gameData) {
             bottomBar.querySelector(".turn-indicator").textContent = gameData.state.turn === "w" ? "Move" : "";
             bottomBar.querySelector(".turn-indicator").style.color = gameData.state.turn === "w" ? "green" : "gray";
             bottomBar.querySelector(".player-timer").textContent = gameData.state.turn === "w" ? "🟢" : "⏳";
+            bottomBar.style.backgroundColor = "f9f9f9";
+            bottomBar.style.color = "#606c76";
 
         } else {
             // Black is at the bottom
@@ -235,6 +147,9 @@ function renderChessBoard(gameData) {
             topBar.querySelector(".turn-indicator").textContent = gameData.state.turn === "w" ? "Move" : "";
             topBar.querySelector(".turn-indicator").style.color = gameData.state.turn === "w" ? "green" : "gray";
             topBar.querySelector(".player-timer").textContent = gameData.state.turn === "w" ? "🟢" : "⏳";
+            topBar.style.backgroundColor = "#f9f9f9";
+            topBar.style.color = "#606c76";
+
 
 
             bottomBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(gameData.black_user.name));
@@ -242,16 +157,18 @@ function renderChessBoard(gameData) {
             bottomBar.querySelector(".turn-indicator").textContent = gameData.state.turn === "b" ? "Move" : "";
             bottomBar.querySelector(".turn-indicator").style.color = gameData.state.turn === "b" ? "green" : "gray";
             bottomBar.querySelector(".player-timer").textContent = gameData.state.turn === "b" ? "🟢" : "⏳";
+            bottomBar.style.backgroundColor = "#606c76";
+            bottomBar.style.color = "#f9f9f9";
+
         }
     };
 
     renderBitBoard();
-    // renderBoard();
     renderPlayerBars();
 
     document.getElementById("flip-board").addEventListener("click", () => {
-        boardPov = localStorage.getItem("boardPov") === "white";
-        localStorage.setItem("boardPov", boardPov ? "b" : "white");
+        boardPov = localStorage.getItem("boardPov") === "w";
+        localStorage.setItem("boardPov", boardPov ? "b" : "w");
         renderBitBoard();
         renderPlayerBars();
     });

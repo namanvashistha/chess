@@ -8,24 +8,25 @@ import (
 )
 
 func GenerateLegalMovesForAllPositions(gs dao.GameState) map[uint64]uint64 {
-	pseudo_legal_moves := GeneratePseudoLegalMoves(gs)
-	legal_moves := filterLegalMoves(gs, pseudo_legal_moves)
+	pseudoLegaMoves, legalMoves := GenerateInitialMoves(gs)
+	legalMoves = filterLegalMoves(gs, legalMoves, pseudoLegaMoves)
 
-	isWhiteKingInCheck, _ := CheckIfKingIsInCheck(gs, pseudo_legal_moves, true)
+	isWhiteKingInCheck, _ := CheckIfKingIsInCheck(gs, pseudoLegaMoves, true)
 	if isWhiteKingInCheck {
 		log.Println("WHITE KING IS IN CHECK")
 	}
 
-	isBlackKingInCheck, _ := CheckIfKingIsInCheck(gs, pseudo_legal_moves, false)
+	isBlackKingInCheck, _ := CheckIfKingIsInCheck(gs, pseudoLegaMoves, false)
 	if isBlackKingInCheck {
 		log.Println("BLACK KING IS IN CHECK")
 	}
 
-	return legal_moves
+	return legalMoves
 }
 
-func filterLegalMoves(gs dao.GameState, pseudoLegalMoves map[uint64]uint64) map[uint64]uint64 {
-	legalMoves := make(map[uint64]uint64)
+func filterLegalMoves(gs dao.GameState, legalMoves map[uint64]uint64, pseudoLegalMoves map[uint64]uint64) map[uint64]uint64 {
+
+	filteredMoves := make(map[uint64]uint64)
 
 	for piece, moves := range pseudoLegalMoves {
 		for move := moves; move != 0; move &= move - 1 {
@@ -34,11 +35,33 @@ func filterLegalMoves(gs dao.GameState, pseudoLegalMoves map[uint64]uint64) map[
 			simulatedGameState := simulateMove(gs, piece, movePosition)
 			isWhite := gs.WhiteBitboard&piece != 0
 			if !isKingInCheck(simulatedGameState, isWhite) {
-				legalMoves[piece] |= movePosition
+				filteredMoves[piece] |= movePosition
 			}
 		}
 	}
-	return legalMoves
+
+	for piece := range legalMoves {
+		pieceMoves := legalMoves[piece]
+		if gs.PawnBitboard&piece != 0 {
+
+			if gs.PawnBitboard&gs.WhiteBitboard&piece != 0 {
+
+				filteredMoves[piece] &= gs.BlackBitboard
+			} else {
+
+				filteredMoves[piece] &= gs.WhiteBitboard
+			}
+			for move := pieceMoves; move != 0; move &= move - 1 {
+				movePosition := move & -move
+				simulatedGameState := simulateMove(gs, piece, movePosition)
+				isWhite := gs.WhiteBitboard&piece != 0
+				if !isKingInCheck(simulatedGameState, isWhite) {
+					filteredMoves[piece] |= legalMoves[piece]
+				}
+			}
+		}
+	}
+	return filteredMoves
 }
 
 func simulateMove(gs dao.GameState, piece uint64, move uint64) dao.GameState {
@@ -88,47 +111,87 @@ func simulateMove(gs dao.GameState, piece uint64, move uint64) dao.GameState {
 }
 
 func isKingInCheck(gs dao.GameState, isWhiteKing bool) bool {
-	pseudo_legal_moves := GeneratePseudoLegalMoves(gs)
+	pseudo_legal_moves, _ := GenerateInitialMoves(gs)
 
 	isInCheck, _ := CheckIfKingIsInCheck(gs, pseudo_legal_moves, isWhiteKing)
 	return isInCheck
 }
 
-func GeneratePseudoLegalMoves(gs dao.GameState) map[uint64]uint64 {
+func GenerateInitialMoves(gs dao.GameState) (map[uint64]uint64, map[uint64]uint64) {
 	pseudo_legal_moves := make(map[uint64]uint64)
+	legal_moves := make(map[uint64]uint64)
 
-	generatePawnMoves(gs, pseudo_legal_moves, make(map[uint64]uint64))
-	generateKnightMoves(gs, pseudo_legal_moves, make(map[uint64]uint64))
-	generateBishopMoves(gs, pseudo_legal_moves, make(map[uint64]uint64))
-	generateRookMoves(gs, pseudo_legal_moves, make(map[uint64]uint64))
-	generateQueenMoves(gs, pseudo_legal_moves, make(map[uint64]uint64))
-	generateKingMoves(gs, pseudo_legal_moves, make(map[uint64]uint64))
+	generatePawnMoves(gs, pseudo_legal_moves, legal_moves)
+	generateKnightMoves(gs, pseudo_legal_moves, legal_moves)
+	generateBishopMoves(gs, pseudo_legal_moves, legal_moves)
+	generateRookMoves(gs, pseudo_legal_moves, legal_moves)
+	generateQueenMoves(gs, pseudo_legal_moves, legal_moves)
+	generateKingMoves(gs, pseudo_legal_moves, legal_moves)
 
-	return pseudo_legal_moves
+	return pseudo_legal_moves, legal_moves
 }
 
 func generatePawnMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, legal_moves map[uint64]uint64) {
 
 	for whitePawnBitboard := (gs.PawnBitboard & gs.WhiteBitboard); whitePawnBitboard != 0; whitePawnBitboard &= whitePawnBitboard - 1 {
-
 		piece := whitePawnBitboard & -whitePawnBitboard
-		pawnMoves := WhitePawnAttackBitboard[piece]
-		pawnMoves &= ^gs.WhiteBitboard
 
-		legal_moves[piece] = pawnMoves
-		pseudo_legal_moves[piece] = pawnMoves
+		singleMove := piece << 8
+		if singleMove&^(gs.WhiteBitboard|gs.BlackBitboard) != 0 {
+			legal_moves[piece] |= singleMove
+		}
+
+		doubleMove := piece << 16
+		if (piece&0x000000000000FF00) != 0 &&
+			(singleMove&^(gs.WhiteBitboard|gs.BlackBitboard) != 0) &&
+			(doubleMove&^(gs.WhiteBitboard|gs.BlackBitboard) != 0) {
+			legal_moves[piece] |= doubleMove
+		}
+
+		diagonalLeft := (piece &^ 0x0101010101010101) << 7
+		diagonalRight := (piece &^ 0x8080808080808080) << 9
+		attacks := (diagonalLeft | diagonalRight) & gs.BlackBitboard
+
+		if gs.EnPassant != 0 {
+			epSquare := gs.EnPassant
+			if (diagonalLeft|diagonalRight)&epSquare != 0 {
+				attacks |= epSquare
+			}
+		}
+
+		legal_moves[piece] |= attacks
+		pseudo_legal_moves[piece] = (diagonalLeft | diagonalRight)
 	}
 
 	for blackPawnBitboard := (gs.PawnBitboard & gs.BlackBitboard); blackPawnBitboard != 0; blackPawnBitboard &= blackPawnBitboard - 1 {
-
 		piece := blackPawnBitboard & -blackPawnBitboard
-		pawnMoves := BlackPawnAttackBitboard[piece]
-		pawnMoves &= ^gs.BlackBitboard
 
-		legal_moves[piece] = pawnMoves
-		pseudo_legal_moves[piece] = pawnMoves
+		singleMove := piece >> 8
+		if singleMove&^(gs.WhiteBitboard|gs.BlackBitboard) != 0 {
+			legal_moves[piece] |= singleMove
+		}
+
+		doubleMove := piece >> 16
+		if (piece&0x00FF000000000000) != 0 &&
+			(singleMove&^(gs.WhiteBitboard|gs.BlackBitboard) != 0) &&
+			(doubleMove&^(gs.WhiteBitboard|gs.BlackBitboard) != 0) {
+			legal_moves[piece] |= doubleMove
+		}
+
+		diagonalLeft := (piece &^ 0x0101010101010101) >> 9
+		diagonalRight := (piece &^ 0x8080808080808080) >> 7
+		attacks := (diagonalLeft | diagonalRight) & gs.WhiteBitboard
+
+		if gs.EnPassant != 0 {
+			epSquare := gs.EnPassant
+			if (diagonalLeft|diagonalRight)&epSquare != 0 {
+				attacks |= epSquare
+			}
+		}
+
+		legal_moves[piece] |= attacks
+		pseudo_legal_moves[piece] = diagonalLeft | diagonalRight
 	}
-
 }
 
 func generateKnightMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, legal_moves map[uint64]uint64) {
@@ -254,57 +317,62 @@ func generateKingMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, l
 			kingMoves &= ^gs.WhiteBitboard
 			attackedSquares := getAttackedSquares(gs.BlackBitboard, pseudo_legal_moves)
 			kingMoves &= ^attackedSquares
+
+			if piece == (1 << PositionToIndex("e1")) {
+
+				if strings.Contains(gs.CastlingRights, "K") &&
+					gs.WhiteBitboard&(1<<PositionToIndex("f1")) == 0 &&
+					gs.WhiteBitboard&(1<<PositionToIndex("g1")) == 0 &&
+					gs.BlackBitboard&(1<<PositionToIndex("f1")) == 0 &&
+					gs.BlackBitboard&(1<<PositionToIndex("g1")) == 0 &&
+					attackedSquares&(1<<PositionToIndex("e1")) == 0 &&
+					attackedSquares&(1<<PositionToIndex("f1")) == 0 &&
+					attackedSquares&(1<<PositionToIndex("g1")) == 0 {
+					kingMoves |= (1 << PositionToIndex("g1"))
+				}
+
+				if strings.Contains(gs.CastlingRights, "Q") &&
+					gs.WhiteBitboard&(1<<PositionToIndex("d1")) == 0 &&
+					gs.WhiteBitboard&(1<<PositionToIndex("c1")) == 0 &&
+					gs.WhiteBitboard&(1<<PositionToIndex("b1")) == 0 &&
+					gs.BlackBitboard&(1<<PositionToIndex("d1")) == 0 &&
+					gs.BlackBitboard&(1<<PositionToIndex("c1")) == 0 &&
+					gs.BlackBitboard&(1<<PositionToIndex("b1")) == 0 &&
+					attackedSquares&(1<<PositionToIndex("e1")) == 0 &&
+					attackedSquares&(1<<PositionToIndex("d1")) == 0 &&
+					attackedSquares&(1<<PositionToIndex("c1")) == 0 {
+					kingMoves |= (1 << PositionToIndex("c1"))
+				}
+			}
 		} else if gs.BlackBitboard&piece != 0 {
 			kingMoves &= ^gs.BlackBitboard
 			attackedSquares := getAttackedSquares(gs.WhiteBitboard, pseudo_legal_moves)
 			kingMoves &= ^attackedSquares
-		}
-		if piece&gs.WhiteBitboard != 0 {
-			if piece == (1 << PositionToIndex("e1")) {
-				// Kingside castling
-				if strings.Contains(gs.CastlingRights, "K") {
-					if gs.WhiteBitboard&(1<<PositionToIndex("f1")) == 0 &&
-						gs.WhiteBitboard&(1<<PositionToIndex("g1")) == 0 &&
-						gs.BlackBitboard&(1<<PositionToIndex("f1")) == 0 &&
-						gs.BlackBitboard&(1<<PositionToIndex("g1")) == 0 {
-						kingMoves |= (1 << PositionToIndex("g1"))
-					}
-				}
-				// Queenside castling
-				if strings.Contains(gs.CastlingRights, "Q") {
-					if gs.WhiteBitboard&(1<<PositionToIndex("d1")) == 0 &&
-						gs.WhiteBitboard&(1<<PositionToIndex("c1")) == 0 &&
-						gs.WhiteBitboard&(1<<PositionToIndex("b1")) == 0 &&
-						gs.BlackBitboard&(1<<PositionToIndex("d1")) == 0 &&
-						gs.BlackBitboard&(1<<PositionToIndex("c1")) == 0 &&
-						gs.BlackBitboard&(1<<PositionToIndex("b1")) == 0 {
-						kingMoves |= (1 << PositionToIndex("c1"))
-					}
-				}
-			}
-		} else {
+
 			if piece == (1 << PositionToIndex("e8")) {
-				// Kingside castling
 
-				if strings.Contains(gs.CastlingRights, "k") {
-					if gs.WhiteBitboard&(1<<PositionToIndex("f8")) == 0 &&
-						gs.WhiteBitboard&(1<<PositionToIndex("g8")) == 0 &&
-						gs.BlackBitboard&(1<<PositionToIndex("f8")) == 0 &&
-						gs.BlackBitboard&(1<<PositionToIndex("g8")) == 0 {
-
-						kingMoves |= (1 << PositionToIndex("g8"))
-					}
+				if strings.Contains(gs.CastlingRights, "k") &&
+					gs.BlackBitboard&(1<<PositionToIndex("f8")) == 0 &&
+					gs.BlackBitboard&(1<<PositionToIndex("g8")) == 0 &&
+					gs.WhiteBitboard&(1<<PositionToIndex("f8")) == 0 &&
+					gs.WhiteBitboard&(1<<PositionToIndex("g8")) == 0 &&
+					attackedSquares&(1<<PositionToIndex("e8")) == 0 &&
+					attackedSquares&(1<<PositionToIndex("f8")) == 0 &&
+					attackedSquares&(1<<PositionToIndex("g8")) == 0 {
+					kingMoves |= (1 << PositionToIndex("g8"))
 				}
-				// Queenside castling
-				if strings.Contains(gs.CastlingRights, "q") {
-					if gs.WhiteBitboard&(1<<PositionToIndex("d8")) == 0 &&
-						gs.WhiteBitboard&(1<<PositionToIndex("c8")) == 0 &&
-						gs.WhiteBitboard&(1<<PositionToIndex("b8")) == 0 &&
-						gs.BlackBitboard&(1<<PositionToIndex("d8")) == 0 &&
-						gs.BlackBitboard&(1<<PositionToIndex("c8")) == 0 &&
-						gs.BlackBitboard&(1<<PositionToIndex("b8")) == 0 {
-						kingMoves |= (1 << PositionToIndex("c8"))
-					}
+
+				if strings.Contains(gs.CastlingRights, "q") &&
+					gs.BlackBitboard&(1<<PositionToIndex("d8")) == 0 &&
+					gs.BlackBitboard&(1<<PositionToIndex("c8")) == 0 &&
+					gs.BlackBitboard&(1<<PositionToIndex("b8")) == 0 &&
+					gs.WhiteBitboard&(1<<PositionToIndex("d8")) == 0 &&
+					gs.WhiteBitboard&(1<<PositionToIndex("c8")) == 0 &&
+					gs.WhiteBitboard&(1<<PositionToIndex("b8")) == 0 &&
+					attackedSquares&(1<<PositionToIndex("e8")) == 0 &&
+					attackedSquares&(1<<PositionToIndex("d8")) == 0 &&
+					attackedSquares&(1<<PositionToIndex("c8")) == 0 {
+					kingMoves |= (1 << PositionToIndex("c8"))
 				}
 			}
 		}
@@ -392,15 +460,4 @@ func CheckIfKingIsInCheck(gs dao.GameState, moves map[uint64]uint64, isWhiteKing
 	}
 
 	return false, 0
-}
-
-func isPieceAttackingKing(gs dao.GameState, kingPosition uint64, opponentBitboard uint64, moves map[uint64]uint64) bool {
-	for opponentBitboard != 0 {
-		piece := opponentBitboard & -opponentBitboard
-		if (moves[piece] & kingPosition) != 0 {
-			return true
-		}
-		opponentBitboard &= opponentBitboard - 1
-	}
-	return false
 }
