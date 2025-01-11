@@ -2,6 +2,7 @@ package engine
 
 import (
 	"chess-engine/app/domain/dao"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -257,6 +258,55 @@ func generateKingMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, l
 			kingMoves &= ^gs.BlackBitboard
 			attackedSquares := getAttackedSquares(gs.WhiteBitboard, pseudo_legal_moves)
 			kingMoves &= ^attackedSquares
+		}
+		if piece&gs.WhiteBitboard != 0 {
+			if piece == (1 << PositionToIndex("e1")) {
+				// Kingside castling
+				if strings.Contains(gs.CastlingRights, "K") {
+					if gs.WhiteBitboard&(1<<PositionToIndex("f1")) == 0 &&
+						gs.WhiteBitboard&(1<<PositionToIndex("g1")) == 0 &&
+						gs.BlackBitboard&(1<<PositionToIndex("f1")) == 0 &&
+						gs.BlackBitboard&(1<<PositionToIndex("g1")) == 0 {
+						kingMoves |= (1 << PositionToIndex("g1"))
+					}
+				}
+				// Queenside castling
+				if strings.Contains(gs.CastlingRights, "Q") {
+					if gs.WhiteBitboard&(1<<PositionToIndex("d1")) == 0 &&
+						gs.WhiteBitboard&(1<<PositionToIndex("c1")) == 0 &&
+						gs.WhiteBitboard&(1<<PositionToIndex("b1")) == 0 &&
+						gs.BlackBitboard&(1<<PositionToIndex("d1")) == 0 &&
+						gs.BlackBitboard&(1<<PositionToIndex("c1")) == 0 &&
+						gs.BlackBitboard&(1<<PositionToIndex("b1")) == 0 {
+						kingMoves |= (1 << PositionToIndex("c1"))
+					}
+				}
+			}
+		} else {
+			if piece == (1 << PositionToIndex("e8")) {
+				// Kingside castling
+
+				if strings.Contains(gs.CastlingRights, "k") {
+					if gs.WhiteBitboard&(1<<PositionToIndex("f8")) == 0 &&
+						gs.WhiteBitboard&(1<<PositionToIndex("g8")) == 0 &&
+						gs.BlackBitboard&(1<<PositionToIndex("f8")) == 0 &&
+						gs.BlackBitboard&(1<<PositionToIndex("g8")) == 0 {
+
+						kingMoves |= (1 << PositionToIndex("g8"))
+					}
+				}
+				// Queenside castling
+				if strings.Contains(gs.CastlingRights, "q") {
+					if gs.WhiteBitboard&(1<<PositionToIndex("d8")) == 0 &&
+						gs.WhiteBitboard&(1<<PositionToIndex("c8")) == 0 &&
+						gs.WhiteBitboard&(1<<PositionToIndex("b8")) == 0 &&
+						gs.BlackBitboard&(1<<PositionToIndex("d8")) == 0 &&
+						gs.BlackBitboard&(1<<PositionToIndex("c8")) == 0 &&
+						gs.BlackBitboard&(1<<PositionToIndex("b8")) == 0 {
+						kingMoves |= (1 << PositionToIndex("c8"))
+					}
+				}
+			}
 		}
 
 		legal_moves[piece] = kingMoves

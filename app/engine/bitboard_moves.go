@@ -4,6 +4,7 @@ import (
 	"chess-engine/app/domain/dao"
 	"chess-engine/app/domain/dto"
 	"fmt"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -51,6 +52,65 @@ func ProcessMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
 		"q": {&game.State.QueenBitboard, &game.State.BlackBitboard},
 		"k": {&game.State.KingBitboard, &game.State.BlackBitboard},
 		"p": {&game.State.PawnBitboard, &game.State.BlackBitboard},
+	}
+
+	if move.Piece == "K" || move.Piece == "k" {
+		// White kingside castling
+		if move.Source == "e1" && move.Destination == "g1" && strings.Contains(game.State.CastlingRights, "K") {
+			// Move rook from h1 to f1
+			*pieceBitboards["R"].colorBitboard &= ^(1 << PositionToIndex("h1"))
+			*pieceBitboards["R"].pieceBitboard &= ^(1 << PositionToIndex("h1"))
+			*pieceBitboards["R"].colorBitboard |= (1 << PositionToIndex("f1"))
+			*pieceBitboards["R"].pieceBitboard |= (1 << PositionToIndex("f1"))
+		}
+		// White queenside castling
+		if move.Source == "e1" && move.Destination == "c1" && strings.Contains(game.State.CastlingRights, "Q") {
+			// Move rook from a1 to d1
+			*pieceBitboards["R"].colorBitboard &= ^(1 << PositionToIndex("a1"))
+			*pieceBitboards["R"].pieceBitboard &= ^(1 << PositionToIndex("a1"))
+			*pieceBitboards["R"].colorBitboard |= (1 << PositionToIndex("d1"))
+			*pieceBitboards["R"].pieceBitboard |= (1 << PositionToIndex("d1"))
+		}
+		// Black kingside castling
+		if move.Source == "e8" && move.Destination == "g8" && strings.Contains(game.State.CastlingRights, "k") {
+			// Move rook from h8 to f8
+			*pieceBitboards["r"].colorBitboard &= ^(1 << PositionToIndex("h8"))
+			*pieceBitboards["r"].pieceBitboard &= ^(1 << PositionToIndex("h8"))
+			*pieceBitboards["r"].colorBitboard |= (1 << PositionToIndex("f8"))
+			*pieceBitboards["r"].pieceBitboard |= (1 << PositionToIndex("f8"))
+		}
+		// Black queenside castling
+		if move.Source == "e8" && move.Destination == "c8" && strings.Contains(game.State.CastlingRights, "q") {
+			// Move rook from a8 to d8
+			*pieceBitboards["r"].colorBitboard &= ^(1 << PositionToIndex("a8"))
+			*pieceBitboards["r"].pieceBitboard &= ^(1 << PositionToIndex("a8"))
+			*pieceBitboards["r"].colorBitboard |= (1 << PositionToIndex("d8"))
+			*pieceBitboards["r"].pieceBitboard |= (1 << PositionToIndex("d8"))
+		}
+
+		// Remove all castling rights for this player
+		if game.State.Turn == "w" {
+			game.State.CastlingRights = strings.ReplaceAll(game.State.CastlingRights, "K", "")
+			game.State.CastlingRights = strings.ReplaceAll(game.State.CastlingRights, "Q", "")
+		} else {
+			game.State.CastlingRights = strings.ReplaceAll(game.State.CastlingRights, "k", "")
+			game.State.CastlingRights = strings.ReplaceAll(game.State.CastlingRights, "q", "")
+		}
+	}
+
+	// Remove castling rights when a rook moves
+	if move.Piece == "R" {
+		if move.Source == "a1" {
+			game.State.CastlingRights = strings.ReplaceAll(game.State.CastlingRights, "Q", "")
+		} else if move.Source == "h1" {
+			game.State.CastlingRights = strings.ReplaceAll(game.State.CastlingRights, "K", "")
+		}
+	} else if move.Piece == "r" {
+		if move.Source == "a8" {
+			game.State.CastlingRights = strings.ReplaceAll(game.State.CastlingRights, "q", "")
+		} else if move.Source == "h8" {
+			game.State.CastlingRights = strings.ReplaceAll(game.State.CastlingRights, "k", "")
+		}
 	}
 
 	if game.State.WhiteBitboard&(1<<destinationIdx) != 0 {
