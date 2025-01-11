@@ -88,9 +88,6 @@ func simulateMove(gs dao.GameState, piece uint64, move uint64) dao.GameState {
 
 func isKingInCheck(gs dao.GameState, isWhiteKing bool) bool {
 	pseudo_legal_moves := GeneratePseudoLegalMoves(gs)
-	if gs.CastlingRights == "log" {
-		log.Info(pseudo_legal_moves)
-	}
 
 	isInCheck, _ := CheckIfKingIsInCheck(gs, pseudo_legal_moves, isWhiteKing)
 	return isInCheck

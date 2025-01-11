@@ -20,7 +20,6 @@ type ChessRepository interface {
 	SaveChessGameToCache(game *dao.ChessGame) error
 	SaveGameStateToDB(game *dao.GameState) error
 	SaveChessGameToDB(game *dao.ChessGame) error
-	SaveChessStateToDB(game *dao.ChessState) error
 	FindUserByToken(token string) (dao.User, error)
 }
 
@@ -30,7 +29,6 @@ type ChessRepositoryImpl struct {
 }
 
 func ChessRepositoryInit(db *gorm.DB, redisClient *pkg.RedisClient) *ChessRepositoryImpl {
-	db.AutoMigrate(&dao.ChessState{})
 	db.AutoMigrate(&dao.GameState{})
 	db.AutoMigrate(&dao.ChessGame{})
 	// gorm.RegisterSerializer("bitboard", serializer.BitboardSerializer{})
@@ -148,15 +146,6 @@ func (r ChessRepositoryImpl) SaveChessGameToCache(game *dao.ChessGame) error {
 }
 
 func (r ChessRepositoryImpl) SaveGameStateToDB(game *dao.GameState) error {
-	if err := r.db.Save(game).Error; err != nil {
-		log.Error("Error saving game state to DB:", err)
-		return err
-	}
-	return nil
-}
-
-// Save the chess game state to the database
-func (r ChessRepositoryImpl) SaveChessStateToDB(game *dao.ChessState) error {
 	if err := r.db.Save(game).Error; err != nil {
 		log.Error("Error saving game state to DB:", err)
 		return err

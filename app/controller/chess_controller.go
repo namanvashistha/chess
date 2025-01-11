@@ -11,9 +11,6 @@ type ChessController interface {
 	GetChessGameById(c *gin.Context)
 	CreateChessGame(c *gin.Context)
 	JoinChessGame(c *gin.Context)
-	GetChessState(c *gin.Context)
-	SaveChessState(c *gin.Context)
-	CreateChessState(c *gin.Context)
 	MakeMove(c *gin.Context)
 }
 
@@ -35,18 +32,6 @@ func (u ChessControllerImpl) CreateChessGame(c *gin.Context) {
 
 func (u ChessControllerImpl) JoinChessGame(c *gin.Context) {
 	u.svc.JoinChessGame(c)
-}
-
-func (u ChessControllerImpl) GetChessState(c *gin.Context) {
-	u.svc.GetChessState(c)
-}
-
-func (u ChessControllerImpl) SaveChessState(c *gin.Context) {
-	u.svc.SaveChessState(c)
-}
-
-func (u ChessControllerImpl) CreateChessState(c *gin.Context) {
-	u.svc.CreateChessState(c)
 }
 
 func (u ChessControllerImpl) MakeMove(c *gin.Context) {

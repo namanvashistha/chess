@@ -1,9 +1,5 @@
 package dao
 
-import (
-	"encoding/json"
-)
-
 type ChessGame struct {
 	ID         int    `gorm:"column:id;primaryKey;autoIncrement;not null" json:"id"`
 	InviteCode string `gorm:"column:invite_code" json:"invite_code"`
@@ -18,16 +14,6 @@ type ChessGame struct {
 	LegalMoves   map[string][]string `json:"legal_moves" gorm:"-"` // Excluded from GORM
 	CurrentState map[string]string   `json:"current_state" gorm:"-"`
 	BoardLayout  [8][8][2]string     `json:"board_layout" gorm:"-"` // Excluded from GORM
-	BaseModel
-}
-
-type ChessState struct {
-	ID           int                 `gorm:"primaryKey;autoIncrement;not null" json:"id"`
-	Board        json.RawMessage     `gorm:"column:board;type:jsonb" json:"board"`
-	Turn         string              `gorm:"type:varchar(10);not null" json:"turn"`
-	Status       string              `gorm:"type:varchar(20);not null" json:"status"`
-	LastMove     string              `gorm:"type:varchar(10)" json:"last_move"`
-	AllowedMoves map[string][]string `json:"allowed_moves" gorm:"-"` // Excluded from GORM
 	BaseModel
 }
 

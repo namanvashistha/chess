@@ -73,6 +73,7 @@ func (ws *WebSocketServiceImpl) ProcessMove(gameId string, message dto.WebSocket
 	var game dao.ChessGame
 	var err error
 	status := "success"
+	status_message := ""
 	// gameId := message.Payload.(map[string]interface{})["game_id"].(string)
 	// game, _ = ws.chessRepository.FindChessGameById(gameId)
 	// Fetch from cache
@@ -99,11 +100,13 @@ func (ws *WebSocketServiceImpl) ProcessMove(gameId string, message dto.WebSocket
 	if err != nil {
 		status = "error"
 		log.Error("Error fetching user by token:", err)
+		status_message = err.Error()
 		status = "error"
 	}
 
 	if err = engine.ProcessMove(&game, move, user); err != nil {
 		status = "error"
+		status_message = err.Error()
 		log.Error("Error processing move:", err)
 	} else {
 		_ = ws.chessRepository.SaveChessGameToCache(&game)
@@ -120,6 +123,7 @@ func (ws *WebSocketServiceImpl) ProcessMove(gameId string, message dto.WebSocket
 	response := dto.WebSocketMessage{
 		Type:    "game_update",
 		Status:  status,
+		Message: status_message,
 		Payload: game,
 	}
 	ws.BroadcastMessage(gameId, response)
