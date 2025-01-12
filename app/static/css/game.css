@@ -8,17 +8,13 @@
     gap: 20px;
     padding: 5px;
     margin: 0 auto;
-    /* background-color: rgb(62, 45, 87); */
 }
 
 
 #game-wrapper {
     display: flex;
-    /* justify-content: space-between; */
-    /* background-color: rgb(154, 117, 117); */
     height: 100vh;
     padding: auto;
-    
 }
 
 #chess-board-container {
@@ -26,7 +22,7 @@
     justify-content: center;
     flex-direction: column;
     align-items: center;
-    padding: 5px; /* Optional padding for spacing */
+    padding: 5px;
 }
 
 .player-bar {
@@ -39,7 +35,6 @@
     border-radius: 2px;
     box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
     width: 100%;
-    /* box-sizing: border-box; */
 }
 
 .player-bar-section {
@@ -50,7 +45,7 @@
 
 .player-dp {
     width: 10%;
-    /* border-radius: 50%; */
+
 }
 
 .player-name {
@@ -73,21 +68,26 @@
 }
 
 #controls {
-    margin-top: 15px;
-    display: flex;
-    justify-content: space-around;
+    align-self: center;
     gap: 10px;
 }
 
 #controls button {
-    padding: 10px 20px;
+    padding: 5px 10px;
+    margin-top: 3px;
+    display: block;
     font-size: 16px;
-    background-color: #112647;
+    background-color: #104c89;
     color: #ffffff;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s ease;
+}
+
+#controls button i {
+    font-size: 12px;
+    color: #f9f9f9;
 }
 
 #controls button:hover {
@@ -97,7 +97,7 @@
 #move-history {
     max-height: 88vh;
     overflow-y: auto;
-    flex-shrink: 0; /* Prevent shrinking */
+    flex-shrink: 0;
     background-color: #f9f9f9;
     border: 1px solid #dcdcdc;
     border-radius: 2px;
@@ -112,10 +112,10 @@
     margin: 0 0 10px 0;
     text-align: center;
     font-size: 18px;
-    position: sticky; /* Keeps the header visible while scrolling */
+    position: sticky;
     top: 0;
-    background-color: #f9f9f9; /* Match background color */
-    z-index: 1; /* Ensures the header stays on top */
+    background-color: #f9f9f9;
+    z-index: 1;
     padding: 10px 0;
 }
 
@@ -129,10 +129,10 @@
     text-align: center;
     padding: 0.5em 2em;
     border: 1px solid #ddd;
-    position: sticky; /* Correct syntax for sticky positioning */
-    top: 0; /* Required to define the offset for sticky elements */
-    background-color: #1e2a38; /* Ensures the background matches the table */
-    z-index: 1; /* Keeps the header above the table content */
+    position: sticky;
+    top: 0;
+    background-color: #1e2a38;
+    z-index: 1;
     color: #f9f9f9;
 }
 
@@ -141,7 +141,7 @@
     text-align: center;
     padding: 4px;
     border: 1px solid #ddd;
-    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-y: auto;
 
 }
 
@@ -160,8 +160,8 @@
     }
 }
 
-@media (max-width: 900px) {
-    
+@media (max-width: 1024px) {
+
     #game-wrapper {
         flex-direction: column;
         align-items: center;

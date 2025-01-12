@@ -9,11 +9,18 @@
     <link rel="stylesheet" href="/static/css/styles.css">
     <link rel="stylesheet" href="/static/css/game.css">
     <link rel="stylesheet" href="/static/css/board.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
 </head>
 
 <body>
     <div id="chess-container">
         <div id="game-wrapper">
+            <div id="controls">
+                <button id="home-page" onclick="window.location.href='/'"><i class="fa fa-home"></i></button>
+                <button id="flip-board"><i class="fa fa-rotate"></i></button>
+
+            </div>
             <!-- Chess Board Container -->
             <div id="chess-board-container">
                 <!-- Player Bar Above Chess Board -->
@@ -65,7 +72,11 @@
                     </thead>
                     <tbody>
                         <!-- Moves dynamically added here -->
-                        <tr><td>1</td><td>...</td><td>...</td></tr>
+                        <tr>
+                            <td>1.</td>
+                            <td>...</td>
+                            <td>...</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
