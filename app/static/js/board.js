@@ -192,11 +192,28 @@ function renderChessBoard(gameData) {
         const moveHistory = document.getElementById("move-history");
         moveHistory.scrollTop = moveHistory.scrollHeight;
     };
+    const highlightLastMove = () => {
+        const lastMove = gameData.state.last_move;
+        if (!lastMove) return;  // Ensure there's a move to highlight
+    
+        const source = lastMove.substring(1, 3);  // Extract "from" square (e.g., "a4")
+        const target = lastMove.substring(3);      // Extract "to" square (e.g., "c5")
+
+        const sourceSquare = document.querySelector(`.square[data-key="${source}"]`);
+        const targetSquare = document.querySelector(`.square[data-key="${target}"]`);
+
+        if (sourceSquare) {
+            sourceSquare.classList.add('last-move-highlight-source');
+        }
+        if (targetSquare) {
+            targetSquare.classList.add('last-move-highlight-target');
+        }
+    }
 
     renderBitBoard();
     renderPlayerBars();
     renderMoves();
-
+    highlightLastMove();
     // document.getElementById("flip-board").addEventListener("click", () => {
     //     boardPov = localStorage.getItem("boardPov") === "w";
     //     localStorage.setItem("boardPov", boardPov ? "b" : "w");
