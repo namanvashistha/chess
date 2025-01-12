@@ -1,14 +1,32 @@
+/* game.css */
 #chess-container {
     display: flex;
+    height: 100vh;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 2px;
-    padding: 20px;
-    width: 100%;
-    max-width: 800px;
+    gap: 20px;
+    padding: 5px;
     margin: 0 auto;
-    /* background-color: #d1d5db; */
+    /* background-color: rgb(62, 45, 87); */
+}
+
+
+#game-wrapper {
+    display: flex;
+    /* justify-content: space-between; */
+    /* background-color: rgb(154, 117, 117); */
+    height: 100vh;
+    padding: auto;
+    
+}
+
+#chess-board-container {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px; /* Optional padding for spacing */
 }
 
 .player-bar {
@@ -21,7 +39,7 @@
     border-radius: 2px;
     box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
     width: 100%;
-    box-sizing: border-box;
+    /* box-sizing: border-box; */
 }
 
 .player-bar-section {
@@ -31,8 +49,7 @@
 }
 
 .player-dp {
-    width: 35px;
-    height: 35px;
+    width: 10%;
     /* border-radius: 50%; */
 }
 
@@ -55,63 +72,114 @@
     text-align: center;
 }
 
-/* Move History Section */
+#controls {
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+
+#controls button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #112647;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#controls button:hover {
+    background-color: #1b76d0;
+}
+
 #move-history {
-    display: none;
-    max-width: 300px;
-    flex-grow: 1;
-    background-color: #f3f4f6;
-    padding: 10px;
-    border-radius: 8px;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
-    margin-top: 20px;
+    max-height: 88vh;
+    overflow-y: auto;
+    flex-shrink: 0; /* Prevent shrinking */
+    background-color: #f9f9f9;
+    border: 1px solid #dcdcdc;
+    border-radius: 2px;
+    padding: 0x;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    color: #606c76;
+    align-self: center;
+
 }
 
 #move-history h3 {
-    margin-bottom: 10px;
-    font-size: 1.2em;
+    margin: 0 0 10px 0;
+    text-align: center;
+    font-size: 18px;
+    position: sticky; /* Keeps the header visible while scrolling */
+    top: 0;
+    background-color: #f9f9f9; /* Match background color */
+    z-index: 1; /* Ensures the header stays on top */
+    padding: 10px 0;
 }
 
 #history-table {
     width: 100%;
     border-collapse: collapse;
-}
-
-#history-table th,
-#history-table td {
-    border: 1px solid #e5e7eb;
-    padding: 5px;
-    text-align: center;
-    font-size: 0.9em;
+    font-size: 14px;
 }
 
 #history-table th {
-    background-color: #d1d5db;
-    font-weight: bold;
+    text-align: center;
+    padding: 0.5em 2em;
+    border: 1px solid #ddd;
+    position: sticky; /* Correct syntax for sticky positioning */
+    top: 0; /* Required to define the offset for sticky elements */
+    background-color: #1e2a38; /* Ensures the background matches the table */
+    z-index: 1; /* Keeps the header above the table content */
+    color: #f9f9f9;
 }
 
-#history-table tbody tr:nth-child(even) {
-    background-color: #f3f4f6;
+
+#history-table td {
+    text-align: center;
+    padding: 4px;
+    border: 1px solid #ddd;
+    overflow-y: auto; /* Enable vertical scrolling */
+
 }
 
 #history-table tbody tr:nth-child(odd) {
-    background-color: #ffffff;
+    background-color: #f2f2f2;
 }
 
-/* Responsive Design Adjustments */
-@media (max-width: 768px) {
+#history-table tbody tr:hover {
+    background-color: #d1e7fd;
+}
 
-    .player-dp {
-        width: 30px;
-        height: 30px;
+
+@media (min-width: 1024px) {
+    #chess-container {
+        max-height: 100vh;
     }
+}
 
+@media (max-width: 900px) {
+    
+    #game-wrapper {
+        flex-direction: column;
+        align-items: center;
+    }
 
     #move-history {
-        max-width: 95%;
+        width: 100%;
+        margin-top: 20px;
+        max-height: none;
     }
 
-    #history-table th, #history-table td {
-        font-size: 0.7em;
+    #history-table {
+        font-size: 12px;
+    }
+
+    #chess-board-container {
+        height: auto;
+        padding: 0px;
+        margin: 0px;
     }
 }

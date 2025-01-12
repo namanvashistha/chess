@@ -163,15 +163,46 @@ function renderChessBoard(gameData) {
         }
     };
 
+    const renderMoves = () => {
+        const historyTableBody = document.querySelector("#history-table tbody");
+        console.log(historyTableBody);
+        historyTableBody.innerHTML = ""; // Clear any existing rows
+        const moves = gameData.moves;
+    
+        for (let i = 0; i < moves.length; i += 2) {
+            const moveRow = document.createElement("tr");
+    
+            // Add the move number
+            const moveNumberCell = document.createElement("td");
+            moveNumberCell.textContent = `${Math.floor(i / 2) + 1}.`;
+            moveRow.appendChild(moveNumberCell);
+    
+            // Add White's move
+            const whiteMoveCell = document.createElement("td");
+            whiteMoveCell.textContent = moves[i]?.move || ""; // If no move, leave blank
+            moveRow.appendChild(whiteMoveCell);
+    
+            // Add Black's move
+            const blackMoveCell = document.createElement("td");
+            blackMoveCell.textContent = moves[i + 1]?.move || ""; // If no move, leave blank
+            moveRow.appendChild(blackMoveCell);
+    
+            historyTableBody.appendChild(moveRow);
+        }
+        const moveHistory = document.getElementById("move-history");
+        moveHistory.scrollTop = moveHistory.scrollHeight;
+    };
+
     renderBitBoard();
     renderPlayerBars();
+    renderMoves();
 
-    document.getElementById("flip-board").addEventListener("click", () => {
-        boardPov = localStorage.getItem("boardPov") === "w";
-        localStorage.setItem("boardPov", boardPov ? "b" : "w");
-        renderBitBoard();
-        renderPlayerBars();
-    });
+    // document.getElementById("flip-board").addEventListener("click", () => {
+    //     boardPov = localStorage.getItem("boardPov") === "w";
+    //     localStorage.setItem("boardPov", boardPov ? "b" : "w");
+    //     renderBitBoard();
+    //     renderPlayerBars();
+    // });
 }
 
 

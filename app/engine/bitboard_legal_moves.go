@@ -3,25 +3,29 @@ package engine
 import (
 	"chess-engine/app/domain/dao"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
-func GenerateLegalMovesForAllPositions(gs dao.GameState) map[uint64]uint64 {
+func GenerateLegalMovesForAllPositions(gs dao.GameState) (map[uint64]uint64, string) {
 	pseudoLegaMoves, legalMoves := GenerateInitialMoves(gs)
 	legalMoves = filterLegalMoves(gs, legalMoves, pseudoLegaMoves)
 
 	isWhiteKingInCheck, _ := CheckIfKingIsInCheck(gs, pseudoLegaMoves, true)
-	if isWhiteKingInCheck {
-		log.Println("WHITE KING IS IN CHECK")
+	if isWhiteKingInCheck && gs.Turn == "w" {
+		if !checkIsMoveLeft(gs.WhiteBitboard, legalMoves) {
+			return legalMoves, "white_checkmate"
+		}
+		return legalMoves, "white_check"
 	}
 
 	isBlackKingInCheck, _ := CheckIfKingIsInCheck(gs, pseudoLegaMoves, false)
 	if isBlackKingInCheck {
-		log.Println("BLACK KING IS IN CHECK")
+		if !checkIsMoveLeft(gs.BlackBitboard, legalMoves) {
+			return legalMoves, "black_checkmate"
+		}
+		return legalMoves, "black_check"
 	}
 
-	return legalMoves
+	return legalMoves, ""
 }
 
 func filterLegalMoves(gs dao.GameState, legalMoves map[uint64]uint64, pseudoLegalMoves map[uint64]uint64) map[uint64]uint64 {
@@ -133,9 +137,11 @@ func GenerateInitialMoves(gs dao.GameState) (map[uint64]uint64, map[uint64]uint6
 
 func generatePawnMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, legal_moves map[uint64]uint64) {
 
+	// Generate moves for white pawns
 	for whitePawnBitboard := (gs.PawnBitboard & gs.WhiteBitboard); whitePawnBitboard != 0; whitePawnBitboard &= whitePawnBitboard - 1 {
 		piece := whitePawnBitboard & -whitePawnBitboard
 
+		// Single and double forward moves
 		singleMove := piece << 8
 		if singleMove&^(gs.WhiteBitboard|gs.BlackBitboard) != 0 {
 			legal_moves[piece] |= singleMove
@@ -148,11 +154,13 @@ func generatePawnMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, l
 			legal_moves[piece] |= doubleMove
 		}
 
+		// Diagonal captures and en passant
 		diagonalLeft := (piece &^ 0x0101010101010101) << 7
 		diagonalRight := (piece &^ 0x8080808080808080) << 9
 		attacks := (diagonalLeft | diagonalRight) & gs.BlackBitboard
 
-		if gs.EnPassant != 0 {
+		// En passant for white pawns
+		if gs.EnPassant != 0 && (gs.EnPassant&gs.BlackBitboard) != 0 {
 			epSquare := gs.EnPassant
 			if (diagonalLeft|diagonalRight)&epSquare != 0 {
 				attacks |= epSquare
@@ -163,9 +171,11 @@ func generatePawnMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, l
 		pseudo_legal_moves[piece] = (diagonalLeft | diagonalRight)
 	}
 
+	// Generate moves for black pawns
 	for blackPawnBitboard := (gs.PawnBitboard & gs.BlackBitboard); blackPawnBitboard != 0; blackPawnBitboard &= blackPawnBitboard - 1 {
 		piece := blackPawnBitboard & -blackPawnBitboard
 
+		// Single and double forward moves
 		singleMove := piece >> 8
 		if singleMove&^(gs.WhiteBitboard|gs.BlackBitboard) != 0 {
 			legal_moves[piece] |= singleMove
@@ -178,11 +188,13 @@ func generatePawnMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, l
 			legal_moves[piece] |= doubleMove
 		}
 
+		// Diagonal captures and en passant
 		diagonalLeft := (piece &^ 0x0101010101010101) >> 9
 		diagonalRight := (piece &^ 0x8080808080808080) >> 7
 		attacks := (diagonalLeft | diagonalRight) & gs.WhiteBitboard
 
-		if gs.EnPassant != 0 {
+		// En passant for black pawns
+		if gs.EnPassant != 0 && (gs.EnPassant&gs.WhiteBitboard) != 0 {
 			epSquare := gs.EnPassant
 			if (diagonalLeft|diagonalRight)&epSquare != 0 {
 				attacks |= epSquare
@@ -460,4 +472,15 @@ func CheckIfKingIsInCheck(gs dao.GameState, moves map[uint64]uint64, isWhiteKing
 	}
 
 	return false, 0
+}
+
+func checkIsMoveLeft(bitboard uint64, moves map[uint64]uint64) bool {
+	for bitboard != 0 {
+		piece := bitboard & -bitboard
+		if moves[piece] != 0 {
+			return true
+		}
+		bitboard &= bitboard - 1
+	}
+	return false
 }

@@ -11,6 +11,7 @@ type ChessGame struct {
 	WhiteUser    *User               `gorm:"foreignKey:WhiteUserId" json:"white_user"`
 	BlackUser    *User               `gorm:"foreignKey:BlackUserId" json:"black_user"`
 	State        GameState           `gorm:"foreignKey:GameID" json:"state"`
+	Moves        []GameMove          `gorm:"foreignKey:GameID" json:"moves"`
 	LegalMoves   map[string][]string `json:"legal_moves" gorm:"-"` // Excluded from GORM
 	CurrentState map[string]string   `json:"current_state" gorm:"-"`
 	BoardLayout  [8][8][2]string     `json:"board_layout" gorm:"-"` // Excluded from GORM
@@ -32,5 +33,12 @@ type GameState struct {
 	CastlingRights string `gorm:"type:varchar(4)" json:"castling_rights"`
 	LastMove       string `gorm:"type:varchar(10)" json:"last_move"`
 	Turn           string `gorm:"type:varchar(1);not null" json:"turn"`
+	BaseModel
+}
+
+type GameMove struct {
+	ID     int    `gorm:"primaryKey;autoIncrement" json:"id"`
+	GameID int    `gorm:"not null;index" json:"game_id"`
+	Move   string `gorm:"not null" json:"move"`
 	BaseModel
 }

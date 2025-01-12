@@ -13,52 +13,62 @@
 
 <body>
     <div id="chess-container">
-        <!-- Player Bar Above Chess Board -->
-        <div class="player-bar" id="player-bar-top">
-            <div class="player-bar-section">
-                <img class="player-dp" src="" alt="Player Top">
-                <span class="player-name"></span>
-            </div>
-            <div class="player-bar-section">
-                <span class="player-timer"></span>
-                <span class="turn-indicator"></span>
-            </div>
-        </div>
+        <div id="game-wrapper">
+            <!-- Chess Board Container -->
+            <div id="chess-board-container">
+                <!-- Player Bar Above Chess Board -->
+                <div class="player-bar" id="player-bar-top">
+                    <div class="player-bar-section">
+                        <img class="player-dp" src="" alt="Player Top">
+                        <span class="player-name"></span>
+                    </div>
+                    <div class="player-bar-section">
+                        <span class="player-timer"></span>
+                        <span class="turn-indicator"></span>
+                    </div>
+                </div>
 
-        <!-- Chess Board -->
-        <div id="chess-board">
-            <!-- Chess squares dynamically rendered by JavaScript -->
-        </div>
+                <!-- Chess Board -->
+                <div id="chess-board">
+                    <!-- Chess squares dynamically rendered by JavaScript -->
+                </div>
 
-        <!-- Player Bar Below Chess Board -->
-        <div class="player-bar" id="player-bar-bottom">
-            <div class="player-bar-section">
-                <img class="player-dp" src="" alt="Player Bottom">
-                <span class="player-name"></span>
-            </div>
-            <div class="player-bar-section">
-                <span class="player-timer"></span>
-                <span class="turn-indicator"></span>
-            </div>
-        </div>
-        <button id="flip-board">Flip Board</button>
-        <button id="home-page" onclick="window.location.href='/'">Home</button>
+                <!-- Player Bar Below Chess Board -->
+                <div class="player-bar" id="player-bar-bottom">
+                    <div class="player-bar-section">
+                        <img class="player-dp" src="" alt="Player Bottom">
+                        <span class="player-name"></span>
+                    </div>
+                    <div class="player-bar-section">
+                        <span class="player-timer"></span>
+                        <span class="turn-indicator"></span>
+                    </div>
+                </div>
 
-        <!-- Move History -->
-        <div id="move-history">
-            <h3>Move History</h3>
-            <table id="history-table">
-                <thead>
-                    <tr>
-                        <th>Move #</th>
-                        <th>White</th>
-                        <th>Black</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Moves dynamically added here -->
-                </tbody>
-            </table>
+                <!-- Controls -->
+                <!-- <div id="controls">
+                    <button id="flip-board">Flip Board</button>
+                    <button id="home-page" onclick="window.location.href='/'">Home</button>
+                </div> -->
+            </div>
+
+            <!-- Move History -->
+            <div id="move-history">
+                <!-- <h3>Moves</h3> -->
+                <table id="history-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>White</th>
+                            <th>Black</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Moves dynamically added here -->
+                        <tr><td>1</td><td>...</td><td>...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -66,5 +76,6 @@
     <script src="/static/js/board.js"></script>
     <script src="/static/js/socket.js"></script>
 </body>
+
 
 </html>

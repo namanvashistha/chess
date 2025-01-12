@@ -9,28 +9,28 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func ProcessMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
+func ProcessMove(game *dao.ChessGame, move dto.Move, user dao.User) (string, error) {
 
 	if user.ID != game.WhiteUser.ID && user.ID != game.BlackUser.ID {
 		log.Errorf("Invalid move: user %d is not in the game", user.ID)
-		return fmt.Errorf("invalid move: user %d is not in the game", user.ID)
+		return "", fmt.Errorf("invalid move: user %d is not in the game", user.ID)
 	}
 
 	if game.State.Turn == "w" && user.ID != game.WhiteUser.ID {
 		log.Errorf("Invalid move: user %d is not white", user.ID)
-		return fmt.Errorf("invalid move: user %d is not white", user.ID)
+		return "", fmt.Errorf("invalid move: user %d is not white", user.ID)
 	} else if game.State.Turn == "b" && user.ID != game.BlackUser.ID {
 		log.Errorf("Invalid move: user %d is not black", user.ID)
-		return fmt.Errorf("invalid move: user %d is not black", user.ID)
+		return "", fmt.Errorf("invalid move: user %d is not black", user.ID)
 	}
 
 	if game.State.Turn == "w" && !(int(move.Piece[0]) >= 65 && int(move.Piece[0]) <= 90) {
 		log.Errorf("Invalid move: user %d is not white", user.ID)
-		return fmt.Errorf("invalid move: user %d is not white", user.ID)
+		return "", fmt.Errorf("invalid move: user %d is not white", user.ID)
 	}
 	if game.State.Turn == "b" && !(int(move.Piece[0]) >= 97 && int(move.Piece[0]) <= 122) {
 		log.Errorf("Invalid move: user %d is not black", user.ID)
-		return fmt.Errorf("invalid move: user %d is not black", user.ID)
+		return "", fmt.Errorf("invalid move: user %d is not black", user.ID)
 	}
 
 	sourceIdx := PositionToIndex(move.Source)
@@ -38,7 +38,7 @@ func ProcessMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
 
 	if !IsValidMove(*game, (1 << sourceIdx), (1 << destinationIdx)) {
 		log.Errorf("Invalid move: move is not valid")
-		return fmt.Errorf("invalid move: move is not valid")
+		return "", fmt.Errorf("invalid move: move is not valid")
 	}
 
 	pieceBitboards := map[string]struct {
@@ -223,11 +223,11 @@ func ProcessMove(game *dao.ChessGame, move dto.Move, user dao.User) error {
 
 	game.State.Turn = ToggleTurn(game.State.Turn)
 
-	return nil
+	return game.State.LastMove, nil
 }
 
 func IsValidMove(game dao.ChessGame, piece uint64, destination uint64) bool {
-	legalMoves := GenerateLegalMovesForAllPositions(game.State)
+	legalMoves, _ := GenerateLegalMovesForAllPositions(game.State)
 	return legalMoves[piece]&destination != 0
 }
 
@@ -236,4 +236,35 @@ func ToggleTurn(currentTurn string) string {
 		return "b"
 	}
 	return "w"
+}
+
+func ConvertToStandardNotation(move string, isCapture bool, isCastling bool) string {
+	// Special case for castling
+	if isCastling {
+		if move == "O-O" {
+			return "O-O"
+		} else if move == "O-O-O" {
+			return "O-O-O"
+		}
+	}
+
+	// Extract components of the move
+	piece := move[:1] // First character
+	from := move[1:3] // Next two characters
+	to := move[3:]    // Last two characters
+
+	// Handle pawn moves (no piece designation for pawns)
+	if piece == "" || piece == "P" {
+		if isCapture {
+			return string(from[0]) + "x" + to // Use the file of the pawn for capture
+		}
+		return to
+	}
+
+	// Handle standard piece moves
+	if isCapture {
+		return piece + "x" + to
+	}
+
+	return piece + to
 }

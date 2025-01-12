@@ -74,9 +74,6 @@ func (ws *WebSocketServiceImpl) ProcessMove(gameId string, message dto.WebSocket
 	var err error
 	status := "success"
 	status_message := ""
-	// gameId := message.Payload.(map[string]interface{})["game_id"].(string)
-	// game, _ = ws.chessRepository.FindChessGameById(gameId)
-	// Fetch from cache
 	game, err = ws.chessRepository.GetChessGameFromCache(gameId)
 	if err != nil || game.ID == 0 {
 		// Fallback to DB if cache miss
@@ -103,27 +100,44 @@ func (ws *WebSocketServiceImpl) ProcessMove(gameId string, message dto.WebSocket
 		status_message = err.Error()
 		status = "error"
 	}
-
-	if err = engine.ProcessMove(&game, move, user); err != nil {
+	legalMoves := make(map[uint64]uint64)
+	gameStatus := ""
+	if lastMove, err := engine.ProcessMove(&game, move, user); err != nil {
 		status = "error"
 		status_message = err.Error()
 		log.Error("Error processing move:", err)
 	} else {
+		legalMoves, gameStatus = engine.GenerateLegalMovesForAllPositions(game.State)
+		gameMove := dao.GameMove{
+			GameID: game.ID,
+			Move:   lastMove,
+		}
+		_ = ws.chessRepository.SaveGameMoveToDB(&gameMove)
+		game.Moves = append(game.Moves, gameMove)
+		if gameStatus == "white_checkmate" {
+			game.Winner = "b"
+		}
+
+		if gameStatus == "black_checkmate" {
+			game.Winner = "w"
+		}
+
 		_ = ws.chessRepository.SaveChessGameToCache(&game)
 		_ = ws.chessRepository.SaveChessGameToDB(&game)
 		_ = ws.chessRepository.SaveGameStateToDB(&game.State)
-		// _ = ws.chessRepository.SaveChessStateToDB(&game.ChessState)
 	}
 
-	// Build response
-	// game.ChessState.AllowedMoves = engine.GetAllowedMoves(game)
 	game.BoardLayout = engine.GetBoardLayout()
 	game.CurrentState = engine.ConvertGameStateToMap(game.State)
-	game.LegalMoves = engine.ConvertLegalMovesToMap(engine.GenerateLegalMovesForAllPositions(game.State))
+
+	if len(legalMoves) == 0 {
+		legalMoves, gameStatus = engine.GenerateLegalMovesForAllPositions(game.State)
+	}
+	game.LegalMoves = engine.ConvertLegalMovesToMap(legalMoves)
 	response := dto.WebSocketMessage{
 		Type:    "game_update",
 		Status:  status,
-		Message: status_message,
+		Message: status_message + gameStatus,
 		Payload: game,
 	}
 	ws.BroadcastMessage(gameId, response)
