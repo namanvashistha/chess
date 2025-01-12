@@ -165,7 +165,6 @@ function renderChessBoard(gameData) {
 
     const renderMoves = () => {
         const historyTableBody = document.querySelector("#history-table tbody");
-        console.log(historyTableBody);
         historyTableBody.innerHTML = ""; // Clear any existing rows
         const moves = gameData.moves;
     
@@ -210,10 +209,30 @@ function renderChessBoard(gameData) {
         }
     }
 
+    const displayWinner = () => {
+        const winner = gameData.winner;
+        if (!winner) return;
+        console.log(winner);
+        const winnerMessage = document.getElementById("winner-message");
+        const winnerDisplay = document.getElementById("winner-display");
+        
+        if (winner == "w") {
+            winnerMessage.textContent = 'White wins the game!';
+        } else if (winner == "b"){
+            winnerMessage.textContent = 'Black wins the game!';
+        }
+        else {
+            winnerMessage.textContent = "It's a draw!";
+        }
+    
+        winnerDisplay.style.display = "block";
+    }
+
     renderBitBoard();
     renderPlayerBars();
     renderMoves();
     highlightLastMove();
+    displayWinner();
     // document.getElementById("flip-board").addEventListener("click", () => {
     //     boardPov = localStorage.getItem("boardPov") === "w";
     //     localStorage.setItem("boardPov", boardPov ? "b" : "w");

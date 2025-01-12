@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     ? formatUserName(game.black_user.name)
                                     : '<span class="loader">waiting<span class="dots">...</span></span>'}
                             </p>
-                            <p>Status: ${game.status || 'Waiting for opponent'}</p>
+                            <p>Status: ${game.winner === "w" ? "White Won!" : game.winner === "b" ? "Black Won!" : ""}</p>
                             <button class="join-game-button" data-invite-code="${game.invite_code}">Join Game</button>
                         `;
                         gamesList.appendChild(gameItem);
