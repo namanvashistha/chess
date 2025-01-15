@@ -160,10 +160,10 @@ func generatePawnMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, l
 		attacks := (diagonalLeft | diagonalRight) & gs.BlackBitboard
 
 		// En passant for white pawns
-		if gs.EnPassant != 0 && (gs.EnPassant&gs.BlackBitboard) != 0 {
+		if gs.EnPassant != 0 && gs.EnPassant&gs.BlackBitboard != 0 {
 			epSquare := gs.EnPassant
 			if (diagonalLeft|diagonalRight)&epSquare != 0 {
-				attacks |= epSquare
+				attacks |= (diagonalLeft | diagonalRight) & epSquare
 			}
 		}
 
@@ -194,10 +194,10 @@ func generatePawnMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, l
 		attacks := (diagonalLeft | diagonalRight) & gs.WhiteBitboard
 
 		// En passant for black pawns
-		if gs.EnPassant != 0 && (gs.EnPassant&gs.WhiteBitboard) != 0 {
+		if gs.EnPassant != 0 && gs.EnPassant&gs.WhiteBitboard != 0 {
 			epSquare := gs.EnPassant
 			if (diagonalLeft|diagonalRight)&epSquare != 0 {
-				attacks |= epSquare
+				attacks |= (diagonalLeft | diagonalRight) & epSquare
 			}
 		}
 

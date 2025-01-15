@@ -132,8 +132,10 @@ func ProcessMove(game *dao.ChessGame, move dto.Move, user dao.User) (string, err
 		// Set en passant square for potential future capture
 		if move.Source[1] == '2' && move.Destination[1] == '4' { // White two-square move
 			game.State.EnPassant = 1 << PositionToIndex(string(move.Destination[0])+"3")
+			game.State.EnPassant |= 1 << PositionToIndex(string(move.Destination[0])+"4")
 		} else if move.Source[1] == '7' && move.Destination[1] == '5' { // Black two-square move
 			game.State.EnPassant = 1 << PositionToIndex(string(move.Destination[0])+"6")
+			game.State.EnPassant |= 1 << PositionToIndex(string(move.Destination[0])+"5")
 		} else {
 			game.State.EnPassant = 0 // Clear en passant
 		}
