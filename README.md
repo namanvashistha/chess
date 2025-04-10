@@ -1,6 +1,6 @@
 # chess
 
-This project is a *web-based chess application*.
+This project is a *chess application*.
 It allows two players to play chess against each other in *real-time*.
 The core game logic uses a **Bitboard Chess Engine** for efficiency.
 User interactions happen through a web interface (frontend), which communicates with the backend via API calls and WebSockets.

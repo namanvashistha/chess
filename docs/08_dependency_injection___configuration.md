@@ -334,7 +334,3 @@ This concludes our journey through the backend architecture of the `chess` proje
 
 ---
 
-<script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: true });
-</script>
