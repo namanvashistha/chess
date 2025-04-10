@@ -7,8 +7,6 @@ User interactions happen through a web interface (frontend), which communicates 
 Game states and user data are stored in a **PostgreSQL database** and cached using **Redis**.
 
 
-**Source Repository:** [None](None)
-
 ```mermaid
 flowchart TD
     A0["Chess Engine (Bitboard Implementation)"]
