@@ -1,10 +1,16 @@
 package config
 
-import "chess-engine/app/pkg"
+import (
+	"chess-engine/app/pkg"
+	"os"
+)
 
 func InitRedis() *pkg.RedisClient {
 	// Replace with your Redis configuration
-	const redisAddr = "localhost:6379"
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
 	const redisPassword = "" // Leave empty if no password
 	const redisDB = 0        // Default DB
 
