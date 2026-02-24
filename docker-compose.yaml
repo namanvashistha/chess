@@ -20,7 +20,7 @@ services:
       - backend
       - caddy
     labels:
-      caddy: chess.namanvashistha.com
+      caddy: http://chess.namanvashistha.com
       caddy.reverse_proxy: "{{upstreams 9000}}"
 
   redis:
