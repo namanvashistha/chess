@@ -1,11 +1,10 @@
 services:
-  # Go application
   go-app:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "127.0.0.1:9000:9000"
+    expose:
+      - "9000"
     environment:
       - PORT=${PORT:-9000}
       - APPLICATION_NAME=${APPLICATION_NAME:-chess}
@@ -19,8 +18,11 @@ services:
         condition: service_healthy
     networks:
       - backend
+      - caddy
+    labels:
+      caddy: chess.namanvashistha.com
+      caddy.reverse_proxy: "{{upstreams 9000}}"
 
-  # Redis
   redis:
     image: redis:7.0
     networks:
@@ -33,7 +35,6 @@ services:
       timeout: 3s
       retries: 5
 
-  # PostgreSQL
   postgres:
     image: postgres:15
     environment:
@@ -50,11 +51,11 @@ services:
       timeout: 5s
       retries: 5
 
-
-
 networks:
   backend:
     driver: bridge
+  caddy:
+    external: true
 
 volumes:
   postgres_data:
