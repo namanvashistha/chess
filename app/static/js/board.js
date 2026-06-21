@@ -2,6 +2,11 @@ const chessBoard = document.getElementById('chess-board');
 let legalMoves = []; // To store allowed moves for the clicked piece
 let selectedPiece = null; // Track the currently selected piece
 let selectedSquare = null; // Track the currently selected square
+let lastGameData = null; // Most recent game payload (for re-render on flip)
+
+// Standard piece values and full starting material (for captured/advantage calc)
+const PIECE_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+const START_COUNTS = { p: 8, n: 2, b: 2, r: 2, q: 1, k: 1 };
 
 function bitboardToBits(title, bitboard) {
     const bits = [];
@@ -43,6 +48,9 @@ function getGameIdFromURL() {
 
 const gameId = getGameIdFromURL();
 
+// Poll handle used while a host waits for an opponent to join.
+let waitingPoll = null;
+
 // Fetch initial chessboard state from the API
 function fetchChessState() {
     fetch(`/api/chess/game/${gameId}`)
@@ -54,13 +62,22 @@ function fetchChessState() {
         .catch(err => console.error('Error fetching chess state:', err));
 }
 
+// Manual board-flip override (null = follow the player's own colour)
+let povOverride = null;
+
 // Render the chessboard
 function renderChessBoard(gameData) {
+    // Cache a pristine copy so a manual flip can re-render without compounding
+    // the in-place board_layout mutations below.
+    lastGameData = JSON.parse(JSON.stringify(gameData));
+
     legalMoves = gameData.legal_moves; // Store the allowed moves
     userData = JSON.parse(localStorage.getItem("userData"));
-    if (userData.id === gameData.white_user.id) {
+    if (povOverride) {
+        localStorage.setItem("boardPov", povOverride);
+    } else if (gameData.white_user && userData.id === gameData.white_user.id) {
         localStorage.setItem("boardPov", "w");
-    } else if (userData.id === gameData.black_user.id) {
+    } else if (gameData.black_user && userData.id === gameData.black_user.id) {
         localStorage.setItem("boardPov", "b");
     }
 
@@ -74,21 +91,29 @@ function renderChessBoard(gameData) {
             gameData.board_layout = gameData.board_layout.map(row => row.reverse()).reverse();
         }
         currentState = gameData.current_state;
-        gameData.board_layout.forEach((row, _) => {
-            row.forEach((squareInfo, _) => {
+        gameData.board_layout.forEach((row, rowIndex) => {
+            row.forEach((squareInfo, colIndex) => {
                 const [squareKey, color] = squareInfo;
 
                 const square = document.createElement('div');
                 square.className = `square ${color === 'w' ? 'light' : 'dark'}`;
-                // square.textContent = squareKey;
                 square.dataset.key = squareKey;
                 square.dataset.file = squareKey[0];
                 square.dataset.rank = squareKey[1];
 
-                const label = document.createElement('span');
-                label.textContent = squareKey;
-                label.className = 'square-label';
-                square.appendChild(label);
+                // Coordinates only on board edges (lichess-style overlay)
+                if (rowIndex === 7) {
+                    const fileLabel = document.createElement('span');
+                    fileLabel.textContent = squareKey[0];
+                    fileLabel.className = 'square-label file';
+                    square.appendChild(fileLabel);
+                }
+                if (colIndex === 0) {
+                    const rankLabel = document.createElement('span');
+                    rankLabel.textContent = squareKey[1];
+                    rankLabel.className = 'square-label rank';
+                    square.appendChild(rankLabel);
+                }
 
                 const pieceCode = currentState[squareKey];
                 if (pieceCode) {
@@ -116,50 +141,95 @@ function renderChessBoard(gameData) {
         });
     }
 
-    const getAvatarUrl = (name) => `https://avatar.iran.liara.run/username?username=${encodeURIComponent(name)}`;
+    // Generate avatars locally as SVG data-URIs (no network round-trip).
+    const getAvatarUrl = (name) => {
+        const initials = (name || "?")
+            .split(/\s+/)
+            .map(w => w.charAt(0))
+            .slice(0, 2)
+            .join("")
+            .toUpperCase();
+        // deterministic hue from the name
+        let hash = 0;
+        for (let i = 0; i < (name || "").length; i++) {
+            hash = (name.charCodeAt(i) + ((hash << 5) - hash)) | 0;
+        }
+        const hue = Math.abs(hash) % 360;
+        const svg =
+            `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80">` +
+            `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">` +
+            `<stop offset="0" stop-color="hsl(${hue},62%,55%)"/>` +
+            `<stop offset="1" stop-color="hsl(${(hue + 38) % 360},62%,42%)"/>` +
+            `</linearGradient></defs>` +
+            `<rect width="80" height="80" rx="20" fill="url(#g)"/>` +
+            `<text x="50%" y="50%" dy="0.35em" text-anchor="middle" ` +
+            `font-family="Inter,system-ui,sans-serif" font-size="34" font-weight="700" fill="#fff">${initials}</text>` +
+            `</svg>`;
+        return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    };
 
     const renderPlayerBars = () => {
         const topBar = document.getElementById("player-bar-top");
         const bottomBar = document.getElementById("player-bar-bottom");
-        if ((localStorage.getItem("boardPov") || "w") === "w") {
-            // White is at the bottom
-            topBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(gameData.black_user.name));
-            topBar.querySelector(".player-name").textContent = formatUserName(gameData.black_user.name);
-            topBar.querySelector(".turn-indicator").textContent = gameData.state.turn === "b" ? "Move" : "";
-            topBar.querySelector(".turn-indicator").style.color = gameData.state.turn === "b" ? "green" : "gray";
-            topBar.querySelector(".player-timer").textContent = gameData.state.turn === "b" ? "🟢" : "⏳";
-            topBar.style.backgroundColor = "#606c76";
-            topBar.style.color = "#f9f9f9";
+        const pov = localStorage.getItem("boardPov") || "w";
+        // top player is the opposite color of the point-of-view
+        const topColor = pov === "w" ? "b" : "w";
+        const bottomColor = pov === "w" ? "w" : "b";
+        const turn = gameData.state.turn;
+        const captured = computeCaptured(gameData.current_state);
 
+        const renderCaptured = (container, color) => {
+            container.innerHTML = "";
+            // pieces THIS player captured = the opponent's lost pieces
+            const codes = color === "w" ? captured.whiteCaptured : captured.blackCaptured;
+            codes.forEach(code => {
+                const img = document.createElement("img");
+                img.src = pieceMap[code];
+                img.alt = code;
+                container.appendChild(img);
+            });
+            const adv = color === "w" ? captured.adv : -captured.adv;
+            if (adv > 0) {
+                const span = document.createElement("span");
+                span.className = "material";
+                span.textContent = `+${adv}`;
+                container.appendChild(span);
+            }
+        };
 
-            bottomBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(gameData.white_user.name));
-            bottomBar.querySelector(".player-name").textContent = formatUserName(gameData.white_user.name);
-            bottomBar.querySelector(".turn-indicator").textContent = gameData.state.turn === "w" ? "Move" : "";
-            bottomBar.querySelector(".turn-indicator").style.color = gameData.state.turn === "w" ? "green" : "gray";
-            bottomBar.querySelector(".player-timer").textContent = gameData.state.turn === "w" ? "🟢" : "⏳";
-            bottomBar.style.backgroundColor = "f9f9f9";
-            bottomBar.style.color = "#606c76";
+        const fillBar = (bar, color) => {
+            const user = color === "w" ? gameData.white_user : gameData.black_user;
+            if (!user) {
+                // Seat not yet taken: show a quiet placeholder instead of crashing.
+                bar.querySelector(".player-dp").src = getAvatarUrl("?");
+                bar.querySelector(".player-name").textContent = "Waiting for opponent…";
+                bar.querySelector(".turn-indicator").textContent = "";
+                bar.querySelector(".player-timer").textContent = "";
+                bar.classList.remove("is-turn");
+                bar.querySelector(".player-captured").innerHTML = "";
+                return;
+            }
+            const name = formatUserName(user.name);
+            bar.querySelector(".player-dp").src = getAvatarUrl(name);
+            bar.querySelector(".player-name").textContent = name;
+            bar.querySelector(".turn-indicator").textContent = turn === color ? "To move" : "";
+            bar.querySelector(".player-timer").textContent = turn === color ? "🟢" : "⏳";
+            bar.classList.toggle("is-turn", turn === color);
+            renderCaptured(bar.querySelector(".player-captured"), color);
+        };
 
-        } else {
-            // Black is at the bottom
-            topBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(gameData.white_user.name));
-            topBar.querySelector(".player-name").textContent = formatUserName(gameData.white_user.name);
-            topBar.querySelector(".turn-indicator").textContent = gameData.state.turn === "w" ? "Move" : "";
-            topBar.querySelector(".turn-indicator").style.color = gameData.state.turn === "w" ? "green" : "gray";
-            topBar.querySelector(".player-timer").textContent = gameData.state.turn === "w" ? "🟢" : "⏳";
-            topBar.style.backgroundColor = "#f9f9f9";
-            topBar.style.color = "#606c76";
+        fillBar(topBar, topColor);
+        fillBar(bottomBar, bottomColor);
+    };
 
-
-
-            bottomBar.querySelector(".player-dp").src = getAvatarUrl(formatUserName(gameData.black_user.name));
-            bottomBar.querySelector(".player-name").textContent = formatUserName(gameData.black_user.name);
-            bottomBar.querySelector(".turn-indicator").textContent = gameData.state.turn === "b" ? "Move" : "";
-            bottomBar.querySelector(".turn-indicator").style.color = gameData.state.turn === "b" ? "green" : "gray";
-            bottomBar.querySelector(".player-timer").textContent = gameData.state.turn === "b" ? "🟢" : "⏳";
-            bottomBar.style.backgroundColor = "#606c76";
-            bottomBar.style.color = "#f9f9f9";
-
+    const renderStatus = () => {
+        const moveCount = document.getElementById("move-count");
+        if (moveCount) moveCount.textContent = gameData.moves.length;
+        const status = document.getElementById("game-status");
+        if (status) {
+            status.textContent = gameData.winner
+                ? "Game over"
+                : `${gameData.state.turn === "w" ? "White" : "Black"} to move`;
         }
     };
 
@@ -188,8 +258,8 @@ function renderChessBoard(gameData) {
     
             historyTableBody.appendChild(moveRow);
         }
-        const moveHistory = document.getElementById("move-history");
-        moveHistory.scrollTop = moveHistory.scrollHeight;
+        const scroller = document.getElementById("move-history");
+        scroller.scrollTop = scroller.scrollHeight;
     };
     const highlightLastMove = () => {
         const lastMove = gameData.state.last_move;
@@ -225,21 +295,79 @@ function renderChessBoard(gameData) {
             winnerMessage.textContent = "It's a draw!";
         }
     
-        winnerDisplay.style.display = "block";
+        winnerDisplay.style.display = "flex";
     }
+
+    // Host is in the game but the opponent seat is still empty: prompt them to
+    // share the invite code, and poll until someone joins (join isn't pushed
+    // over the socket).
+    const manageWaiting = () => {
+        const me = userData?.id;
+        const amPlayer = me != null &&
+            ((gameData.white_user && gameData.white_user.id === me) ||
+             (gameData.black_user && gameData.black_user.id === me));
+        const waiting = amPlayer && (!gameData.white_user || !gameData.black_user) && !gameData.winner;
+        const overlay = document.getElementById("waiting-display");
+        if (!overlay) return;
+
+        if (!waiting) {
+            overlay.style.display = "none";
+            if (waitingPoll) { clearInterval(waitingPoll); waitingPoll = null; }
+            return;
+        }
+
+        const codeEl = document.getElementById("waiting-code");
+        if (codeEl) codeEl.textContent = gameData.invite_code || "";
+        overlay.style.display = "flex";
+        if (!waitingPoll) waitingPoll = setInterval(fetchChessState, 3000);
+    };
 
     renderBitBoard();
     renderPlayerBars();
     renderMoves();
+    renderStatus();
     highlightLastMove();
     displayWinner();
-    // document.getElementById("flip-board").addEventListener("click", () => {
-    //     boardPov = localStorage.getItem("boardPov") === "w";
-    //     localStorage.setItem("boardPov", boardPov ? "b" : "w");
-    //     renderBitBoard();
-    //     renderPlayerBars();
-    // });
+    manageWaiting();
 }
+
+// Compute captured pieces and material advantage from the live board state.
+// Returns { whiteCaptured, blackCaptured, adv } where *Captured are arrays of
+// piece codes that side has captured, and adv = white material - black material.
+function computeCaptured(currentState) {
+    const onBoard = { w: { p: 0, n: 0, b: 0, r: 0, q: 0, k: 0 }, b: { p: 0, n: 0, b: 0, r: 0, q: 0, k: 0 } };
+    Object.values(currentState || {}).forEach(code => {
+        if (!code) return;
+        const side = code === code.toUpperCase() ? "w" : "b";
+        onBoard[side][code.toLowerCase()]++;
+    });
+
+    const order = ["q", "r", "b", "n", "p"];
+    const whiteCaptured = []; // black pieces white removed -> black codes (lowercase)
+    const blackCaptured = []; // white pieces black removed -> white codes (uppercase)
+    let whiteMat = 0, blackMat = 0;
+    order.forEach(type => {
+        const wLost = Math.max(0, START_COUNTS[type] - onBoard.w[type]);
+        const bLost = Math.max(0, START_COUNTS[type] - onBoard.b[type]);
+        for (let i = 0; i < bLost; i++) whiteCaptured.push(type);            // black piece
+        for (let i = 0; i < wLost; i++) blackCaptured.push(type.toUpperCase()); // white piece
+        whiteMat += onBoard.w[type] * PIECE_VALUES[type];
+        blackMat += onBoard.b[type] * PIECE_VALUES[type];
+    });
+
+    return { whiteCaptured, blackCaptured, adv: whiteMat - blackMat };
+}
+
+// Flip the board orientation (works for players and spectators).
+(function wireFlipButton() {
+    const flipBtn = document.getElementById("flip-board");
+    if (!flipBtn) return;
+    flipBtn.addEventListener("click", () => {
+        const current = localStorage.getItem("boardPov") || "w";
+        povOverride = current === "w" ? "b" : "w";
+        if (lastGameData) renderChessBoard(JSON.parse(JSON.stringify(lastGameData)));
+    });
+})();
 
 
 
@@ -305,6 +433,7 @@ function handlePieceClick(piece, square) {
 }
 
 function highlightAllowedMoves(piece) {
+    piece.parentElement.classList.add('selected');
     const pieceMoves = legalMoves[piece.parentElement.dataset.key];
 
     if (!pieceMoves) {
@@ -328,6 +457,9 @@ function clearHighlightedSquares() {
     document.querySelectorAll('.highlight').forEach(square => {
         square.classList.remove('highlight');
         square.removeEventListener('click', handleSquareClick);
+    });
+    document.querySelectorAll('.square.selected').forEach(square => {
+        square.classList.remove('selected');
     });
 }
 
@@ -372,3 +504,22 @@ function movePieceOnBoard(sourceFile, sourceRank, targetFile, targetRank, pieceC
 
 // Fetch and render the chessboard initially
 fetchChessState();
+
+// Wire the waiting-overlay "copy invite code" button once.
+(function () {
+    const btn = document.getElementById("waiting-copy");
+    const codeEl = document.getElementById("waiting-code");
+    if (!btn || !codeEl) return;
+    btn.addEventListener("click", () => {
+        const label = btn.querySelector(".waiting-copy-label");
+        navigator.clipboard?.writeText(codeEl.textContent.trim()).then(() => {
+            const prev = label ? label.innerHTML : "";
+            if (label) label.innerHTML = '<i class="fa fa-check"></i> Copied';
+            btn.classList.add("is-copied");
+            setTimeout(() => {
+                if (label) label.innerHTML = prev;
+                btn.classList.remove("is-copied");
+            }, 1500);
+        }).catch(() => {});
+    });
+})();

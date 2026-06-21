@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"chess-engine/app/constant"
 	"chess-engine/app/domain/dao"
 	"chess-engine/app/pkg"
 	"encoding/json"
@@ -21,6 +22,7 @@ type ChessRepository interface {
 	SaveGameStateToDB(game *dao.GameState) error
 	SaveChessGameToDB(game *dao.ChessGame) error
 	FindUserByToken(token string) (dao.User, error)
+	FindOrCreateBotUser() (dao.User, error)
 	SaveGameMoveToDB(game *dao.GameMove) error
 }
 
@@ -169,6 +171,21 @@ func (u ChessRepositoryImpl) FindUserByToken(token string) (dao.User, error) {
 	err := u.db.Where("token = ?", token).First(&user).Error
 	if err != nil {
 		log.Error("Got and error when find user by token. Error: ", err)
+		return dao.User{}, err
+	}
+	return user, nil
+}
+
+// FindOrCreateBotUser returns the singleton computer-opponent user, creating it
+// the first time a bot game is requested.
+func (u ChessRepositoryImpl) FindOrCreateBotUser() (dao.User, error) {
+	var user dao.User
+	if err := u.db.Where("token = ?", constant.BotToken).First(&user).Error; err == nil {
+		return user, nil
+	}
+	user = dao.User{Name: constant.BotName, Token: constant.BotToken, Status: 1}
+	if err := u.db.Create(&user).Error; err != nil {
+		log.Error("Error creating bot user. Error: ", err)
 		return dao.User{}, err
 	}
 	return user, nil

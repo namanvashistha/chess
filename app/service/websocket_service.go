@@ -1,12 +1,14 @@
 package service
 
 import (
+	"chess-engine/app/constant"
 	"chess-engine/app/domain/dao"
 	"chess-engine/app/domain/dto"
 	"chess-engine/app/engine"
 	"chess-engine/app/pkg"
 	"chess-engine/app/repository"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
@@ -17,6 +19,7 @@ type WebSocketService interface {
 	UnregisterClient(gameId string, conn *websocket.Conn)
 	BroadcastMessage(gameID string, message dto.WebSocketMessage)
 	ProcessMove(gameId string, message dto.WebSocketMessage)
+	MaybePlayBotMove(gameId string)
 }
 
 type WebSocketServiceImpl struct {
@@ -141,6 +144,55 @@ func (ws *WebSocketServiceImpl) ProcessMove(gameId string, message dto.WebSocket
 		Payload: game,
 	}
 	ws.BroadcastMessage(gameId, response)
+
+	// If it's now the bot's turn, let it reply through this same pipeline.
+	if status == "success" {
+		go ws.MaybePlayBotMove(gameId)
+	}
+}
+
+// MaybePlayBotMove checks whether the side to move is the built-in bot and, if
+// so, computes a move and replays it through ProcessMove (so it persists and
+// broadcasts exactly like a human move). It's a no-op for human turns, finished
+// games, and games without a bot, which makes it safe to call after every move
+// and on connect. No recursion risk: a bot game has only one bot seat, so after
+// the bot moves it's the human's turn and this returns immediately.
+func (ws *WebSocketServiceImpl) MaybePlayBotMove(gameId string) {
+	game, err := ws.chessRepository.GetChessGameFromCache(gameId)
+	if err != nil || game.ID == 0 {
+		game, err = ws.chessRepository.FindChessGameById(gameId)
+		if err != nil {
+			return
+		}
+	}
+	if game.Winner != "" || game.WhiteUser == nil || game.BlackUser == nil {
+		return
+	}
+
+	botToMove := (game.State.Turn == "w" && game.WhiteUser.Name == constant.BotName) ||
+		(game.State.Turn == "b" && game.BlackUser.Name == constant.BotName)
+	if !botToMove {
+		return
+	}
+
+	move := engine.ChooseGreedyMove(&game)
+	if move == nil {
+		return
+	}
+
+	// A short pause so the reply doesn't feel instant.
+	time.Sleep(600 * time.Millisecond)
+
+	ws.ProcessMove(gameId, dto.WebSocketMessage{
+		Type: "game_update",
+		Payload: map[string]interface{}{
+			"piece":       move.Piece,
+			"source":      move.Source,
+			"destination": move.Destination,
+			"game_id":     gameId,
+			"token":       constant.BotToken,
+		},
+	})
 }
 
 func (ws *WebSocketServiceImpl) run() {

@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-20T21:47:01Z",
+  "title": "Design System: Chess",
+  "extensions": {
+    "colorMeta": {
+      "accent": { "role": "primary", "displayName": "Signal Blue", "canonical": "#5b8def", "tonalRamp": ["#10172a", "#1b2747", "#274069", "#345a8f", "#4577e0", "#5b8def", "#86a9f0", "#b3caf6", "#dbe6fb"] },
+      "bg-dark": { "role": "neutral", "displayName": "Hall Black", "canonical": "#0e1117", "tonalRamp": ["#0a0d12", "#0e1117", "#141a24", "#1a212d", "#212a38", "#2a3545", "#3a475a", "#586577", "#98a3b3"] },
+      "surface-dark": { "role": "neutral", "displayName": "Panel Slate", "canonical": "#1a212d", "tonalRamp": ["#0e1117", "#141a24", "#1a212d", "#212a38", "#2a3545", "#36425a", "#586577", "#8a97a8", "#c2cbd6"] },
+      "text-dark": { "role": "neutral", "displayName": "Chalk", "canonical": "#e7ecf3", "tonalRamp": ["#1a212d", "#2a3545", "#3a475a", "#586577", "#6b7686", "#98a3b3", "#c2cbd6", "#e7ecf3", "#f5f8fc"] },
+      "board-dark-sq": { "role": "tertiary", "displayName": "Board Sage", "canonical": "#7d945d", "tonalRamp": ["#2c3420", "#3d4a2c", "#4f6039", "#637749", "#7d945d", "#96ab78", "#b1c19a", "#cdd8bd", "#e8eddc"] },
+      "good": { "role": "tertiary", "displayName": "Win Green", "canonical": "#3aa564", "tonalRamp": ["#0f2c1b", "#154027", "#1d5836", "#277347", "#3aa564", "#5cbb81", "#86cfa3", "#b3e2c6", "#dcf2e6"] },
+      "lastmove": { "role": "tertiary", "displayName": "Last-Move Amber", "canonical": "#ffc440", "tonalRamp": ["#3d2c00", "#574000", "#785800", "#a07700", "#c89800", "#ffc440", "#ffd56e", "#ffe6a3", "#fff3d4"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The lobby greeting and single hero lines." },
+      "title": { "displayName": "Title", "purpose": "Brand wordmark and winner-card heading." },
+      "body": { "displayName": "Body", "purpose": "Descriptions and table data; measure capped 65-75ch." },
+      "label": { "displayName": "Label", "purpose": "Uppercase eyebrows, panel titles, turn indicators, column heads." }
+    },
+    "shadows": [
+      { "name": "shadow-sm", "value": "0 1px 2px rgba(18,28,45,0.06), 0 1px 3px rgba(18,28,45,0.08)", "purpose": "Resting cards, player bars, icon buttons." },
+      { "name": "shadow-md", "value": "0 4px 12px rgba(18,28,45,0.08), 0 2px 4px rgba(18,28,45,0.06)", "purpose": "Lobby panels and side panel." },
+      { "name": "shadow-lg", "value": "0 18px 40px rgba(18,28,45,0.16)", "purpose": "Heaviest lift; use sparingly." },
+      { "name": "accent-glow", "value": "0 10px 24px -10px var(--board-glow)", "purpose": "Under the primary CTA and the active player's bar only." }
+    ],
+    "motion": [
+      { "name": "ease", "value": "cubic-bezier(0.22, 0.61, 0.36, 1)", "purpose": "Default ease-out for all state transitions and entrances." },
+      { "name": "lobby-rise", "value": "translateY(14px) -> 0, opacity 0 -> 1 over 0.6s", "purpose": "Staggered panel entrance on the lobby." },
+      { "name": "live-pulse", "value": "opacity 1 <-> 0.35 over 2.4s loop", "purpose": "Breathing status dot signalling a live list." }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "860px" },
+      { "name": "lg", "value": "980px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one CTA per surface: Create a game.",
+      "html": "<button class=\"ds-btn-primary\"><span class=\"ds-btn-icon\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg></span><span class=\"ds-btn-text\"><strong>Create a game</strong><small>You play White, invite link generated</small></span><svg class=\"ds-btn-go\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg></button>",
+      "css": ".ds-btn-primary { display:flex; align-items:center; gap:16px; padding:16px 20px; text-align:left; color:#0c1118; background:linear-gradient(135deg,#5b8def,#4577e0); border:none; border-radius:12px; box-shadow:0 10px 24px -10px rgba(111,155,255,0.3); transition:transform .18s cubic-bezier(0.22,0.61,0.36,1), box-shadow .25s; cursor:pointer; } .ds-btn-primary:hover { transform:translateY(-2px); } .ds-btn-icon { display:grid; place-items:center; width:42px; height:42px; border-radius:11px; background:rgba(255,255,255,0.18); } .ds-btn-text { display:flex; flex-direction:column; gap:2px; line-height:1.25; } .ds-btn-text strong { font:700 1.05rem Inter,sans-serif; letter-spacing:-0.01em; } .ds-btn-text small { font:500 0.8rem Inter,sans-serif; opacity:0.82; } .ds-btn-go { margin-left:auto; opacity:0.85; transition:transform .2s; } .ds-btn-primary:hover .ds-btn-go { transform:translateX(4px); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Second action, e.g. Join.",
+      "html": "<button class=\"ds-btn-ghost\">Join</button>",
+      "css": ".ds-btn-ghost { padding:13px 24px; font:700 0.95rem Inter,sans-serif; color:#e7ecf3; background:#2a3545; border:1px solid #36425a; border-radius:12px; transition:color .2s, border-color .2s, transform .15s cubic-bezier(0.22,0.61,0.36,1); cursor:pointer; } .ds-btn-ghost:hover { color:#5b8def; border-color:#5b8def; transform:translateY(-1px); }"
+    },
+    {
+      "name": "Icon Button",
+      "kind": "button",
+      "refersTo": "icon-button",
+      "description": "Topbar action, e.g. theme toggle.",
+      "html": "<button class=\"ds-icon-btn\" aria-label=\"Toggle theme\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z\"/></svg></button>",
+      "css": ".ds-icon-btn { width:40px; height:40px; display:grid; place-items:center; color:#98a3b3; background:#1a212d; border:1px solid #2a3342; border-radius:10px; box-shadow:0 1px 2px rgba(0,0,0,0.4); transition:color .2s, border-color .2s, transform .15s cubic-bezier(0.22,0.61,0.36,1); cursor:pointer; } .ds-icon-btn:hover { color:#5b8def; border-color:#5b8def; transform:translateY(-1px) rotate(18deg); }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "Invite-code field.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"e.g. 4F2A9C\">",
+      "css": ".ds-input { width:100%; padding:13px 15px; font:500 0.98rem Inter,sans-serif; letter-spacing:0.06em; color:#e7ecf3; background:#212a38; border:1px solid #2a3342; border-radius:12px; outline:none; transition:border-color .2s, box-shadow .2s; } .ds-input::placeholder { color:#6b7686; letter-spacing:0.02em; } .ds-input:focus { border-color:#5b8def; box-shadow:0 0 0 3px color-mix(in oklab, #5b8def 20%, transparent); }"
+    },
+    {
+      "name": "Open Table Row",
+      "kind": "card",
+      "refersTo": "surface-card",
+      "description": "Signature component: one live game in the lobby's open-tables list.",
+      "html": "<div class=\"ds-table\"><p class=\"ds-table-id\">Game 4821</p><p class=\"ds-table-code\">Invite 4F2A9C</p><p class=\"ds-table-player\">White: Ada</p><p class=\"ds-table-player\">Black: <span class=\"ds-waiting\">waiting<span class=\"ds-dots\">...</span></span></p><button class=\"ds-join\">Join Game</button></div>",
+      "css": ".ds-table { padding:14px 16px; background:#212a38; border:1px solid #2a3342; border-radius:12px; transition:border-color .2s, transform .15s cubic-bezier(0.22,0.61,0.36,1); } .ds-table:hover { border-color:#36425a; transform:translateY(-1px); } .ds-table-id { font:700 0.68rem Inter,sans-serif; text-transform:uppercase; letter-spacing:0.07em; color:#6b7686; } .ds-table-code { font:600 0.88rem Inter,sans-serif; font-variant-numeric:tabular-nums; letter-spacing:0.04em; color:#e7ecf3; } .ds-table-player { font:500 0.88rem Inter,sans-serif; color:#e7ecf3; line-height:1.5; } .ds-waiting { color:#6b7686; font-style:italic; } .ds-dots { animation:ds-blink 1.6s steps(1) infinite; } @keyframes ds-blink { 0%,100%{opacity:1} 50%{opacity:0} } .ds-join { width:100%; margin-top:12px; padding:9px 14px; font:700 0.85rem Inter,sans-serif; color:#5b8def; background:transparent; border:1px solid #5b8def; border-radius:8px; transition:color .18s, background .18s; cursor:pointer; } .ds-join:hover { color:#0c1118; background:#5b8def; }"
+    },
+    {
+      "name": "Topbar",
+      "kind": "nav",
+      "refersTo": "surface-card",
+      "description": "Sticky glass app bar shared across every surface.",
+      "html": "<header class=\"ds-topbar\"><a class=\"ds-brand\" href=\"#\"><span class=\"ds-brand-mark\">&#9822;</span><span class=\"ds-brand-name\">Chess</span></a><button class=\"ds-icon-btn\" aria-label=\"Toggle theme\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z\"/></svg></button></header>",
+      "css": ".ds-topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 24px; background:rgba(26,33,45,0.66); backdrop-filter:blur(14px) saturate(150%); border-bottom:1px solid #2a3342; } .ds-brand { display:flex; align-items:center; gap:10px; text-decoration:none; color:#e7ecf3; font:800 1.15rem Inter,sans-serif; letter-spacing:-0.02em; } .ds-brand-mark { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:linear-gradient(150deg,#5b8def,#4577e0); color:#0c1118; font-size:1.2rem; } .ds-icon-btn { width:40px; height:40px; display:grid; place-items:center; color:#98a3b3; background:#1a212d; border:1px solid #2a3342; border-radius:10px; cursor:pointer; transition:color .2s, border-color .2s; } .ds-icon-btn:hover { color:#5b8def; border-color:#5b8def; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Board",
+    "overview": "This is the interface of a tournament hall, not a game arcade. The surface recedes so the game can lead: tinted near-black panels in the dark theme, soft off-whites in the light theme, and a single blue accent that appears only where something is actionable. The board itself uses flat tournament colors, never photoreal wood. Everything is built from one token set in theme.css, so the lobby, the table, and the board read as one continuous app. Density is calm and deliberate. Type hierarchy comes from scale and weight, not color or decoration. Numerals are tabular wherever they represent state. Motion is a confirmation layer; nothing performs.",
+    "keyCharacteristics": [
+      "One blue accent, reserved for the actionable.",
+      "Tinted neutrals, never pure #000 or #fff.",
+      "Flat tournament board, never wood.",
+      "Tabular numerals for all game state.",
+      "Dark by default, light as a true peer."
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "Signal Blue speaks for the actionable and nothing else. If blue appears on a passive element, it is a bug. The accent's rarity is the point.", "section": "colors" },
+      { "name": "The Tinted Neutral Rule", "body": "Never #000, never #fff. Every neutral carries a faint cool tint toward the slate hue so the surfaces feel like one material.", "section": "colors" },
+      { "name": "The Tabular State Rule", "body": "Any number that changes during play uses font-variant-numeric: tabular-nums. State must never reflow as it updates.", "section": "typography" },
+      { "name": "The Tonal-First Rule", "body": "Reach for the next surface tone before reaching for a shadow. Shadows confirm hierarchy; they do not create it.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do reserve Signal Blue (#5b8def) for actionable elements only: the One Voice Rule.",
+      "Do tint every neutral toward slate; never use #000 or #fff.",
+      "Do reach for the next surface tone before adding a shadow.",
+      "Do use tabular-nums for every number that changes during play.",
+      "Do keep one primary action per surface.",
+      "Do keep the topbar, tokens, and theme identical across lobby, table, and board.",
+      "Do ease motion out and keep it short; respect prefers-reduced-motion."
+    ],
+    "donts": [
+      "Don't build a generic SaaS dashboard: no cream cards, no gradient hero-metric blocks, no identical icon + heading + text feature grids.",
+      "Don't go neon gamer / crypto: no glowing neon-on-black, no aggressive RGB, no esports energy.",
+      "Don't render skeuomorphic wood: no wooden boards, felt textures, vintage chrome, or heavy drop shadows.",
+      "Don't sprawl into a cluttered chess portal: no toolbars on every edge, no ad-dense panels.",
+      "Don't use a colored border-left/border-right stripe as an accent; borders are full and 1px.",
+      "Don't convey game state by color alone."
+    ]
+  }
+}

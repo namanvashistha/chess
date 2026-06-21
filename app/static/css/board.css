@@ -1,122 +1,351 @@
-/* board.css */
+/* board.css — the star: board frame, squares, pieces, highlights, animations */
+
+/* ---------- Board stage (frame + ambient glow) ---------- */
+.board-stage {
+    position: relative;
+    padding: 10px;
+    border-radius: var(--radius-lg);
+    background: var(--board-frame);
+    box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.board-stage::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: calc(var(--radius-lg) + 2px);
+    background: radial-gradient(60% 60% at 50% 40%, var(--board-glow), transparent 70%);
+    filter: blur(22px);
+    z-index: -1;
+    opacity: 0.9;
+}
+
 #chess-board {
-    aspect-ratio: 1; /* Keep the board square */
+    aspect-ratio: 1;
+    width: 100%;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(0, 0, 0, 0);
-    max-height: 80%;
+    border-radius: calc(var(--radius) - 2px);
+    overflow: hidden;
 }
 
+/* ---------- Squares ---------- */
 .square {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: calc(2vw + 10px);
-    aspect-ratio: 1; /* Ensures each square remains square */
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border-radius: 2px;
-    background-color: #ffffff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    color: black;
+    aspect-ratio: 1;
 }
 
 .square.light {
-    background-color: #f9f9f9; /* Soft off-white */
+    background-color: var(--board-light);
 }
 
 .square.dark {
-    background-color: #606c76; /* Calm slate gray */
+    background-color: var(--board-dark);
 }
 
-.square:hover {
-    transform: scale(1.05); /* Gentle hover effect */
-    /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); Slightly deeper shadow */
-    z-index: 1; /* Lift above other squares */
-    cursor: pointer; /* Hover effect */
+/* Coordinate labels (rendered only on edges by JS) */
+.square-label {
+    position: absolute;
+    font-size: clamp(8px, 1.1vw, 12px);
+    font-weight: 700;
+    pointer-events: none;
+    user-select: none;
+    line-height: 1;
+    opacity: 0.85;
 }
 
-/* Highlight for allowed moves */
+.square-label.file {
+    bottom: 3px;
+    right: 4px;
+}
+
+.square-label.rank {
+    top: 3px;
+    left: 4px;
+}
+
+.square.light .square-label {
+    color: var(--board-dark);
+}
+
+.square.dark .square-label {
+    color: var(--board-light);
+}
+
+/* ---------- Move hints ---------- */
+.square.highlight {
+    cursor: pointer;
+}
+
 .square.highlight::after {
-    content: '';
+    content: "";
     position: absolute;
     top: 50%;
     left: 50%;
     width: 30%;
     height: 30%;
-    background-color: rgba(138, 138, 138, 0.4);
-    /* background-color: rgba(0, 128, 0, 0.6); */
+    background-color: var(--sq-highlight);
     border-radius: 50%;
     transform: translate(-50%, -50%);
     pointer-events: none;
+    transition: transform 0.12s var(--ease);
+    z-index: 3;
 }
 
-
-.last-move-highlight-source {
-    box-shadow: inset 0 0 10px rgb(255, 166, 0);
+/* ring hint when the target square holds a capturable piece */
+.square.highlight:has(.piece)::after {
+    width: 90%;
+    height: 90%;
+    background: transparent;
+    border: 6px solid var(--sq-capture);
+    box-sizing: border-box;
 }
 
+.square.highlight:hover::after {
+    transform: translate(-50%, -50%) scale(1.18);
+}
+
+/* ---------- Last move + selection ---------- */
+.last-move-highlight-source,
 .last-move-highlight-target {
-    box-shadow: inset 0 0 15px rgb(255, 166, 0);
+    background-image: linear-gradient(var(--sq-lastmove), var(--sq-lastmove));
 }
-.square-label {
-    position: absolute;
-    bottom: 0;
-    left: 2px;
-    width: 20%;
-    height: 20%;
+
+.square.selected {
+    background-image: linear-gradient(var(--sq-select), var(--sq-select));
+    box-shadow: inset 0 0 0 3px var(--accent);
+}
+
+/* ---------- Pieces ---------- */
+.piece {
+    position: relative;
+    z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: .25em;
-    color: #545454;
-    pointer-events: none;
-    mix-blend-mode: difference;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    animation: piece-in 0.18s var(--ease);
 }
 
-.piece {
-    display: flex; /* Ensures the piece's image is centered within its container */
+.piece:active {
+    cursor: grabbing;
+}
+
+.piece-image {
+    width: 88%;
+    height: 88%;
+    object-fit: contain;
+    filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.3));
+    transition: transform 0.12s var(--ease);
+    pointer-events: none;
+}
+
+.piece:hover .piece-image {
+    transform: scale(1.07) translateY(-1px);
+}
+
+@keyframes piece-in {
+    from {
+        transform: scale(0.82);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ---------- Winner overlay ---------- */
+#winner-display {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
     align-items: center;
     justify-content: center;
-    width: 90%;
-    height: 90%;
+    background: rgba(8, 11, 16, 0.6);
+    backdrop-filter: blur(6px);
+    animation: fade-in 0.25s var(--ease);
 }
 
-/* Piece styling */
-.piece img {
-    max-width: 80%; /* Slight reduction to fit within borders cleanly */
-    max-height: 80%;
-    object-fit: contain;
-    transition: transform 0.2s ease;
-}
-
-#winner-display {
-    background-color: #4CAF50;
-    color: white;
-    padding: 20px;
-    border-radius: 5px;
+.winner-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
     text-align: center;
-    margin-top: 20px;
+    background: var(--surface);
+    color: var(--text);
+    padding: 34px 46px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    animation: pop-in 0.32s var(--ease);
 }
 
-#winner-display h2 {
-    font-size: 2em;
-    margin-bottom: 10px;
+.winner-icon {
+    font-size: 2.6rem;
+    line-height: 1;
+    color: var(--accent);
 }
 
-#winner-display p {
-    font-size: 1.5em;
-    font-weight: bold;
+.winner-card h2 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-weight: 700;
 }
 
-
-@media (max-width: 1024px) {
-    #chess-board {
-        width: 100%;
-        height: auto;
-    }
-
+.winner-card p {
+    font-size: 1.7rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
 }
 
+.winner-home {
+    margin-top: 14px;
+    padding: 11px 22px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--accent-contrast);
+    background: linear-gradient(150deg, var(--accent), var(--accent-hover));
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.15s var(--ease), filter 0.2s var(--ease);
+}
+
+.winner-home:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes pop-in {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* ---------- Waiting-for-opponent overlay ---------- */
+#waiting-display {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(8, 11, 16, 0.6);
+    backdrop-filter: blur(6px);
+    animation: fade-in 0.25s var(--ease);
+}
+
+.waiting-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+    width: min(92vw, 380px);
+    background: var(--surface);
+    color: var(--text);
+    padding: 32px 32px 26px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    animation: pop-in 0.32s var(--ease);
+}
+
+.waiting-spinner {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 3px solid var(--surface-3);
+    border-top-color: var(--accent);
+    animation: waiting-spin 0.8s linear infinite;
+}
+
+.waiting-card h2 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.waiting-sub {
+    max-width: 30ch;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+.waiting-code-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin-top: 8px;
+    padding: 12px 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: border-color 0.18s var(--ease);
+}
+
+.waiting-code-btn:hover { border-color: var(--accent); }
+.waiting-code-btn.is-copied { border-color: var(--good); }
+
+.waiting-code {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+    font-size: 1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.06em;
+    color: var(--text);
+}
+
+.waiting-copy-label {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.waiting-code-btn.is-copied .waiting-copy-label { color: var(--good); }
+
+.waiting-back {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.18s var(--ease);
+}
+
+.waiting-back:hover { color: var(--accent); }
+
+@keyframes waiting-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .waiting-spinner { animation-duration: 1.6s; }
+}

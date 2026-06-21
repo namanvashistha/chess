@@ -4,35 +4,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home - Chess Game</title>
-    <link rel="icon" type="image/png" href="/static/images/wQ.svg"/>
-    <link rel="stylesheet" href="/static/css/styles.css">
-    <link rel="stylesheet" href="/static/css/home.css">
+    <title>Lobby - Chess</title>
+    <link rel="icon" type="image/png" href="/static/images/wQ.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/theme.css">
+    <link rel="stylesheet" href="/static/css/game.css">
+    <link rel="stylesheet" href="/static/css/home.css?v=5">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- apply saved theme before paint to avoid flash -->
+    <script>
+        (function () {
+            var t = localStorage.getItem("theme") || "dark";
+            document.documentElement.setAttribute("data-theme", t);
+        })();
+    </script>
 </head>
 
 <body>
-    <div id="home-container">
-        <h1>Hey, <span id="user-name"></span></h1>
-        <h2>Welcome to Chess Game</h1>
-        <p>Create or join a game to start playing.</p>
-
-        <div id="action-buttons">
-            <button id="create-game">Create Game</button>
-            <div>
-                <input type="text" id="invite-code" placeholder="Enter Invite Code">
-                <button id="join-game">Join Game</button>
-            </div>
+    <!-- Top app bar -->
+    <header class="topbar">
+        <a class="brand" href="/">
+            <span class="brand-mark">♞</span>
+            <span class="brand-name">Chess</span>
+        </a>
+        <div class="topbar-actions">
+            <button id="theme-toggle" class="icon-btn" aria-label="Toggle theme" title="Toggle theme">
+                <i class="fa fa-moon"></i>
+            </button>
         </div>
+    </header>
 
-        <div id="games-list"></div>
-        <!-- <div id="game-info">
-            <p>Invite Code: <span id="invite-code-display"></span></p>
-            <p>Status: <span id="game-status">Waiting for a player...</span></p>
-        </div> -->
-    </div>
+    <main class="lobby">
+        <!-- Hero: greeting + live stats + a real board (after 1.e4) -->
+        <section class="hero">
+            <div class="hero-copy">
+                <span class="eyebrow">Lobby</span>
+                <h1 class="hero-title">Hey <span id="user-name">player</span>,<br>ready to play?</h1>
+                <p class="hero-sub">Open a fresh table and share the code, or drop into a game that's already waiting.</p>
+                <dl class="hero-stats" aria-live="polite">
+                    <div class="stat">
+                        <dt class="stat-label">Open tables</dt>
+                        <dd class="stat-num" id="stat-open">&mdash;</dd>
+                    </div>
+                    <div class="stat">
+                        <dt class="stat-label">Your games</dt>
+                        <dd class="stat-num" id="stat-mine">&mdash;</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <figure class="hero-board" aria-hidden="true">
+                <div class="board-frame">
+                    <div id="motif-board" class="motif-board"></div>
+                </div>
+                <figcaption class="hero-board-cap">After 1. e4</figcaption>
+            </figure>
+        </section>
+
+        <!-- Actions + games -->
+        <div class="lobby-grid">
+            <section class="console">
+                <button id="create-game" class="btn-create">
+                    <span class="btn-create-icon"><i class="fa fa-plus"></i></span>
+                    <span class="btn-create-text">
+                        <strong>Create a game</strong>
+                        <small>Random side, share the code to invite</small>
+                    </span>
+                    <i class="fa fa-arrow-right btn-create-go"></i>
+                </button>
+
+                <button id="create-bot-game" class="btn-bot">
+                    <i class="fa fa-robot"></i>
+                    <span>Play against the bot</span>
+                </button>
+
+                <div class="join-divider"><span>or join with a code</span></div>
+
+                <div class="join-row">
+                    <input type="text" id="invite-code" placeholder="Paste an invite code" autocomplete="off" spellcheck="false">
+                    <button id="join-game" class="btn-join">Join</button>
+                </div>
+
+                <p class="console-hint">Tip: tap any invite code on the right to copy it.</p>
+            </section>
+
+            <aside class="tables">
+                <div class="tables-head">
+                    <span class="panel-title">Games</span>
+                    <span class="status-dot" title="Live"></span>
+                    <button id="refresh-games" class="tables-refresh icon-btn" title="Refresh" aria-label="Refresh games">
+                        <i class="fa fa-rotate-right"></i>
+                    </button>
+                </div>
+                <div id="games-list" class="tables-list"></div>
+            </aside>
+        </div>
+    </main>
 
     <script src="/static/js/index.js"></script>
-    <script src="/static/js/home.js"></script>
+    <script src="/static/js/theme.js"></script>
+    <script src="/static/js/home.js?v=5"></script>
 </body>
 
 </html>

@@ -4,64 +4,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chess Board</title>
+    <title>Chess</title>
     <link rel="icon" type="image/png" href="/static/images/wQ.svg" />
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/theme.css">
     <link rel="stylesheet" href="/static/css/game.css">
-    <link rel="stylesheet" href="/static/css/board.css">
+    <link rel="stylesheet" href="/static/css/board.css?v=2">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-
+    <!-- apply saved theme before paint to avoid flash -->
+    <script>
+        (function () {
+            var t = localStorage.getItem("theme") || "dark";
+            document.documentElement.setAttribute("data-theme", t);
+        })();
+    </script>
 </head>
 
 <body>
-    <div id="chess-container">
-        <div id="game-wrapper">
-            <div id="controls">
-                <button id="home-page" onclick="window.location.href='/'"><i class="fa fa-home"></i></button>
-                <button id="flip-board"><i class="fa fa-rotate"></i></button>
+    <!-- Top app bar -->
+    <header class="topbar">
+        <a class="brand" href="/">
+            <span class="brand-mark">♞</span>
+            <span class="brand-name">Chess</span>
+        </a>
+        <div class="topbar-actions">
+            <button id="home-page" class="icon-btn" title="Home" onclick="window.location.href='/'">
+                <i class="fa fa-home"></i>
+            </button>
+            <button id="flip-board" class="icon-btn" title="Flip board">
+                <i class="fa fa-rotate"></i>
+            </button>
+            <button id="theme-toggle" class="icon-btn" aria-label="Toggle theme" title="Toggle theme">
+                <i class="fa fa-moon"></i>
+            </button>
+        </div>
+    </header>
 
-            </div>
-            <!-- Chess Board Container -->
-            <div id="chess-board-container">
-                <!-- Player Bar Above Chess Board -->
-                <div class="player-bar" id="player-bar-top">
-                    <div class="player-bar-section">
-                        <img class="player-dp" src="" alt="Player Top">
+    <main class="game">
+        <!-- Board + player bars -->
+        <section class="board-area">
+            <!-- Top player -->
+            <div class="player-bar" id="player-bar-top">
+                <div class="player-bar-section player-id">
+                    <img class="player-dp" src="" alt="">
+                    <div class="player-meta">
                         <span class="player-name"></span>
-                    </div>
-                    <div class="player-bar-section">
-                        <span class="player-timer"></span>
-                        <span class="turn-indicator"></span>
+                        <span class="player-captured"></span>
                     </div>
                 </div>
-
-                <!-- Chess Board -->
-                <div id="chess-board">
-                    <!-- Chess squares dynamically rendered by JavaScript -->
+                <div class="player-bar-section player-state">
+                    <span class="turn-indicator"></span>
+                    <span class="player-timer"></span>
                 </div>
-
-                <!-- Player Bar Below Chess Board -->
-                <div class="player-bar" id="player-bar-bottom">
-                    <div class="player-bar-section">
-                        <img class="player-dp" src="" alt="Player Bottom">
-                        <span class="player-name"></span>
-                    </div>
-                    <div class="player-bar-section">
-                        <span class="player-timer"></span>
-                        <span class="turn-indicator"></span>
-                    </div>
-                </div>
-
-                <!-- Controls -->
-                <!-- <div id="controls">
-                    <button id="flip-board">Flip Board</button>
-                    <button id="home-page" onclick="window.location.href='/'">Home</button>
-                </div> -->
             </div>
 
-            <!-- Move History -->
-            <div id="move-history">
-                <!-- <h3>Moves</h3> -->
+            <!-- Board -->
+            <div class="board-stage">
+                <div id="chess-board"></div>
+            </div>
+
+            <!-- Bottom player -->
+            <div class="player-bar" id="player-bar-bottom">
+                <div class="player-bar-section player-id">
+                    <img class="player-dp" src="" alt="">
+                    <div class="player-meta">
+                        <span class="player-name"></span>
+                        <span class="player-captured"></span>
+                    </div>
+                </div>
+                <div class="player-bar-section player-state">
+                    <span class="turn-indicator"></span>
+                    <span class="player-timer"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Side panel -->
+        <aside class="side-panel">
+            <div class="panel-head">
+                <span class="panel-title">Moves</span>
+                <span class="badge" id="move-count">0</span>
+            </div>
+            <div class="move-history" id="move-history">
                 <table id="history-table">
                     <thead>
                         <tr>
@@ -72,25 +98,44 @@
                     </thead>
                     <tbody>
                         <!-- Moves dynamically added here -->
-                        <tr>
-                            <td>1.</td>
-                            <td>...</td>
-                            <td>...</td>
-                        </tr>
                     </tbody>
                 </table>
             </div>
+            <div class="panel-foot">
+                <span class="status-dot"></span>
+                <span class="status-text" id="game-status">Loading…</span>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Waiting-for-opponent overlay (host, before someone joins) -->
+    <div id="waiting-display" style="display: none;">
+        <div class="waiting-card">
+            <span class="waiting-spinner" aria-hidden="true"></span>
+            <h2>Waiting for an opponent</h2>
+            <p class="waiting-sub">Share this code. The game starts the moment they join.</p>
+            <button type="button" id="waiting-copy" class="waiting-code-btn" title="Copy invite code">
+                <span id="waiting-code" class="waiting-code"></span>
+                <span class="waiting-copy-label"><i class="fa fa-copy"></i> Copy</span>
+            </button>
+            <a class="waiting-back" href="/">Back to lobby</a>
         </div>
     </div>
+
+    <!-- Winner overlay -->
     <div id="winner-display" style="display: none;">
-        <h2>Game Over</h2>
-        <p id="winner-message"></p>
+        <div class="winner-card">
+            <span class="winner-icon">♔</span>
+            <h2>Game Over</h2>
+            <p id="winner-message"></p>
+            <button class="winner-home" onclick="window.location.href='/'">Back to Home</button>
+        </div>
     </div>
 
     <script src="/static/js/index.js"></script>
-    <script src="/static/js/board.js"></script>
+    <script src="/static/js/theme.js"></script>
+    <script src="/static/js/board.js?v=2"></script>
     <script src="/static/js/socket.js"></script>
 </body>
-
 
 </html>

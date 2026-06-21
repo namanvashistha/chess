@@ -1,0 +1,136 @@
+/* theme.css — design tokens + base for the revamped UI
+   Light is the default; [data-theme="dark"] overrides. */
+
+:root {
+    /* Brand / accent */
+    --accent: #5b8def;
+    --accent-hover: #4577e0;
+    --accent-contrast: #ffffff;
+
+    /* Surfaces */
+    --bg: #f4f5f7;
+    --bg-grad: radial-gradient(1200px 800px at 50% -10%, #ffffff 0%, #eef0f4 55%, #e7e9ef 100%);
+    --surface: #ffffff;
+    --surface-2: #f1f3f7;
+    --surface-3: #e7eaf0;
+
+    /* Text */
+    --text: #1c2430;
+    --text-muted: #6b7686;
+    --text-faint: #9aa3b2;
+
+    /* Lines & elevation */
+    --border: #e2e6ec;
+    --border-strong: #d2d8e1;
+    --shadow-sm: 0 1px 2px rgba(18, 28, 45, 0.06), 0 1px 3px rgba(18, 28, 45, 0.08);
+    --shadow-md: 0 4px 12px rgba(18, 28, 45, 0.08), 0 2px 4px rgba(18, 28, 45, 0.06);
+    --shadow-lg: 0 18px 40px rgba(18, 28, 45, 0.16);
+
+    /* Glass / elevated panels */
+    --glass: rgba(255, 255, 255, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.6);
+
+    /* Board */
+    --board-light: #ebecd0;
+    --board-dark: #7d945d;
+    --board-frame: linear-gradient(150deg, #ffffff, #eceef3);
+    --board-glow: rgba(91, 141, 239, 0.25);
+    --sq-highlight: rgba(20, 30, 20, 0.28);
+    --sq-capture: rgba(20, 30, 20, 0.32);
+    --sq-lastmove: rgba(255, 196, 64, 0.55);
+    --sq-select: rgba(91, 141, 239, 0.45);
+
+    /* State accents */
+    --good: #3aa564;
+    --good-soft: rgba(58, 165, 100, 0.16);
+    --danger: #e0564f;
+
+    /* Shape & motion */
+    --radius-sm: 8px;
+    --radius: 12px;
+    --radius-lg: 18px;
+    --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+    color-scheme: light;
+}
+
+[data-theme="dark"] {
+    --accent: #6f9bff;
+    --accent-hover: #5b8def;
+    --accent-contrast: #0c1118;
+
+    --bg: #0e1117;
+    --bg-grad: radial-gradient(1200px 800px at 50% -10%, #1b2230 0%, #141a24 55%, #0e1117 100%);
+    --surface: #1a212d;
+    --surface-2: #212a38;
+    --surface-3: #2a3545;
+
+    --text: #e7ecf3;
+    --text-muted: #98a3b3;
+    --text-faint: #6b7686;
+
+    --border: #2a3342;
+    --border-strong: #36425440;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 22px 48px rgba(0, 0, 0, 0.55);
+
+    --glass: rgba(26, 33, 45, 0.66);
+    --glass-border: rgba(255, 255, 255, 0.07);
+
+    --board-light: #d8dbc4;
+    --board-dark: #6b8050;
+    --board-frame: linear-gradient(150deg, #232c3a, #161d27);
+    --board-glow: rgba(111, 155, 255, 0.3);
+    --sq-lastmove: rgba(255, 196, 64, 0.5);
+
+    color-scheme: dark;
+}
+
+/* Reset */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: var(--bg);
+    background-image: var(--bg-grad);
+    background-attachment: fixed;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    transition: background-color 0.3s var(--ease), color 0.3s var(--ease);
+}
+
+button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    color: var(--text);
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 99px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-faint);
+    background-clip: padding-box;
+}

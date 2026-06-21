@@ -17,6 +17,7 @@ type ChessService interface {
 	GetAllChessGame(c *gin.Context)
 	GetChessGameById(c *gin.Context)
 	CreateChessGame(c *gin.Context)
+	CreateBotChessGame(c *gin.Context)
 	JoinChessGame(c *gin.Context)
 	MakeMove(c *gin.Context)
 }
@@ -108,6 +109,68 @@ func (u ChessServiceImpl) CreateChessGame(c *gin.Context) {
 	// Return a success response
 	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, newGame.ID))
 
+}
+
+// CreateBotChessGame creates a game seating the human against the built-in bot,
+// with both seats filled so play can start immediately. Colours are randomised;
+// if the bot draws White it makes the first move as soon as the human connects.
+func (u ChessServiceImpl) CreateBotChessGame(c *gin.Context) {
+	defer pkg.PanicHandler(c)
+
+	log.Info("start to execute program create chess game vs bot")
+	var request dto.TokenGetRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		log.Error("Happened error when mapping request from FE. Error", err)
+		pkg.PanicException(constant.InvalidRequest)
+	}
+
+	human, err := u.chessRepository.FindUserByToken(request.Token)
+	if err != nil {
+		log.Error("Happened error when finding user by token. Error", err)
+		pkg.PanicException(constant.DataNotFound)
+	}
+	bot, err := u.chessRepository.FindOrCreateBotUser()
+	if err != nil {
+		log.Error("Happened error when resolving bot user. Error", err)
+		pkg.PanicException(constant.UnknownError)
+	}
+
+	newGame := dao.ChessGame{
+		InviteCode: pkg.GenerateRandomString(20),
+		Winner:     "",
+	}
+	if humanIsWhite := pkg.GenerateRandomBool(); humanIsWhite {
+		newGame.WhiteUser = &human
+		newGame.BlackUser = &bot
+	} else {
+		newGame.WhiteUser = &bot
+		newGame.BlackUser = &human
+	}
+
+	if err := u.chessRepository.SaveChessGameToDB(&newGame); err != nil {
+		log.Error("Happened error when saving game to database. Error", err)
+		pkg.PanicException(constant.UnknownError)
+	}
+	initialGameState := dao.GameState{
+		GameID:         newGame.ID,
+		WhiteBitboard:  0xFFFF,
+		BlackBitboard:  0xFFFF000000000000,
+		PawnBitboard:   0x00FF00000000FF00,
+		RookBitboard:   0x8100000000000081,
+		KnightBitboard: 0x4200000000000042,
+		BishopBitboard: 0x2400000000000024,
+		QueenBitboard:  0x0800000000000008,
+		KingBitboard:   0x1000000000000010,
+		EnPassant:      0,
+		CastlingRights: "KQkq",
+		Turn:           "w",
+	}
+	if err := u.chessRepository.SaveGameStateToDB(&initialGameState); err != nil {
+		log.Error("Happened error when saving game state to database. Error", err)
+		pkg.PanicException(constant.UnknownError)
+	}
+
+	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, newGame.ID))
 }
 
 func (u ChessServiceImpl) JoinChessGame(c *gin.Context) {

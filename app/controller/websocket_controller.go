@@ -44,6 +44,9 @@ func (wsCtrl WebSocketControllerImpl) HandleWebSocket(c *gin.Context) {
 
 	defer wsCtrl.svc.UnregisterClient(gameID, conn) // Ensure cleanup on disconnect
 
+	// If the bot has the move (e.g. it drew White), play it now that someone is watching.
+	go wsCtrl.svc.MaybePlayBotMove(gameID)
+
 	// Listen for messages from the client
 	for {
 		log.Info("Waiting for WebSocket message...")

@@ -10,6 +10,7 @@ type ChessController interface {
 	GetAllChessGame(c *gin.Context)
 	GetChessGameById(c *gin.Context)
 	CreateChessGame(c *gin.Context)
+	CreateBotChessGame(c *gin.Context)
 	JoinChessGame(c *gin.Context)
 	MakeMove(c *gin.Context)
 }
@@ -28,6 +29,10 @@ func (u ChessControllerImpl) GetChessGameById(c *gin.Context) {
 
 func (u ChessControllerImpl) CreateChessGame(c *gin.Context) {
 	u.svc.CreateChessGame(c)
+}
+
+func (u ChessControllerImpl) CreateBotChessGame(c *gin.Context) {
+	u.svc.CreateBotChessGame(c)
 }
 
 func (u ChessControllerImpl) JoinChessGame(c *gin.Context) {
