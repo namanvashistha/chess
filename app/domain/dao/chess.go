@@ -4,6 +4,8 @@ type ChessGame struct {
 	ID         int    `gorm:"column:id;primaryKey;autoIncrement;not null" json:"id"`
 	InviteCode string `gorm:"column:invite_code" json:"invite_code"`
 	Winner     string `gorm:"column:winner" json:"winner"`
+	// BotLevel is "" for human games, or "easy" | "medium" | "hard" for bot games.
+	BotLevel string `gorm:"column:bot_level" json:"bot_level"`
 	// ChessStateId int                 `gorm:"column:chess_state_id;not null" json:"chess_state_id"`
 	// ChessState   ChessState          `gorm:"foreignKey:ChessStateId" json:"chess_state"`
 	WhiteUserId  *int                `gorm:"column:white_user_id" json:"white_user_id"`

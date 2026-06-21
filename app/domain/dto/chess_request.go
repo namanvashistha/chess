@@ -24,6 +24,11 @@ type TokenGetRequest struct {
 	Token string `json:"token"`
 }
 
+type CreateBotGameRequest struct {
+	Token      string `json:"token"`
+	Difficulty string `json:"difficulty"` // "easy" | "medium" | "hard"
+}
+
 type JoinChessGameRequest struct {
 	Token      string `json:"token"`
 	InviteCode string `json:"invite_code"`

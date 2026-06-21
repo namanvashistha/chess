@@ -257,13 +257,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- play against the bot ----
     const createBotButton = document.getElementById('create-bot-game');
+    const botLevelButtons = document.querySelectorAll('.bot-level');
+    let botLevel = localStorage.getItem('botLevel') || 'medium';
+
+    function syncBotLevels() {
+        botLevelButtons.forEach(b => b.classList.toggle('is-active', b.dataset.level === botLevel));
+    }
+    syncBotLevels();
+    botLevelButtons.forEach(b => {
+        b.addEventListener('click', () => {
+            botLevel = b.dataset.level;
+            localStorage.setItem('botLevel', botLevel);
+            syncBotLevels();
+        });
+    });
+
     if (createBotButton) {
         createBotButton.addEventListener('click', () => {
             const token = localStorage.getItem('userToken');
             createBotButton.disabled = true;
             fetch('/api/chess/game/bot', {
                 method: 'POST',
-                body: JSON.stringify({ token }),
+                body: JSON.stringify({ token, difficulty: botLevel }),
                 headers: { 'Content-Type': 'application/json' },
             })
             .then(res => res.json())

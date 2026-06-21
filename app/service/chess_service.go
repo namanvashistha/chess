@@ -118,10 +118,15 @@ func (u ChessServiceImpl) CreateBotChessGame(c *gin.Context) {
 	defer pkg.PanicHandler(c)
 
 	log.Info("start to execute program create chess game vs bot")
-	var request dto.TokenGetRequest
+	var request dto.CreateBotGameRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		log.Error("Happened error when mapping request from FE. Error", err)
 		pkg.PanicException(constant.InvalidRequest)
+	}
+
+	level := request.Difficulty
+	if level != "easy" && level != "medium" && level != "hard" {
+		level = "easy"
 	}
 
 	human, err := u.chessRepository.FindUserByToken(request.Token)
@@ -138,6 +143,7 @@ func (u ChessServiceImpl) CreateBotChessGame(c *gin.Context) {
 	newGame := dao.ChessGame{
 		InviteCode: pkg.GenerateRandomString(20),
 		Winner:     "",
+		BotLevel:   level,
 	}
 	if humanIsWhite := pkg.GenerateRandomBool(); humanIsWhite {
 		newGame.WhiteUser = &human

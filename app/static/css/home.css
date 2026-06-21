@@ -270,6 +270,37 @@
 .btn-bot:hover i { color: var(--accent); }
 .btn-bot:disabled { opacity: 0.6; cursor: progress; transform: none; }
 
+/* difficulty segmented control */
+.bot-levels {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+    padding: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.bot-level {
+    flex: 1;
+    padding: 7px 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s var(--ease), background 0.15s var(--ease);
+}
+
+.bot-level:hover { color: var(--text); }
+
+.bot-level.is-active {
+    color: var(--accent);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+
 .join-divider {
     display: flex;
     align-items: center;

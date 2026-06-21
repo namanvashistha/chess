@@ -175,7 +175,7 @@ func (ws *WebSocketServiceImpl) MaybePlayBotMove(gameId string) {
 		return
 	}
 
-	move := engine.ChooseGreedyMove(&game)
+	move := engine.ChooseBotMove(&game)
 	if move == nil {
 		return
 	}
