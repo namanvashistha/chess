@@ -1,0 +1,23 @@
+# Local development overrides — Compose merges this on top of docker-compose.yaml
+# automatically, so `docker compose up` gives you hot reload while the base file
+# stays production-ready (CI/prod can opt out with `-f docker-compose.yaml`).
+services:
+  go-app:
+    build:
+      # Swap the production build for the Air-based dev image.
+      dockerfile: Dockerfile.dev
+    # Bind-mount the source so Go rebuilds (Air) and static asset edits
+    # (CSS/JS/HTML served from disk) both reflect without an image rebuild.
+    volumes:
+      - .:/app
+      - go-build-cache:/root/.cache/go-build
+      - go-mod-cache:/go/pkg/mod
+    # Expose the app directly on the host for local access (base only exposes
+    # it to the Caddy network).
+    ports:
+      - "${PORT:-9000}:9000"
+    command: ["air", "-c", ".air.toml"]
+
+volumes:
+  go-build-cache:
+  go-mod-cache:

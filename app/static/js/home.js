@@ -4,8 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const inviteCodeInput = document.getElementById('invite-code');
     const refreshButton = document.getElementById('refresh-games');
     const gamesList = document.getElementById('games-list');
-    const statOpen = document.getElementById('stat-open');
-    const statMine = document.getElementById('stat-mine');
 
     // ---- identity ----
     function renderUserName() {
@@ -64,59 +62,86 @@ document.addEventListener('DOMContentLoaded', () => {
         return game.winner === 'w' || game.winner === 'b';
     }
 
-    function statusFor(game, role) {
-        if (isFinished(game)) return game.winner === 'w' ? 'White won' : 'Black won';
-        if (role === 'mine') return 'You’re in';
-        if (role === 'open') return 'Open seat';
-        return 'In progress';
+    function hasOpenSeat(game) {
+        return !game.white_user || !game.black_user;
     }
 
-    function seatMarkup(user, myId) {
-        if (!user) return '<span class="loader">waiting<span class="dots">...</span></span>';
-        const you = user.id === myId ? ' <span class="gi-you">you</span>' : '';
-        return `${formatUserName(user.name)}${you}`;
+    // One status per game, with a colour "kind" the CSS maps to a pill style.
+    function statusMeta(game, role) {
+        if (isFinished(game)) {
+            const label = game.winner === 'w' ? 'White won'
+                : game.winner === 'b' ? 'Black won' : 'Draw';
+            return { kind: 'done', label };
+        }
+        if (role === 'open') return { kind: 'join', label: 'Open seat' };
+        if (role === 'mine') {
+            return hasOpenSeat(game)
+                ? { kind: 'wait', label: 'Waiting' }
+                : { kind: 'mine', label: 'Your game' };
+        }
+        return { kind: 'live', label: 'Live' };
+    }
+
+    function seatName(user, myId) {
+        if (!user) return '<span class="g-name g-name--empty">Open seat</span>';
+        const you = user.id === myId ? ' <i class="g-you">you</i>' : '';
+        return `<span class="g-name">${formatUserName(user.name)}${you}</span>`;
     }
 
     function gameCard(game, role, myId) {
         const action = role === 'open' ? 'join' : 'view';
-        const label = role === 'mine' ? 'Resume' : role === 'open' ? 'Join game' : 'View game';
-        const statusKind = isFinished(game) ? 'done' : role === 'open' ? 'join' : role === 'mine' ? 'mine' : 'live';
+        const meta = statusMeta(game, role);
+        // Only surface the invite code when it's actually useful to share:
+        // an open table, or your own game that's still waiting for an opponent.
+        const showCode = role === 'open' || (role === 'mine' && hasOpenSeat(game));
 
         const item = document.createElement('div');
         item.className = 'game-item';
         item.innerHTML = `
-            <div class="gi-head">
-                <span class="gi-id">Game #${game.id}</span>
-                <span class="gi-status gi-status--${statusKind}">${statusFor(game, role)}</span>
-            </div>
-            <button type="button" class="gi-code" title="Copy invite code">
-                <i class="fa fa-hashtag"></i>
-                <span class="gi-code-value">${game.invite_code}</span>
-                <i class="fa fa-copy gi-code-icon"></i>
+            <button type="button" class="g-row" data-action="${action}">
+                <span class="g-players">
+                    <span class="g-seat">
+                        <span class="g-chip g-chip--w"></span>
+                        ${seatName(game.white_user, myId)}
+                    </span>
+                    <span class="g-vs">vs</span>
+                    <span class="g-seat">
+                        <span class="g-chip g-chip--b"></span>
+                        ${seatName(game.black_user, myId)}
+                    </span>
+                </span>
+                <span class="g-end">
+                    <span class="g-status g-status--${meta.kind}">${meta.label}</span>
+                    <i class="fa fa-chevron-right g-go"></i>
+                </span>
             </button>
-            <div class="gi-players">
-                <span class="gi-player"><span class="gi-side gi-side--w"></span>${seatMarkup(game.white_user, myId)}</span>
-                <span class="gi-player"><span class="gi-side gi-side--b"></span>${seatMarkup(game.black_user, myId)}</span>
-            </div>
-            <button type="button" class="join-game-button" data-action="${action}">${label}</button>
+            ${showCode ? `
+            <button type="button" class="g-code" title="Copy invite code">
+                <i class="fa fa-hashtag g-code-hash"></i>
+                <span class="g-code-value">${game.invite_code}</span>
+                <span class="g-code-copy"><i class="fa fa-copy"></i> Copy</span>
+            </button>` : ''}
         `;
 
-        // click-to-copy invite code
-        const codeBtn = item.querySelector('.gi-code');
-        codeBtn.addEventListener('click', () => {
-            const icon = codeBtn.querySelector('.gi-code-icon');
-            navigator.clipboard?.writeText(game.invite_code).then(() => {
-                codeBtn.classList.add('is-copied');
-                icon.className = 'fa fa-check gi-code-icon';
-                setTimeout(() => {
-                    codeBtn.classList.remove('is-copied');
-                    icon.className = 'fa fa-copy gi-code-icon';
-                }, 1400);
-            }).catch(() => {});
-        });
+        // click-to-copy invite code (don't trigger the row's primary action)
+        const codeBtn = item.querySelector('.g-code');
+        if (codeBtn) {
+            codeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const copy = codeBtn.querySelector('.g-code-copy');
+                navigator.clipboard?.writeText(game.invite_code).then(() => {
+                    codeBtn.classList.add('is-copied');
+                    copy.innerHTML = '<i class="fa fa-check"></i> Copied';
+                    setTimeout(() => {
+                        codeBtn.classList.remove('is-copied');
+                        copy.innerHTML = '<i class="fa fa-copy"></i> Copy';
+                    }, 1400);
+                }).catch(() => {});
+            });
+        }
 
-        // join (claim seat) or view/spectate
-        item.querySelector('.join-game-button').addEventListener('click', () => {
+        // primary action: the whole row joins (claim seat) or views/spectates
+        item.querySelector('.g-row').addEventListener('click', () => {
             localStorage.setItem('inviteCode', game.invite_code);
             if (action === 'view') {
                 window.location.href = `/game/${game.id}`;
@@ -144,31 +169,36 @@ document.addEventListener('DOMContentLoaded', () => {
         return item;
     }
 
-    function renderGroup(title, games, role, myId) {
-        const section = document.createElement('div');
-        section.className = 'game-group';
-        const head = document.createElement('div');
-        head.className = 'game-group-head';
-        head.innerHTML = `<span>${title}</span><span class="game-group-count">${games.length}</span>`;
-        section.appendChild(head);
-        games.forEach(g => section.appendChild(gameCard(g, role, myId)));
-        return section;
-    }
+    // ---- tabbed games browser ----
+    const tabButtons = document.querySelectorAll('.tab');
+    const counts = {
+        mine: document.getElementById('count-mine'),
+        open: document.getElementById('count-open'),
+        watch: document.getElementById('count-watch'),
+    };
+    const roleForTab = { mine: 'mine', open: 'open', watch: 'watch' };
+    const emptyCopy = {
+        mine: { mark: '♟', title: 'No games yet', sub: 'Create a table or challenge the bot to get going.' },
+        open: { mark: '⏳', title: 'No open tables', sub: 'Create a game and share its code to invite a friend.' },
+        watch: { mark: '👁', title: 'Nothing to watch', sub: 'Games in progress will appear here to spectate.' },
+    };
+
+    let buckets = { mine: [], open: [], watch: [] };
+    let activeTab = 'mine';
+    let userPickedTab = false;
 
     function showSkeleton() {
         let html = '';
-        for (let i = 0; i < 3; i++) {
-            html += '<div class="game-skeleton"><span></span><span></span><span></span></div>';
-        }
+        for (let i = 0; i < 4; i++) html += '<div class="game-skeleton"><span></span><span></span></div>';
         gamesList.innerHTML = html;
     }
 
-    function showEmpty() {
+    function showEmpty(copy) {
         gamesList.innerHTML = `
             <div class="tables-empty">
-                <span class="tables-empty-mark">♟</span>
-                <p class="tables-empty-title">No games yet</p>
-                <p class="tables-empty-sub">Create a table and share the code to get the first game going.</p>
+                <span class="tables-empty-mark">${copy.mark}</span>
+                <p class="tables-empty-title">${copy.title}</p>
+                <p class="tables-empty-sub">${copy.sub}</p>
             </div>`;
     }
 
@@ -183,43 +213,59 @@ document.addEventListener('DOMContentLoaded', () => {
         if (retry) retry.addEventListener('click', fetchChessGames);
     }
 
+    function renderActive() {
+        const games = buckets[activeTab];
+        if (!games.length) { showEmpty(emptyCopy[activeTab]); return; }
+        const myId = currentUserId();
+        gamesList.innerHTML = '';
+        games.forEach(g => gamesList.appendChild(gameCard(g, roleForTab[activeTab], myId)));
+    }
+
+    function setActiveTab(tab) {
+        activeTab = tab;
+        tabButtons.forEach(b => b.classList.toggle('is-active', b.dataset.tab === tab));
+        renderActive();
+    }
+
     function fetchChessGames() {
         showSkeleton();
         fetch('/api/chess/game')
             .then(res => res.json())
             .then(data => {
                 const games = data.response_key === 'SUCCESS' ? data.data : null;
-                if (!Array.isArray(games) || games.length === 0) {
-                    statOpen.textContent = '0';
-                    statMine.textContent = '0';
-                    showEmpty();
-                    return;
-                }
-
+                const all = Array.isArray(games) ? games : [];
                 const myId = currentUserId();
                 const amPlayer = (g) =>
                     myId != null &&
                     ((g.white_user && g.white_user.id === myId) ||
                      (g.black_user && g.black_user.id === myId));
-                const hasOpenSeat = (g) => !g.white_user || !g.black_user;
 
-                const mine = games.filter(g => amPlayer(g));
-                const open = games.filter(g => !amPlayer(g) && hasOpenSeat(g) && !isFinished(g));
-                const watch = games.filter(g => !amPlayer(g) && !(hasOpenSeat(g) && !isFinished(g)));
+                buckets.mine = all.filter(g => amPlayer(g));
+                buckets.open = all.filter(g => !amPlayer(g) && hasOpenSeat(g) && !isFinished(g));
+                buckets.watch = all.filter(g => !amPlayer(g) && !(hasOpenSeat(g) && !isFinished(g)));
 
-                statOpen.textContent = String(open.length);
-                statMine.textContent = String(mine.length);
+                counts.mine.textContent = buckets.mine.length;
+                counts.open.textContent = buckets.open.length;
+                counts.watch.textContent = buckets.watch.length;
 
-                gamesList.innerHTML = '';
-                if (mine.length) gamesList.appendChild(renderGroup('Your games', mine, 'mine', myId));
-                if (open.length) gamesList.appendChild(renderGroup('Open tables', open, 'open', myId));
-                if (watch.length) gamesList.appendChild(renderGroup('Watch', watch, 'watch', myId));
+                // First load: land on the most relevant tab automatically.
+                if (!userPickedTab) {
+                    activeTab = buckets.mine.length ? 'mine' : buckets.open.length ? 'open' : 'mine';
+                    tabButtons.forEach(b => b.classList.toggle('is-active', b.dataset.tab === activeTab));
+                }
+                renderActive();
             })
             .catch(err => {
                 console.error('Error fetching games:', err);
                 showError();
             });
     }
+
+    tabButtons.forEach(b => b.addEventListener('click', () => {
+        userPickedTab = true;
+        setActiveTab(b.dataset.tab);
+    }));
+
     fetchChessGames();
 
     if (refreshButton) {

@@ -136,6 +136,7 @@ func (ws *WebSocketServiceImpl) ProcessMove(gameId string, message dto.WebSocket
 	if len(legalMoves) == 0 {
 		legalMoves, gameStatus = engine.GenerateLegalMovesForAllPositions(game.State)
 	}
+	legalMoves = engine.FilterMovesByTurn(legalMoves, game.State)
 	game.LegalMoves = engine.ConvertLegalMovesToMap(legalMoves)
 	response := dto.WebSocketMessage{
 		Type:    "game_update",

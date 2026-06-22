@@ -12,6 +12,17 @@ import (
 	"gorm.io/gorm"
 )
 
+// inviteTTL is how long a game with an empty seat stays joinable / listed.
+// After this, the unfilled invite is treated as expired ("archived") and is
+// excluded from listings and join lookups.
+const inviteTTL = 10 * time.Minute
+
+// notExpiredWaiting matches games that are either already full (a real game) or
+// still within their invite window. A game with an open seat older than
+// inviteTTL is excluded. created_at is read-disabled on the struct but still a
+// real column we can filter on.
+const notExpiredWaiting = "NOT ((white_user_id IS NULL OR black_user_id IS NULL) AND created_at < ?)"
+
 type ChessRepository interface {
 	FindAllChessGame() ([]dao.ChessGame, error)
 	FindChessGameById(id string) (dao.ChessGame, error)
@@ -51,7 +62,9 @@ func (r ChessRepositoryImpl) FindAllChessGame() ([]dao.ChessGame, error) {
 		}).
 		Preload("BlackUser", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, name")
-		}).Order("id desc").Find(&chesses).Error
+		}).
+		Where(notExpiredWaiting, time.Now().Add(-inviteTTL)).
+		Order("id desc").Find(&chesses).Error
 	if err != nil {
 		log.Error("Error finding all chess games:", err)
 		return nil, err
@@ -87,7 +100,9 @@ func (r ChessRepositoryImpl) FindChessGameByInviteCode(inviteCode string) (dao.C
 		}).
 		Preload("BlackUser", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, name")
-		}).First(&chess, "invite_code = ?", inviteCode).Error
+		}).
+		Where(notExpiredWaiting, time.Now().Add(-inviteTTL)).
+		First(&chess, "invite_code = ?", inviteCode).Error
 	if err != nil {
 		log.Error("Error finding chess by invite code:", err)
 		return dao.ChessGame{}, err

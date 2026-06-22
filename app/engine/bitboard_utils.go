@@ -89,6 +89,24 @@ func ConvertGameStateToMap(gameState dao.GameState) map[string]string {
 // 	return moves
 // }
 
+// FilterMovesByTurn keeps only the moves of pieces belonging to the side whose
+// turn it is. Move generation produces entries for both colours (the check
+// detection needs them), but the client must only see the side-to-move's moves.
+func FilterMovesByTurn(allowedMoves map[uint64]uint64, gs dao.GameState) map[uint64]uint64 {
+	sideMask := gs.WhiteBitboard
+	if gs.Turn == "b" {
+		sideMask = gs.BlackBitboard
+	}
+
+	filtered := make(map[uint64]uint64)
+	for piece, moves := range allowedMoves {
+		if piece&sideMask != 0 {
+			filtered[piece] = moves
+		}
+	}
+	return filtered
+}
+
 func ConvertLegalMovesToMap(allowedMoves map[uint64]uint64) map[string][]string {
 	moves := make(map[string][]string)
 

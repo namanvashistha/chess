@@ -1,0 +1,17 @@
+# Development image: hot-reload via Air. Source is bind-mounted at runtime
+# (see docker-compose.override.yml), so this layer only needs the toolchain.
+# Newer Go than prod (1.23) because current Air requires >= 1.25; building the
+# app with a newer toolchain is backward-compatible.
+FROM golang:1.25-alpine
+
+WORKDIR /app
+
+# Air watches the tree and rebuilds the Go binary on change.
+RUN go install github.com/air-verse/air@latest
+
+# Pre-cache modules so the first `air` build is fast. The bind mount overlays
+# the source at runtime; module/build caches live in named volumes.
+COPY go.mod go.sum ./
+RUN go mod download
+
+CMD ["air", "-c", ".air.toml"]

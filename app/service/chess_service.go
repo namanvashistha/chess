@@ -42,6 +42,7 @@ func (u ChessServiceImpl) GetChessGameById(c *gin.Context) {
 	game.BoardLayout = boardlayout
 	game.CurrentState = engine.ConvertGameStateToMap(game.State)
 	legalMoves, _ := engine.GenerateLegalMovesForAllPositions(game.State)
+	legalMoves = engine.FilterMovesByTurn(legalMoves, game.State)
 	game.LegalMoves = engine.ConvertLegalMovesToMap(legalMoves)
 
 	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, game))
