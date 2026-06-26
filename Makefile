@@ -1,4 +1,4 @@
-.PHONY: build uci test run
+.PHONY: build uci test run up dev
 
 # Build the HTTP/WebSocket game server.
 build:
@@ -15,3 +15,11 @@ test:
 
 run:
 	go run .
+
+# Production stack (base compose only).
+up:
+	docker compose up -d --build
+
+# Local dev stack with hot reload (base + dev override).
+dev:
+	docker compose -f docker-compose.yaml -f docker-compose.dev.yml up --build

@@ -1,6 +1,7 @@
-# Local development overrides — Compose merges this on top of docker-compose.yaml
-# automatically, so `docker compose up` gives you hot reload while the base file
-# stays production-ready (CI/prod can opt out with `-f docker-compose.yaml`).
+# Local development overrides. NOT auto-loaded (file is not named
+# docker-compose.override.yml), so `docker compose up` runs the production base.
+# Opt into hot reload explicitly:
+#   docker compose -f docker-compose.yaml -f docker-compose.dev.yml up
 services:
   go-app:
     build:
