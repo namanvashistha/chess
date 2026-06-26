@@ -47,4 +47,35 @@ flowchart TD
 8. [Dependency Injection & Configuration](docs/08_dependency_injection___configuration.md)
 
 
+## UCI engine
+
+The bitboard engine can also be driven over the [Universal Chess Interface
+(UCI)](https://www.chessprogramming.org/UCI) protocol, so it plugs into standard
+GUIs and test tooling (Cute Chess, Arena, Banksia) and can be matched against
+other engines.
+
+```sh
+go build -o bin/uci ./cmd/uci    # or: make uci
+./bin/uci
+```
+
+Example session:
+
+```
+uci
+position startpos moves e2e4 e7e5
+go movetime 1000
+# -> info depth ... ; bestmove ...
+quit
+```
+
+Supported commands: `uci`, `isready`, `ucinewgame`, `setoption`,
+`position [startpos | fen <FEN>] [moves ...]`, `go` (`depth`, `movetime`,
+`wtime`/`btime`/`winc`/`binc`/`movestogo`, `infinite`), `stop`, `quit`. Moves use
+UCI long algebraic notation with promotion suffixes (e.g. `e7e8q`, `e7e8n`).
+
+Note: `GameState` tracks no halfmove/fullmove counters, so the engine does not
+claim 50-move or threefold-repetition draws itself (FEN counters are parsed but
+ignored); GUIs adjudicate those.
+
 ---

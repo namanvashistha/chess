@@ -3,10 +3,11 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { ensureUser, userId } from '$lib/api.js';
-	import { currentGame } from '$lib/stores.js';
+	import { currentGame, reviewPly } from '$lib/stores.js';
 	import { formatUserName } from '$lib/format.js';
 	import { avatarUrl } from '$lib/avatar.js';
 	import { computeCaptured } from '$lib/captured.js';
+	import { positionsFrom } from '$lib/replay.js';
 	import { sendMove } from '$lib/socket.js';
 	import Board from '$lib/components/Board.svelte';
 
@@ -48,13 +49,34 @@
 			povOverride = null;
 			clockW = START_SECONDS;
 			clockB = START_SECONDS;
+			reviewPly.set(null);
 		}
 	});
 
+	// Move-review: show a past position when reviewPly points before the latest.
+	let moveCount = $derived($currentGame?.moves?.length ?? 0);
+	let liveMode = $derived($reviewPly === null || $reviewPly >= moveCount);
+	let positions = $derived(liveMode ? null : positionsFrom($currentGame?.moves));
+	let viewPosition = $derived(liveMode ? null : positions[$reviewPly]);
+	let viewLastMove = $derived(
+		liveMode ? null : $reviewPly > 0 ? $currentGame.moves[$reviewPly - 1].move : null
+	);
+
+	// Pass & play: same user seated as both colours -> control both sides, and
+	// flip the board to whoever is to move.
+	let isLocal = $derived(
+		!!(
+			$currentGame?.white_user &&
+			$currentGame?.black_user &&
+			$currentGame.white_user.id === $currentGame.black_user.id
+		)
+	);
 	let basePov = $derived(
-		$currentGame && myId != null && $currentGame.black_user && $currentGame.black_user.id === myId
-			? 'b'
-			: 'w'
+		isLocal
+			? $currentGame.state?.turn ?? 'w'
+			: $currentGame && myId != null && $currentGame.black_user && $currentGame.black_user.id === myId
+				? 'b'
+				: 'w'
 	);
 	let pov = $derived(povOverride ?? basePov);
 	function flip() {
@@ -102,7 +124,16 @@
 		<section class="board-col">
 			<div class="board-stack">
 				{@render bar(topColor)}
-				<Board game={$currentGame} {myId} {pov} onmove={sendMove} />
+				<Board
+				game={$currentGame}
+				{myId}
+				{pov}
+				local={isLocal}
+				onmove={sendMove}
+				position={viewPosition}
+				reviewing={!liveMode}
+				lastMoveStr={viewLastMove}
+			/>
 				{@render bar(bottomColor)}
 				{#if !$currentGame}<p class="board-cap">After 1. e4</p>{/if}
 			</div>
@@ -131,26 +162,19 @@
 	{@const u = seat(color)}
 	{@const taken = color === 'w' ? cap.whiteCaptured : cap.blackCaptured}
 	{@const adv = color === 'w' ? cap.adv : -cap.adv}
-	{@const seed = u
-		? formatUserName(u.name)
-		: $currentGame
-			? '?'
-			: color === bottomColor
-				? 'You'
-				: 'Opponent'}
+	{@const label = isLocal
+		? color === 'w' ? 'White' : 'Black'
+		: u
+			? formatUserName(u.name)
+			: $currentGame
+				? 'Waiting for opponent…'
+				: color === bottomColor ? 'You' : 'Opponent'}
+	{@const seed = isLocal ? label : u ? formatUserName(u.name) : color === bottomColor ? 'You' : 'Opponent'}
 	<div class="player-bar" class:is-turn={$currentGame && turn === color && !$currentGame.winner}>
 		<div class="player-id">
 			<img class="player-dp" src={avatarUrl(seed)} alt="" />
 			<div class="player-meta">
-				<span class="player-name" class:muted={$currentGame && !u}>
-					{#if u}
-						{formatUserName(u.name)}
-					{:else if $currentGame}
-						Waiting for opponent…
-					{:else}
-						{color === bottomColor ? 'You' : 'Opponent'}
-					{/if}
-				</span>
+				<span class="player-name" class:muted={$currentGame && !u}>{label}</span>
 				{#if $currentGame && (taken.length || adv > 0)}
 					<span class="player-captured">
 						{#each taken as code, i (i)}<img src={capUrl(code)} alt="" />{/each}

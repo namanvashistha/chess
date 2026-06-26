@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	petname "github.com/dustinkirkland/golang-petname"
@@ -71,16 +72,31 @@ func BindPayloadToStruct(payload map[string]interface{}, obj interface{}) error 
 	typ := val.Elem().Type()
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
-		fieldName := field.Tag.Get("json")
 
-		// Extract value from payload
-		fieldValue, err := ExtractString(payload, fieldName)
-		if err != nil {
-			return fmt.Errorf("failed to bind key '%s': %v", fieldName, err)
+		// The json tag may carry options (e.g. "promotion,omitempty"); the key
+		// is just the part before the first comma. "-" means "skip this field".
+		fieldName := field.Tag.Get("json")
+		if comma := strings.IndexByte(fieldName, ','); comma >= 0 {
+			fieldName = fieldName[:comma]
+		}
+		if fieldName == "" || fieldName == "-" {
+			continue
+		}
+
+		// Optional fields: a key absent from the payload is left as its zero
+		// value rather than failing the whole bind. This keeps adding new
+		// optional fields (e.g. "promotion") from breaking existing clients.
+		raw, exists := payload[fieldName]
+		if !exists {
+			continue
+		}
+		strValue, ok := raw.(string)
+		if !ok {
+			return fmt.Errorf("failed to bind key '%s': not a string, found %T", fieldName, raw)
 		}
 
 		// Set the struct field
-		val.Elem().Field(i).SetString(fieldValue)
+		val.Elem().Field(i).SetString(strValue)
 	}
 
 	return nil

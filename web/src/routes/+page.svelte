@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { currentGame, user } from '$lib/stores.js';
-	import { listGames, createGame, createBotGame, joinGame } from '$lib/api.js';
+	import { listGames, createGame, createBotGame, createLocalGame, joinGame } from '$lib/api.js';
 	import { formatUserName } from '$lib/format.js';
 
 	let games = $state([]);
@@ -46,6 +46,12 @@
 		creating = false;
 		if (r.response_key === 'SUCCESS') goto(`/game/${r.data}`);
 	}
+	async function onLocal() {
+		creating = true;
+		const r = await createLocalGame();
+		creating = false;
+		if (r.response_key === 'SUCCESS') goto(`/game/${r.data}`);
+	}
 	async function onJoinCode() {
 		if (!inviteCode.trim()) return;
 		const r = await joinGame(inviteCode.trim());
@@ -86,6 +92,10 @@
 				</button>
 			{/each}
 		</div>
+
+		<button class="btn-bot" onclick={onLocal} disabled={creating}>
+			<i class="fa fa-users"></i><span>Pass &amp; play</span>
+		</button>
 
 		<div class="divider"><span>or join with a code</span></div>
 		<div class="join-row">

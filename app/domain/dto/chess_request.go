@@ -8,8 +8,11 @@ type Move struct {
 	Piece       string `json:"piece"`
 	Source      string `json:"source"`
 	Destination string `json:"destination"`
-	GameId      string `json:"game_id"`
-	Token       string `json:"token"`
+	// Promotion is the piece to promote a pawn to, as a lowercase letter
+	// ("q"|"r"|"b"|"n"). Empty means promote to queen (the historical default).
+	Promotion string `json:"promotion,omitempty"`
+	GameId    string `json:"game_id"`
+	Token     string `json:"token"`
 }
 
 type ChessRequest struct {

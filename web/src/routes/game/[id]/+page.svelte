@@ -2,14 +2,14 @@
 	import { page } from '$app/stores';
 	import { onDestroy } from 'svelte';
 	import { getGame } from '$lib/api.js';
-	import { currentGame, user } from '$lib/stores.js';
+	import { currentGame, user, reviewPly } from '$lib/stores.js';
 	import { connectSocket, disconnectSocket } from '$lib/socket.js';
+	import { positionsFrom, sanLabel } from '$lib/replay.js';
 
 	let id = $derived($page.params.id);
 	let myId = $derived($user?.id ?? null);
 
 	// Load initial state and (re)bind the socket whenever the game id changes.
-	// Live updates arrive over the socket; this is the only fetch in steady state.
 	$effect(() => {
 		const gid = id;
 		getGame(gid).then((g) => currentGame.set(g));
@@ -18,7 +18,7 @@
 
 	onDestroy(() => {
 		disconnectSocket();
-		currentGame.set(null); // board returns to idle when leaving the game
+		currentGame.set(null);
 	});
 
 	let g = $derived($currentGame);
@@ -27,13 +27,13 @@
 	);
 	let waiting = $derived(g && amPlayer && (!g.white_user || !g.black_user) && !g.winner);
 
-	// A join isn't pushed over the socket, so poll only while waiting for one.
 	let waitPoll;
 	$effect(() => {
 		clearInterval(waitPoll);
 		if (waiting) waitPoll = setInterval(() => getGame(id).then((x) => currentGame.set(x)), 3000);
 		return () => clearInterval(waitPoll);
 	});
+
 	let statusText = $derived(
 		!g ? 'Loading…'
 			: g.winner === 'w' ? 'White wins'
@@ -42,14 +42,35 @@
 			: 'Black to move'
 	);
 
-	let movePairs = $derived.by(() => {
+	// ---- move navigation ----
+	let positions = $derived(positionsFrom(g?.moves));
+	let total = $derived(g?.moves?.length ?? 0);
+	let cur = $derived($reviewPly ?? total); // active ply shown on the board
+
+	let moveRows = $derived.by(() => {
 		const m = g?.moves ?? [];
 		const rows = [];
 		for (let i = 0; i < m.length; i += 2) {
-			rows.push({ n: i / 2 + 1, w: m[i]?.move ?? '', b: m[i + 1]?.move ?? '' });
+			rows.push({
+				n: i / 2 + 1,
+				w: { ply: i + 1, san: sanLabel(positions[i], m[i].move) },
+				b: m[i + 1] ? { ply: i + 2, san: sanLabel(positions[i + 1], m[i + 1].move) } : null
+			});
 		}
 		return rows;
 	});
+
+	const setPly = (p) => reviewPly.set(p >= total ? null : Math.max(0, p));
+	const goFirst = () => reviewPly.set(total === 0 ? null : 0);
+	const goPrev = () => setPly(cur - 1);
+	const goNext = () => setPly(cur + 1);
+	const goLast = () => reviewPly.set(null);
+
+	function onKey(e) {
+		if (e.target instanceof HTMLInputElement) return;
+		if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
+		else if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
+	}
 
 	let copied = $state(false);
 	function copyCode() {
@@ -59,6 +80,8 @@
 		});
 	}
 </script>
+
+<svelte:window onkeydown={onKey} />
 
 <div class="rail-stack">
 	{#if waiting}
@@ -81,13 +104,29 @@
 		<div class="moves-body">
 			<table>
 				<tbody>
-					{#each movePairs as r}
-						<tr><td class="n">{r.n}.</td><td>{r.w}</td><td>{r.b}</td></tr>
+					{#each moveRows as r}
+						<tr>
+							<td class="n">{r.n}.</td>
+							<td>
+								<button class="ply" class:active={cur === r.w.ply} onclick={() => setPly(r.w.ply)}>{r.w.san}</button>
+							</td>
+							<td>
+								{#if r.b}
+									<button class="ply" class:active={cur === r.b.ply} onclick={() => setPly(r.b.ply)}>{r.b.san}</button>
+								{/if}
+							</td>
+						</tr>
 					{:else}
 						<tr><td colspan="3" class="empty">No moves yet.</td></tr>
 					{/each}
 				</tbody>
 			</table>
+		</div>
+		<div class="nav">
+			<button onclick={goFirst} disabled={cur === 0} aria-label="First move" title="First"><i class="fa fa-angles-left"></i></button>
+			<button onclick={goPrev} disabled={cur === 0} aria-label="Previous move" title="Previous"><i class="fa fa-angle-left"></i></button>
+			<button onclick={goNext} disabled={cur >= total} aria-label="Next move" title="Next"><i class="fa fa-angle-right"></i></button>
+			<button onclick={goLast} disabled={cur >= total} aria-label="Latest move" title="Latest"><i class="fa fa-angles-right"></i></button>
 		</div>
 		<a class="back" href="/"><i class="fa fa-plus"></i> New game</a>
 	</section>
@@ -164,13 +203,13 @@
 	.moves {
 		display: flex;
 		flex-direction: column;
-		max-height: 60vh;
+		max-height: min(64vh, 560px);
 	}
 	.moves-head {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 16px 18px;
+		padding: 14px 18px;
 		border-bottom: 1px solid var(--border);
 	}
 	.status {
@@ -181,27 +220,73 @@
 	.moves-body {
 		flex: 1;
 		overflow-y: auto;
-		min-height: 80px;
+		min-height: 90px;
 	}
 	table {
 		width: 100%;
 		border-collapse: collapse;
-		font-size: 0.9rem;
+		font-size: 0.92rem;
+		table-layout: fixed;
 	}
 	td {
-		padding: 7px 18px;
-		font-variant-numeric: tabular-nums;
+		padding: 2px 8px;
+		vertical-align: middle;
 	}
 	td.n {
+		width: 40px;
+		padding-left: 16px;
 		color: var(--text-faint);
-		width: 46px;
+		font-variant-numeric: tabular-nums;
+		font-size: 0.82rem;
 	}
 	tr:nth-child(odd) {
-		background: var(--surface-2);
+		background: color-mix(in oklab, var(--surface-2) 60%, transparent);
+	}
+	.ply {
+		width: 100%;
+		text-align: left;
+		padding: 6px 8px;
+		border-radius: 6px;
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+		color: var(--text);
+		background: transparent;
+		transition: background 0.1s var(--ease);
+	}
+	.ply:hover {
+		background: var(--surface-3);
+	}
+	.ply.active {
+		background: var(--accent);
+		color: #fff;
 	}
 	.empty {
 		color: var(--text-faint);
 		text-align: center;
+		padding: 16px;
+	}
+	.nav {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 4px;
+		padding: 10px 12px;
+		border-top: 1px solid var(--border);
+	}
+	.nav button {
+		padding: 9px 0;
+		font-size: 0.95rem;
+		color: var(--text-muted);
+		background: var(--surface-2);
+		border-radius: var(--radius-sm);
+		transition: color 0.12s var(--ease), background 0.12s var(--ease);
+	}
+	.nav button:hover:not(:disabled) {
+		color: var(--accent);
+		background: var(--surface-3);
+	}
+	.nav button:disabled {
+		opacity: 0.4;
+		cursor: default;
 	}
 	.back {
 		display: flex;

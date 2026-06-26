@@ -3,7 +3,16 @@
 	// start position when idle). Click-to-move and smooth pointer drag (the
 	// dragged piece follows the cursor) for the side to move; emits
 	// (piece, source, destination) via onmove.
-	let { game = null, myId = null, pov = 'w', onmove = () => {} } = $props();
+	let {
+		game = null,
+		myId = null,
+		pov = 'w',
+		onmove = () => {},
+		position = null, // override board map (move review); null = live current_state
+		reviewing = false, // viewing a past ply -> read-only
+		lastMoveStr = null, // override last-move highlight for the viewed ply
+		local = false // pass & play: one client controls both sides
+	} = $props();
 
 	const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 	const PIECE = {
@@ -30,8 +39,16 @@
 	let selected = $state(null);
 	let drag = $state(null); // { from, code, x, y, moved, size }
 
-	let state = $derived(game?.current_state ?? idleState());
-	let legal = $derived(game?.legal_moves ?? {});
+	// Reviewing a past ply is read-only: never carry a selection/drag into it.
+	$effect(() => {
+		if (reviewing) {
+			selected = null;
+			drag = null;
+		}
+	});
+
+	let state = $derived(position ?? game?.current_state ?? idleState());
+	let legal = $derived(reviewing ? {} : (game?.legal_moves ?? {}));
 	let myColor = $derived(
 		!game || myId == null
 			? null
@@ -41,10 +58,13 @@
 					? 'b'
 					: null
 	);
-	let isMyTurn = $derived(!!(game && myColor && !game.winner && game.state?.turn === myColor));
+	// In pass & play either side may move; otherwise only your own colour on your turn.
+	let isMyTurn = $derived(
+		!!(game && !reviewing && !game.winner && (local || (myColor && game.state?.turn === myColor)))
+	);
 
 	let lastMove = $derived.by(() => {
-		const lm = game?.state?.last_move;
+		const lm = reviewing ? lastMoveStr : game?.state?.last_move;
 		if (!lm || lm.length < 5) return new Set();
 		return new Set([lm.substring(1, 3), lm.substring(3, 5)]);
 	});
@@ -101,7 +121,16 @@
 			e.preventDefault();
 			selected = cell.sq;
 			const size = gridEl ? gridEl.clientWidth / 8 : 64;
-			drag = { from: cell.sq, code: state[cell.sq], x: e.clientX, y: e.clientY, moved: false, size };
+			drag = {
+				from: cell.sq,
+				code: state[cell.sq],
+				x: e.clientX,
+				y: e.clientY,
+				startX: e.clientX,
+				startY: e.clientY,
+				moved: false,
+				size
+			};
 		} else {
 			selected = null;
 		}
@@ -109,7 +138,10 @@
 
 	function onWindowMove(e) {
 		if (!drag) return;
-		if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 4) {
+		// Only treat it as a drag once the pointer leaves the origin square's
+		// rough footprint, so a jittery click isn't mistaken for a drag.
+		const threshold = drag.size ? drag.size * 0.35 : 10;
+		if (!drag.moved && Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) < threshold) {
 			drag.x = e.clientX;
 			drag.y = e.clientY;
 			return;
@@ -122,17 +154,14 @@
 	function onWindowUp(e) {
 		if (!drag) return;
 		const d = drag;
-		if (d.moved) {
-			const sq = squareAt(e.clientX, e.clientY);
-			if (sq && legal[d.from]?.includes(sq)) doMove(d.from, sq);
-			else {
-				selected = null;
-				drag = null;
-			}
-		} else {
-			// A tap: keep the selection so click-to-move works.
-			drag = null;
+		drag = null;
+		if (!d.moved) return; // a tap: keep the selection for click-to-move
+		const sq = squareAt(e.clientX, e.clientY);
+		if (sq && sq !== d.from && legal[d.from]?.includes(sq)) {
+			doMove(d.from, sq);
 		}
+		// Dropped off-target (or jittered back onto the source): keep `selected`
+		// so clicking a destination square still completes the move.
 	}
 </script>
 
@@ -145,7 +174,7 @@
 				class="sq {cell.dark ? 'sq--d' : 'sq--l'}"
 				data-sq={cell.sq}
 				class:is-last={cell.last}
-				class:is-select={selected === cell.sq}
+				class:is-select={!reviewing && selected === cell.sq}
 				class:is-move={targets.has(cell.sq)}
 				class:has-piece={targets.has(cell.sq) && cell.piece}
 				class:can-move={movableFrom(cell.sq)}

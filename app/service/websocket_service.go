@@ -29,6 +29,16 @@ type WebSocketServiceImpl struct {
 	unregister      chan clientRegistration             // Unregistration with game_id
 	chessRepository repository.ChessRepository
 	mutex           sync.Mutex
+	gameLocks       sync.Map // gameID -> *sync.Mutex; serializes move application per game
+}
+
+// lockFor returns a per-game mutex so a game's load→apply→save→broadcast runs
+// atomically. Without this, a human move and the bot's reply (or a duplicate
+// bot trigger on connect) can load the same cached state and overwrite each
+// other, losing moves and corrupting the position.
+func (ws *WebSocketServiceImpl) lockFor(gameID string) *sync.Mutex {
+	m, _ := ws.gameLocks.LoadOrStore(gameID, &sync.Mutex{})
+	return m.(*sync.Mutex)
 }
 
 type clientRegistration struct {
@@ -73,6 +83,12 @@ func (ws *WebSocketServiceImpl) BroadcastMessage(gameID string, message dto.WebS
 func (ws *WebSocketServiceImpl) ProcessMove(gameId string, message dto.WebSocketMessage) {
 	log.Info("Processing move via WebSocket", message.Payload)
 
+	// Serialize all move application for this game (human + bot) so concurrent
+	// calls can't load the same state and clobber each other.
+	lk := ws.lockFor(gameId)
+	lk.Lock()
+	defer lk.Unlock()
+
 	var game dao.ChessGame
 	var err error
 	status := "success"
@@ -94,14 +110,17 @@ func (ws *WebSocketServiceImpl) ProcessMove(gameId string, message dto.WebSocket
 	var move dto.Move
 	if err = pkg.BindPayloadToStruct(message.Payload.(map[string]interface{}), &move); err != nil {
 		log.Errorf("Failed to unmarshal move: %v", err)
-		status = "error"
+		ws.sendError(gameId, "invalid move payload")
+		return
 	}
 	user, err := ws.chessRepository.FindUserByToken(move.Token)
-	if err != nil {
-		status = "error"
+	if err != nil || user.ID == 0 {
+		// The token doesn't map to a user (e.g. a stale token after a DB reset).
+		// Bail out with a clear message instead of running ProcessMove with a
+		// zero user, which would report the misleading "user 0 is not in the game".
 		log.Error("Error fetching user by token:", err)
-		status_message = err.Error()
-		status = "error"
+		ws.sendError(gameId, "session expired, please reload")
+		return
 	}
 	legalMoves := make(map[uint64]uint64)
 	gameStatus := ""
@@ -176,6 +195,13 @@ func (ws *WebSocketServiceImpl) MaybePlayBotMove(gameId string) {
 		return
 	}
 
+	// Guarantee the bot user exists with the canonical token so its move
+	// authenticates (otherwise the move is rejected as "user 0 not in game").
+	if _, err := ws.chessRepository.FindOrCreateBotUser(); err != nil {
+		log.Error("Could not resolve bot user for bot move:", err)
+		return
+	}
+
 	move := engine.ChooseBotMove(&game)
 	if move == nil {
 		return
@@ -193,6 +219,16 @@ func (ws *WebSocketServiceImpl) MaybePlayBotMove(gameId string) {
 			"game_id":     gameId,
 			"token":       constant.BotToken,
 		},
+	})
+}
+
+// sendError broadcasts an error-status game_update so the client can surface the
+// reason without us having to fabricate a game payload.
+func (ws *WebSocketServiceImpl) sendError(gameId, message string) {
+	ws.BroadcastMessage(gameId, dto.WebSocketMessage{
+		Type:    "game_update",
+		Status:  "error",
+		Message: message,
 	})
 }
 

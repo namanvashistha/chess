@@ -41,6 +41,22 @@ func ProcessMove(game *dao.ChessGame, move dto.Move, user dao.User) (string, err
 		return "", fmt.Errorf("invalid move: move is not valid")
 	}
 
+	game.State = ApplyMove(game.State, move)
+	return game.State.LastMove, nil
+}
+
+// ApplyMove mutates a bare GameState by playing move, with no user/turn/legality
+// validation (callers that need those checks should use ProcessMove). It returns
+// the resulting state. Handles captures, castling (rook relocation + rights),
+// en passant (set/clear + capture), and promotion. The promotion target honors
+// move.Promotion ("q"|"r"|"b"|"n", case-insensitive); empty defaults to queen.
+func ApplyMove(state dao.GameState, move dto.Move) dao.GameState {
+	gs := &state
+	game := struct{ State *dao.GameState }{State: gs}
+
+	sourceIdx := PositionToIndex(move.Source)
+	destinationIdx := PositionToIndex(move.Destination)
+
 	pieceBitboards := map[string]struct {
 		pieceBitboard *uint64
 		colorBitboard *uint64
@@ -211,21 +227,33 @@ func ProcessMove(game *dao.ChessGame, move dto.Move, user dao.User) (string, err
 		*pieceBitboards[move.Piece].colorBitboard &= ^(1 << destinationIdx)
 		*pieceBitboards[move.Piece].pieceBitboard &= ^(1 << destinationIdx)
 
-		// Add queen to bitboards
-		if move.Piece == "P" { // Promote white pawn to queen
-			*pieceBitboards["Q"].colorBitboard |= (1 << destinationIdx)
-			*pieceBitboards["Q"].pieceBitboard |= (1 << destinationIdx)
-		} else if move.Piece == "p" { // Promote black pawn to queen
-			*pieceBitboards["q"].colorBitboard |= (1 << destinationIdx)
-			*pieceBitboards["q"].pieceBitboard |= (1 << destinationIdx)
-		}
+		// Promote to the requested piece, defaulting to queen. Use the color
+		// matching the pawn (uppercase key for white, lowercase for black).
+		promo := promotionKey(move.Piece, move.Promotion)
+		*pieceBitboards[promo].colorBitboard |= (1 << destinationIdx)
+		*pieceBitboards[promo].pieceBitboard |= (1 << destinationIdx)
 	}
 
 	game.State.LastMove = move.Piece + move.Source + move.Destination
 
 	game.State.Turn = ToggleTurn(game.State.Turn)
 
-	return game.State.LastMove, nil
+	return *gs
+}
+
+// promotionKey maps a pawn ("P"/"p") and a requested promotion letter
+// ("q"|"r"|"b"|"n", case-insensitive; empty => queen) to the pieceBitboards key
+// of the correct color.
+func promotionKey(pawn, promotion string) string {
+	letter := "q"
+	switch strings.ToLower(promotion) {
+	case "r", "b", "n":
+		letter = strings.ToLower(promotion)
+	}
+	if pawn == "P" { // white promotes to an uppercase piece
+		return strings.ToUpper(letter)
+	}
+	return letter
 }
 
 func IsValidMove(game dao.ChessGame, piece uint64, destination uint64) bool {

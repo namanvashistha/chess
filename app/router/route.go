@@ -57,6 +57,7 @@ func Init(init *config.Initialization) *gin.Engine {
 			chess.GET("/game", init.ChessCtrl.GetAllChessGame)
 			chess.POST("/game", init.ChessCtrl.CreateChessGame)
 			chess.POST("/game/bot", init.ChessCtrl.CreateBotChessGame)
+			chess.POST("/game/local", init.ChessCtrl.CreateLocalChessGame)
 			chess.GET("/game/:gameId", init.ChessCtrl.GetChessGameById)
 			chess.POST("/game/join", init.ChessCtrl.JoinChessGame)
 			chess.POST("/state/move", init.ChessCtrl.MakeMove)

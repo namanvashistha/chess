@@ -286,6 +286,8 @@ a {
 	place-items: center;
 	user-select: none;
 	touch-action: none;
+	outline: none;
+	-webkit-tap-highlight-color: transparent;
 }
 .sq--l {
 	background: var(--board-light);

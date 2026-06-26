@@ -25,14 +25,23 @@ async function post(url, body) {
 	return res.json();
 }
 
-// Create (or reuse) an anonymous user; hydrates the `user` store.
+// Ensure a valid anonymous user and hydrate the `user` store. A stored token is
+// VERIFIED against the server (it can go stale if the DB is reset/migrated); if
+// it no longer maps to a user, a fresh identity is created. This prevents moves
+// from being rejected as "user 0 is not in the game".
 export async function ensureUser() {
-	let t = localStorage.getItem(KEY_TOKEN);
-	const data = localStorage.getItem(KEY_DATA);
-	if (t && data) {
-		const parsed = JSON.parse(data);
-		user.set(parsed);
-		return parsed;
+	const stored = localStorage.getItem(KEY_TOKEN);
+	if (stored) {
+		try {
+			const me = await post('/api/user/me', { token: stored });
+			if (me.response_key === 'SUCCESS' && me.data && me.data.id) {
+				localStorage.setItem(KEY_DATA, JSON.stringify(me.data));
+				user.set(me.data);
+				return me.data;
+			}
+		} catch {
+			// network error: fall through and try to (re)create
+		}
 	}
 	const j = await post('/api/user');
 	if (j.response_key === 'SUCCESS') {
@@ -62,6 +71,10 @@ export async function createGame() {
 
 export async function createBotGame(difficulty) {
 	return post('/api/chess/game/bot', { token: token(), difficulty });
+}
+
+export async function createLocalGame() {
+	return post('/api/chess/game/local', { token: token() });
 }
 
 export async function joinGame(inviteCode) {

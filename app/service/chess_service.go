@@ -18,6 +18,7 @@ type ChessService interface {
 	GetChessGameById(c *gin.Context)
 	CreateChessGame(c *gin.Context)
 	CreateBotChessGame(c *gin.Context)
+	CreateLocalChessGame(c *gin.Context)
 	JoinChessGame(c *gin.Context)
 	MakeMove(c *gin.Context)
 }
@@ -112,9 +113,59 @@ func (u ChessServiceImpl) CreateChessGame(c *gin.Context) {
 
 }
 
-// CreateBotChessGame creates a game seating the human against the built-in bot,
-// with both seats filled so play can start immediately. Colours are randomised;
-// if the bot draws White it makes the first move as soon as the human connects.
+// CreateLocalChessGame creates a pass-and-play game with the human seated as
+// BOTH colours, so a single client controls both sides on one device. The
+// server's turn check passes for either side because the same user owns both.
+func (u ChessServiceImpl) CreateLocalChessGame(c *gin.Context) {
+	defer pkg.PanicHandler(c)
+
+	log.Info("start to execute program create local (pass & play) chess game")
+	var request dto.TokenGetRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		log.Error("Happened error when mapping request from FE. Error", err)
+		pkg.PanicException(constant.InvalidRequest)
+	}
+
+	human, err := u.chessRepository.FindUserByToken(request.Token)
+	if err != nil {
+		log.Error("Happened error when finding user by token. Error", err)
+		pkg.PanicException(constant.DataNotFound)
+	}
+
+	newGame := dao.ChessGame{
+		InviteCode: pkg.GenerateRandomString(20),
+		Winner:     "",
+		WhiteUser:  &human,
+		BlackUser:  &human,
+	}
+	if err := u.chessRepository.SaveChessGameToDB(&newGame); err != nil {
+		log.Error("Happened error when saving game to database. Error", err)
+		pkg.PanicException(constant.UnknownError)
+	}
+	initialGameState := dao.GameState{
+		GameID:         newGame.ID,
+		WhiteBitboard:  0xFFFF,
+		BlackBitboard:  0xFFFF000000000000,
+		PawnBitboard:   0x00FF00000000FF00,
+		RookBitboard:   0x8100000000000081,
+		KnightBitboard: 0x4200000000000042,
+		BishopBitboard: 0x2400000000000024,
+		QueenBitboard:  0x0800000000000008,
+		KingBitboard:   0x1000000000000010,
+		EnPassant:      0,
+		CastlingRights: "KQkq",
+		Turn:           "w",
+	}
+	if err := u.chessRepository.SaveGameStateToDB(&initialGameState); err != nil {
+		log.Error("Happened error when saving game state to database. Error", err)
+		pkg.PanicException(constant.UnknownError)
+	}
+
+	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, newGame.ID))
+}
+
+// CreateBotChessGame creates a game seating the human (always White) against the
+// built-in bot. Both seats are filled so play starts immediately.
 func (u ChessServiceImpl) CreateBotChessGame(c *gin.Context) {
 	defer pkg.PanicHandler(c)
 
@@ -146,13 +197,9 @@ func (u ChessServiceImpl) CreateBotChessGame(c *gin.Context) {
 		Winner:     "",
 		BotLevel:   level,
 	}
-	if humanIsWhite := pkg.GenerateRandomBool(); humanIsWhite {
-		newGame.WhiteUser = &human
-		newGame.BlackUser = &bot
-	} else {
-		newGame.WhiteUser = &bot
-		newGame.BlackUser = &human
-	}
+	// The human always plays White against the bot.
+	newGame.WhiteUser = &human
+	newGame.BlackUser = &bot
 
 	if err := u.chessRepository.SaveChessGameToDB(&newGame); err != nil {
 		log.Error("Happened error when saving game to database. Error", err)

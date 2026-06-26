@@ -60,7 +60,7 @@ func filterLegalMoves(gs dao.GameState, legalMoves map[uint64]uint64, pseudoLega
 				simulatedGameState := simulateMove(gs, piece, movePosition)
 				isWhite := gs.WhiteBitboard&piece != 0
 				if !isKingInCheck(simulatedGameState, isWhite) {
-					filteredMoves[piece] |= legalMoves[piece]
+					filteredMoves[piece] |= movePosition
 				}
 			}
 		}
