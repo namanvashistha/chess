@@ -1,0 +1,17 @@
+# Keep the build context small and avoid copying host-built artifacts into the
+# image (the Dockerfile builds web/ fresh in its own stage).
+.git
+bin/
+tmp/
+main
+dump.rdb
+*.log
+
+# Frontend: built fresh in the web stage; never copy host output or deps.
+web/node_modules
+web/build
+web/.svelte-kit
+
+# Local env / editor
+.env
+.DS_Store
