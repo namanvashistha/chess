@@ -1,0 +1,74 @@
+# Deployed compose for the homelab box. Declared as a Komodo stack in
+# namanvashistha/homelab -> komodo/syncs/projects.toml.
+#
+# This is NOT docker-compose.yml. That one is the dev compose: it builds from
+# the Dockerfile and publishes ports to localhost. This one pulls the image
+# this repo's CI publishes to ghcr.io, uses `expose:` rather than `ports:`
+# (ingress is cloudflared -> caddy, so a host port would bypass Cloudflare
+# Access and publish to the LAN), and carries the caddy labels that route
+# chess.namanvashistha.com.
+#
+# Komodo clones this repo to /etc/komodo/stacks/chess/ and runs compose there
+# under the project name `chess` — which is what the volumes below are prefixed
+# with. Renaming the stack renames the volumes and detaches the data silently.
+
+services:
+  go-app:
+    image: ghcr.io/namanvashistha/chess:latest
+    expose:
+      - "9000"
+    environment:
+      - PORT=${PORT:-9000}
+      - APPLICATION_NAME=${APPLICATION_NAME:-chess}
+      - DB_DSN=${DB_DSN:-host=postgres user=namanvashistha dbname=chess password=your_password port=5432 sslmode=disable}
+      - REDIS_ADDR=${REDIS_ADDR:-redis:6379}
+      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+      - caddy
+    labels:
+      caddy: http://chess.namanvashistha.com
+      caddy.reverse_proxy: "{{upstreams 9000}}"
+
+  redis:
+    image: redis:7.0
+    networks:
+      - backend
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-chess}
+      - POSTGRES_USER=${POSTGRES_USER:-namanvashistha}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-your_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U namanvashistha -d chess"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  backend:
+    driver: bridge
+  caddy:
+    external: true
+
+volumes:
+  postgres_data:
+  redis_data:
