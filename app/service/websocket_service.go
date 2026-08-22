@@ -166,6 +166,19 @@ func (ws *WebSocketServiceImpl) applyMove(gameId string, move dto.Move, user dao
 			game.Winner = "w"
 		}
 
+		// Draws. Checkmate takes precedence, so this only runs when the game is
+		// not already decided. Without it a game could never end in a draw at all:
+		// two sides shuffling pieces just played forever.
+		if game.Winner == "" {
+			// game.Moves does not yet include the move just made (it is appended
+			// after a successful persist), so add it for the replay.
+			played := append(engine.RecordedMoves(game.Moves), gameMove.Move)
+			if draw := engine.DrawStatus(game.State, engine.ReplayGameKeys(played)); draw != "" {
+				game.Winner = "d"
+				gameStatus = draw
+			}
+		}
+
 		// Every one of these writes used to be `_ =`. A database or Redis outage
 		// looked exactly like a successful move: the client saw the new position
 		// broadcast and only found out on reload that it was never saved.

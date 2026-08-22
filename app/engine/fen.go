@@ -35,8 +35,9 @@ func fenPieceBit(c byte, gs *dao.GameState) (color, piece *uint64, ok bool) {
 	return nil, nil, false
 }
 
-// ParseFEN parses a FEN string into a GameState. Halfmove/fullmove counters are
-// accepted but discarded (GameState tracks no draw counters). The en-passant
+// ParseFEN parses a FEN string into a GameState. The halfmove clock is read (it
+// drives the fifty-move rule); the fullmove counter is accepted and discarded.
+// The en-passant
 // target is expanded into the engine's two-bit convention (see ToFEN/ProcessMove):
 // the target square plus the just-pushed pawn's square, so the move generator's
 // `EnPassant & opponentBitboard` guard fires.
@@ -112,11 +113,21 @@ func ParseFEN(fen string) (dao.GameState, error) {
 		}
 	}
 
+	// Field 5 (optional): halfmove clock, plies since the last capture or pawn
+	// move. A malformed or absent value leaves it at 0, which only ever delays a
+	// fifty-move draw.
+	if len(fields) >= 5 {
+		if n, err := strconv.Atoi(fields[4]); err == nil && n >= 0 {
+			gs.HalfmoveClock = n
+		}
+	}
+
 	return gs, nil
 }
 
-// ToFEN renders a GameState as a FEN string. It emits "0 1" for the halfmove and
-// fullmove counters, which the engine does not track. The en-passant target is
+// ToFEN renders a GameState as a FEN string. The halfmove clock round-trips; the
+// fullmove counter is always emitted as 1, since GameState does not track it.
+// The en-passant target is
 // the single rank-3/rank-6 square (the lower-or-higher of the two stored bits).
 func ToFEN(gs dao.GameState) string {
 	board := ConvertGameStateToMap(gs)
@@ -167,7 +178,7 @@ func ToFEN(gs dao.GameState) string {
 		}
 	}
 
-	return fmt.Sprintf("%s %s %s %s 0 1", sb.String(), turn, castling, ep)
+	return fmt.Sprintf("%s %s %s %s %d 1", sb.String(), turn, castling, ep, gs.HalfmoveClock)
 }
 
 // StartState returns the GameState for the standard starting position.

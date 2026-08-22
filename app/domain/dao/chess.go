@@ -33,8 +33,12 @@ type GameState struct {
 	KingBitboard   uint64 `gorm:"type:numeric(20,0);not null" json:"king_bitboard"`
 	EnPassant      uint64 `gorm:"type:numeric(20,0)" json:"en_passant"`
 	CastlingRights string `gorm:"type:varchar(4)" json:"castling_rights"`
-	LastMove       string `gorm:"type:varchar(10)" json:"last_move"`
-	Turn           string `gorm:"type:varchar(1);not null" json:"turn"`
+	// HalfmoveClock counts plies since the last capture or pawn move, for the
+	// fifty-move rule. GORM AutoMigrate adds the column; existing rows default
+	// to 0, which is safe (it only delays a fifty-move draw).
+	HalfmoveClock int    `gorm:"column:halfmove_clock;not null;default:0" json:"halfmove_clock"`
+	LastMove      string `gorm:"type:varchar(10)" json:"last_move"`
+	Turn          string `gorm:"type:varchar(1);not null" json:"turn"`
 	BaseModel
 }
 

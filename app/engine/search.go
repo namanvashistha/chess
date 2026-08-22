@@ -13,6 +13,11 @@ type SearchOptions struct {
 	MoveTime time.Duration // wall-clock budget; 0 means no time limit
 	Infinite bool          // search until Stop regardless of MaxDepth/MoveTime
 	Stop     <-chan struct{}
+	// History holds the Zobrist keys of positions that already occurred in the
+	// game, oldest first, excluding the position being searched. Without it the
+	// search cannot see a repetition that reaches back before the root, so an
+	// engine with a winning position happily shuffles into a threefold draw.
+	History []uint64
 }
 
 // SearchResult is the outcome of (a completed iteration of) a search.
@@ -69,9 +74,15 @@ func Search(gs dao.GameState, opts SearchOptions, info func(SearchResult)) Searc
 	result.Best = botMoveToDTO(gs, rootMoves[0])
 	result.HasBest = true
 
+	// The root position itself is never scored as a draw -- a move still has to
+	// be returned -- but it goes on the path so a child returning to it counts as
+	// a repetition.
+	rootPath := make([]uint64, 0, len(opts.History)+maxDepth+1)
+	rootPath = append(rootPath, opts.History...)
+	rootPath = append(rootPath, PositionKey(gs))
+
 	for depth := 1; depth <= maxDepth; depth++ {
-		var nodes int
-		aborted := false
+		c := &searchCtx{deadline: deadline, stop: opts.Stop, path: rootPath}
 		best := -searchInf
 		var bestMove dto.Move
 		var bestPV []dto.Move
@@ -79,14 +90,12 @@ func Search(gs dao.GameState, opts SearchOptions, info func(SearchResult)) Searc
 
 		for _, m := range rootMoves {
 			if stopped() {
-				aborted = true
+				c.aborted = true
 				break
 			}
-			ns := simulateMove(gs, m.src, m.dst)
-			ns.Turn = oppTurn(gs.Turn)
 			var childPV []dto.Move
-			score := -negamaxPV(ns, depth-1, -searchInf, -alpha, &nodes, &childPV, deadline, opts.Stop, &aborted)
-			if aborted {
+			score := -negamaxPV(c, applyBotMove(gs, m), depth-1, -searchInf, -alpha, &childPV)
+			if c.aborted {
 				break
 			}
 			if score > best {
@@ -99,7 +108,7 @@ func Search(gs dao.GameState, opts SearchOptions, info func(SearchResult)) Searc
 			}
 		}
 
-		if aborted {
+		if c.aborted {
 			break // discard this incomplete depth, keep the previous result
 		}
 
@@ -107,7 +116,7 @@ func Search(gs dao.GameState, opts SearchOptions, info func(SearchResult)) Searc
 		result.HasBest = true
 		result.Score = best
 		result.Depth = depth
-		result.Nodes += nodes
+		result.Nodes += c.nodes
 		result.PV = bestPV
 		result.Elapsed = time.Since(start)
 		if isMateScore(best) {
@@ -132,15 +141,61 @@ func Search(gs dao.GameState, opts SearchOptions, info func(SearchResult)) Searc
 	return result
 }
 
-// negamaxPV is negamax with node counting, principal-variation collection, and
-// cooperative abort on time/Stop. It mirrors negamax (simulateMove + material
-// eval) so move selection matches the existing bot.
-func negamaxPV(gs dao.GameState, depth, alpha, beta int, nodes *int, pv *[]dto.Move, deadline time.Time, stop <-chan struct{}, aborted *bool) int {
-	*nodes++
+// searchCtx is the mutable state threaded through a search: node count, the
+// abort conditions, and the repetition path.
+//
+// It replaces a nine-parameter recursive signature, and it is what carries the
+// position path needed for repetition detection.
+type searchCtx struct {
+	nodes    int
+	deadline time.Time
+	stop     <-chan struct{}
+	aborted  bool
+	// path holds the position keys from the start of the game down to the
+	// current node. Pre-root game history is seeded from SearchOptions.History.
+	path []uint64
+}
+
+// repeats reports whether key already appears on the current path.
+//
+// A single earlier occurrence is treated as a draw, not two. This is the
+// standard convention: a side that can reach the same position once can reach it
+// again, so the first repetition inside the tree already means the game is
+// drawable, and scoring it as such is what makes the engine avoid it when
+// winning and steer into it when losing.
+func (c *searchCtx) repeats(key uint64) bool {
+	for _, k := range c.path {
+		if k == key {
+			return true
+		}
+	}
+	return false
+}
+
+// drawAtNode reports whether the node is a draw by repetition or the fifty-move
+// rule.
+//
+// Caveat: this is checked before move generation, so a checkmate delivered on
+// the exact ply the fifty-move counter expires is scored as a draw rather than a
+// mate. Detecting that would cost a full move generation at every node; the
+// position is vanishingly rare and every engine makes this trade.
+func (c *searchCtx) drawAtNode(gs dao.GameState, key uint64) bool {
+	return c.repeats(key) || gs.HalfmoveClock >= 100
+}
+
+// negamaxPV is negamax with node counting, principal-variation collection,
+// repetition/fifty-move draw detection, and cooperative abort on time/Stop.
+func negamaxPV(c *searchCtx, gs dao.GameState, depth, alpha, beta int, pv *[]dto.Move) int {
+	c.nodes++
 
 	// Check for time/Stop periodically to keep the overhead negligible.
-	if *nodes&1023 == 0 && abortRequested(deadline, stop) {
-		*aborted = true
+	if c.nodes&1023 == 0 && abortRequested(c.deadline, c.stop) {
+		c.aborted = true
+		return 0
+	}
+
+	key := PositionKey(gs)
+	if c.drawAtNode(gs, key) {
 		return 0
 	}
 
@@ -160,14 +215,15 @@ func negamaxPV(gs dao.GameState, depth, alpha, beta int, nodes *int, pv *[]dto.M
 		return 0 // stalemate
 	}
 
+	c.path = append(c.path, key)
+
 	best := -searchInf
 	var bestChildPV []dto.Move
 	for _, m := range moves {
-		ns := simulateMove(gs, m.src, m.dst)
-		ns.Turn = oppTurn(gs.Turn)
 		var childPV []dto.Move
-		score := -negamaxPV(ns, depth-1, -beta, -alpha, nodes, &childPV, deadline, stop, aborted)
-		if *aborted {
+		score := -negamaxPV(c, applyBotMove(gs, m), depth-1, -beta, -alpha, &childPV)
+		if c.aborted {
+			c.path = c.path[:len(c.path)-1]
 			return best
 		}
 		if score > best {
@@ -182,6 +238,8 @@ func negamaxPV(gs dao.GameState, depth, alpha, beta int, nodes *int, pv *[]dto.M
 			break
 		}
 	}
+
+	c.path = c.path[:len(c.path)-1]
 	*pv = bestChildPV
 	return best
 }
@@ -197,19 +255,17 @@ func abortRequested(deadline time.Time, stop <-chan struct{}) bool {
 	return !deadline.IsZero() && time.Now().After(deadline)
 }
 
-// botMoveToDTO builds a dto.Move from a bitboard move, deriving the piece letter
-// from the source square. Promoting pawn moves default to a queen (matching the
-// search), with the promotion letter set so the move round-trips through UCI.
+// botMoveToDTO builds a dto.Move from a search move, deriving the piece letter
+// from the source square. The promotion piece comes from the move itself, so an
+// underpromotion the search chose survives the round trip through UCI instead of
+// being rewritten as a queen.
 func botMoveToDTO(gs dao.GameState, m botMove) dto.Move {
-	src := bitToSquare(m.src, defFiles, defRanks)
-	dst := bitToSquare(m.dst, defFiles, defRanks)
-	piece := getPieceCode(m.src, gs.WhiteBitboard&m.src != 0, gs)
-	move := dto.Move{Piece: piece, Source: src, Destination: dst}
-	if (piece == "P" && len(dst) == 2 && dst[1] == '8') ||
-		(piece == "p" && len(dst) == 2 && dst[1] == '1') {
-		move.Promotion = "q"
+	return dto.Move{
+		Piece:       getPieceCode(m.src, gs.WhiteBitboard&m.src != 0, gs),
+		Source:      bitToSquare(m.src, defFiles, defRanks),
+		Destination: bitToSquare(m.dst, defFiles, defRanks),
+		Promotion:   m.promo,
 	}
-	return move
 }
 
 func isMateScore(s int) bool {

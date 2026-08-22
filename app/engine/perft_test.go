@@ -6,32 +6,23 @@ import (
 	"testing"
 )
 
-// perft counts leaf nodes to the given depth by enumerating the side-to-move's
-// legal moves and applying each via ApplyMove. It exercises FEN parsing, move
-// generation, and ApplyMove together.
-//
-// Caveat: the generator returns a destination bitboard per piece, which has no
-// room for a promotion choice, so a promoting move is counted once (as a queen)
-// instead of four times. Positions whose reference count includes promotions are
-// therefore expected to undercount; see TestPerftSuite.
+// perft counts leaf nodes to the given depth. It enumerates the side-to-move's
+// legal moves via GenerateLegalMoveList (which expands promotions) and applies
+// each with ApplyMove, so it exercises FEN parsing, move generation, promotion
+// handling and move application together.
 func perft(gs dao.GameState, depth int) int {
 	if depth == 0 {
 		return 1
 	}
-	all, _ := GenerateLegalMovesForAllPositions(gs)
-	moves := FilterMovesByTurn(all, gs)
 	nodes := 0
-	for src, dsts := range moves {
-		for d := dsts; d != 0; d &= d - 1 {
-			dst := d & -d
-			move := dto.Move{
-				Piece:       getPieceCode(src, gs.WhiteBitboard&src != 0, gs),
-				Source:      bitToSquare(src, defFiles, defRanks),
-				Destination: bitToSquare(dst, defFiles, defRanks),
-			}
-			ns := ApplyMove(gs, move)
-			nodes += perft(ns, depth-1)
+	for _, m := range GenerateLegalMoveList(gs) {
+		move := dto.Move{
+			Piece:       getPieceCode(m.Src, gs.WhiteBitboard&m.Src != 0, gs),
+			Source:      bitToSquare(m.Src, defFiles, defRanks),
+			Destination: bitToSquare(m.Dst, defFiles, defRanks),
+			Promotion:   m.Promotion,
 		}
+		nodes += perft(ApplyMove(gs, move), depth-1)
 	}
 	return nodes
 }
@@ -40,15 +31,13 @@ func perft(gs dao.GameState, depth int) int {
 // move-generation or move-application defect, never a test bug.
 //
 // This used to cover only the starting position to depth 3 -- the single
-// configuration that passes -- so it could not fail. The suite below found three
-// real defects immediately; each is recorded against the position that exposes
-// it, with a skip so the rest of the suite stays enforced.
+// configuration that passes -- so it could not fail. All five positions are now
+// enforced at every depth.
 func TestPerftSuite(t *testing.T) {
 	cases := []struct {
 		name string
 		fen  string
 		want []int // index i => depth i+1
-		skip string
 	}{
 		{
 			name: "startpos",
@@ -61,40 +50,28 @@ func TestPerftSuite(t *testing.T) {
 			want: []int{48, 2039, 97862},
 		},
 		{
+			// Exposed illegal en-passant captures: the legality filter simulated
+			// the move without removing the captured pawn, so it kept blocking
+			// the 4th rank and hid the discovered check from Rb4.
 			name: "position-3",
 			fen:  "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
 			want: []int{14, 191, 2812, 43238},
-			// Overcounts (193 at depth 2). filterLegalMoves validates moves with
-			// simulateMove, which cannot perform an en-passant capture, so the
-			// captured pawn stays on the board and still blocks the rank. That
-			// hides the discovered check and both en-passant captures here
-			// (f4g3, f4e3) are offered as legal when they are not.
-			skip: "en-passant discovered check not detected (simulateMove cannot do en passant)",
 		},
 		{
+			// Exposed missing underpromotions.
 			name: "position-4",
 			fen:  "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
 			want: []int{6, 264, 9467},
-			// Undercounts by exactly the missing underpromotions: black's b2 pawn
-			// has 2 promotion squares x 3 unavailable pieces = 6 per branch,
-			// x 6 white replies = 36, and 264-228 = 36.
-			skip: "underpromotion cannot be represented in the generator's destination bitboard",
 		},
 		{
 			name: "position-5",
 			fen:  "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 0 1",
 			want: []int{44, 1486, 62379},
-			// Same defect, visible at depth 1: d7xc8 has 4 promotion choices
-			// counted as 1, and 44-41 = 3.
-			skip: "underpromotion cannot be represented in the generator's destination bitboard",
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			if c.skip != "" {
-				t.Skip("known defect: " + c.skip)
-			}
 			gs, err := ParseFEN(c.fen)
 			if err != nil {
 				t.Fatalf("ParseFEN(%q): %v", c.fen, err)

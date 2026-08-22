@@ -24,7 +24,22 @@ const (
 var defFiles = []string{"a", "b", "c", "d", "e", "f", "g", "h"}
 var defRanks = []string{"1", "2", "3", "4", "5", "6", "7", "8"}
 
-type botMove struct{ src, dst uint64 }
+// botMove is a search-level move. promo carries the promotion piece so the
+// search can consider underpromotion and so its material evaluation sees the
+// piece that actually appears on the board.
+type botMove struct {
+	src, dst uint64
+	promo    string
+}
+
+// applyBotMove plays a search move. It goes through the same applier as the
+// server, so the search now sees castling, en passant and promotion instead of
+// silently playing a different game.
+func applyBotMove(gs dao.GameState, m botMove) dao.GameState {
+	ns := applyBitboardMove(gs, m.src, m.dst, m.promo)
+	ns.Turn = oppTurn(gs.Turn)
+	return ns
+}
 
 // ChooseBotMove dispatches to a move-selection strategy based on the game's
 // stored difficulty. Returns nil when there are no legal moves.
@@ -52,19 +67,13 @@ func ChooseGreedyMove(game *dao.ChessGame) *dto.Move {
 	if len(moves) == 0 {
 		return nil
 	}
-	board := ConvertGameStateToMap(gs)
 
 	bestScore := -1
 	var best []botMove
 	for _, m := range moves {
 		score := pieceValueAt(gs, m.dst) // captured value (0 if quiet)
-		// Pawn reaching the last rank promotes (engine defaults to queen).
-		src := bitToSquare(m.src, defFiles, defRanks)
-		dst := bitToSquare(m.dst, defFiles, defRanks)
-		piece := board[src]
-		if (piece == "P" && len(dst) == 2 && dst[1] == '8') ||
-			(piece == "p" && len(dst) == 2 && dst[1] == '1') {
-			score += botPieceValue['q'] - botPieceValue['p']
+		if m.promo != "" {
+			score += botPieceValue[m.promo[0]] - botPieceValue['p']
 		}
 		if score > bestScore {
 			bestScore = score
@@ -86,13 +95,16 @@ func ChooseSearchMove(game *dao.ChessGame, depth int) *dto.Move {
 		return nil
 	}
 
+	// Seed the repetition path from the moves already played, so the bot does not
+	// shuffle a winning position into a threefold draw.
+	path := append(SearchHistory(ReplayGameKeys(RecordedMoves(game.Moves))), PositionKey(gs))
+	c := &searchCtx{path: path}
+
 	bestScore := -searchInf
 	var best []botMove
 	for _, m := range moves {
-		ns := simulateMove(gs, m.src, m.dst)
-		ns.Turn = oppTurn(gs.Turn)
 		// Full window at the root so tied-best moves are collected correctly.
-		score := -negamax(ns, depth-1, -searchInf, searchInf)
+		score := -negamax(c, applyBotMove(gs, m), depth-1, -searchInf, searchInf)
 		if score > bestScore {
 			bestScore = score
 			best = []botMove{m}
@@ -103,8 +115,14 @@ func ChooseSearchMove(game *dao.ChessGame, depth int) *dto.Move {
 	return buildMove(gs, best[rand.Intn(len(best))])
 }
 
-// negamax returns the value of gs from the side-to-move's perspective.
-func negamax(gs dao.GameState, depth, alpha, beta int) int {
+// negamax returns the value of gs from the side-to-move's perspective. It shares
+// searchCtx with the UCI search so both see repetitions and the fifty-move rule.
+func negamax(c *searchCtx, gs dao.GameState, depth, alpha, beta int) int {
+	key := PositionKey(gs)
+	if c.drawAtNode(gs, key) {
+		return 0
+	}
+
 	if depth == 0 {
 		score := evalMaterial(gs)
 		if gs.Turn == "b" {
@@ -116,16 +134,16 @@ func negamax(gs dao.GameState, depth, alpha, beta int) int {
 	moves := sideToMoveMovesOrdered(gs)
 	if len(moves) == 0 {
 		if isKingInCheck(gs, gs.Turn == "w") {
-			return -mateScore - depth // prefer slower mates / faster wins
+			return -mateScore - depth // prefer faster mates
 		}
 		return 0 // stalemate
 	}
 
+	c.path = append(c.path, key)
+
 	best := -searchInf
 	for _, m := range moves {
-		ns := simulateMove(gs, m.src, m.dst)
-		ns.Turn = oppTurn(gs.Turn)
-		score := -negamax(ns, depth-1, -beta, -alpha)
+		score := -negamax(c, applyBotMove(gs, m), depth-1, -beta, -alpha)
 		if score > best {
 			best = score
 		}
@@ -136,6 +154,8 @@ func negamax(gs dao.GameState, depth, alpha, beta int) int {
 			break
 		}
 	}
+
+	c.path = c.path[:len(c.path)-1]
 	return best
 }
 
@@ -154,32 +174,27 @@ func evalMaterial(gs dao.GameState) int {
 	return w - b
 }
 
-// sideToMoveMoves expands the legal moves for the side to move into a flat list.
-// GenerateLegalMovesForAllPositions returns moves for both colours, so we filter
-// to the side to move by piece colour.
+// sideToMoveMoves lists the legal moves for the side to move, with promotions
+// expanded into all four pieces. GenerateLegalMoveList returns them in a
+// deterministic order, which is what makes the search reproducible.
 func sideToMoveMoves(gs dao.GameState) []botMove {
-	all, _ := GenerateLegalMovesForAllPositions(gs)
-	colorBB := gs.WhiteBitboard
-	if gs.Turn == "b" {
-		colorBB = gs.BlackBitboard
-	}
-	var out []botMove
-	for src, dsts := range all {
-		if src&colorBB == 0 {
-			continue
-		}
-		for d := dsts; d != 0; d &= d - 1 {
-			out = append(out, botMove{src: src, dst: d & -d})
-		}
+	legal := GenerateLegalMoveList(gs)
+	out := make([]botMove, 0, len(legal))
+	for _, m := range legal {
+		out = append(out, botMove{src: m.Src, dst: m.Dst, promo: m.Promotion})
 	}
 	return out
 }
 
 // sideToMoveMovesOrdered orders captures first (most valuable victim first) so
 // alpha-beta prunes more.
+//
+// SliceStable, not Slice: an unstable sort over equally-valued moves reorders
+// them unpredictably, which reintroduces the non-determinism that the ordered
+// generator exists to remove.
 func sideToMoveMovesOrdered(gs dao.GameState) []botMove {
 	moves := sideToMoveMoves(gs)
-	sort.Slice(moves, func(i, j int) bool {
+	sort.SliceStable(moves, func(i, j int) bool {
 		return pieceValueAt(gs, moves[i].dst) > pieceValueAt(gs, moves[j].dst)
 	})
 	return moves
@@ -202,13 +217,11 @@ func pieceValueAt(gs dao.GameState, bit uint64) int {
 }
 
 func buildMove(gs dao.GameState, m botMove) *dto.Move {
-	source := bitToSquare(m.src, defFiles, defRanks)
-	dest := bitToSquare(m.dst, defFiles, defRanks)
-	piece := ConvertGameStateToMap(gs)[source]
-	if piece == "" {
+	move := botMoveToDTO(gs, m)
+	if move.Piece == "" {
 		return nil
 	}
-	return &dto.Move{Piece: piece, Source: source, Destination: dest}
+	return &move
 }
 
 func oppTurn(turn string) string {

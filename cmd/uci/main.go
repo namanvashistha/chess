@@ -33,7 +33,11 @@ type uciEngine struct {
 	out *bufio.Writer
 	mu  sync.Mutex // serializes writes to stdout
 
-	state        dao.GameState
+	state dao.GameState
+	// history holds the Zobrist keys of every position before the current one,
+	// accumulated as "position ... moves ..." is applied. The search needs it to
+	// see a repetition that reaches back before the root.
+	history      []uint64
 	moveOverhead time.Duration
 
 	searchMu sync.Mutex
@@ -64,6 +68,7 @@ func main() {
 		case "ucinewgame":
 			eng.stopSearch()
 			eng.state = engine.StartState()
+			eng.history = nil
 		case "setoption":
 			eng.handleSetOption(fields)
 		case "position":
@@ -128,6 +133,7 @@ func (e *uciEngine) handlePosition(fields []string) {
 	e.stopSearch()
 
 	var gs dao.GameState
+	var history []uint64
 	idx := 1
 	if idx >= len(fields) {
 		return
@@ -162,11 +168,15 @@ func (e *uciEngine) handlePosition(fields []string) {
 				e.infoString("illegal move " + fields[idx] + ": " + err.Error())
 				return
 			}
+			// Record the position before each move, so history ends up holding
+			// every position that occurred except the one now being searched.
+			history = append(history, engine.PositionKey(gs))
 			gs = engine.ApplyMove(gs, move)
 		}
 	}
 
 	e.state = gs
+	e.history = history
 }
 
 func (e *uciEngine) handleGo(fields []string) {
@@ -222,6 +232,8 @@ func (e *uciEngine) handleGo(fields []string) {
 	e.searchMu.Lock()
 	e.stopCh = stop
 	e.searchMu.Unlock()
+
+	opts.History = e.history
 
 	gs := e.state
 	e.wg.Add(1)

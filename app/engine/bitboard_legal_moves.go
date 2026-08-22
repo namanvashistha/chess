@@ -68,50 +68,13 @@ func filterLegalMoves(gs dao.GameState, legalMoves map[uint64]uint64, pseudoLega
 	return filteredMoves
 }
 
+// simulateMove plays a move for the purpose of legality checking. The promotion
+// choice is irrelevant there -- a promoted piece cannot expose its own king
+// differently depending on what it promoted to -- so it defaults to a queen.
+// Callers that care about the promoted piece (the search) call
+// applyBitboardMove directly.
 func simulateMove(gs dao.GameState, piece uint64, move uint64) dao.GameState {
-	newGameState := gs
-
-	if gs.WhiteBitboard&piece != 0 {
-		newGameState.WhiteBitboard &= ^piece
-	} else {
-		newGameState.BlackBitboard &= ^piece
-	}
-	newGameState.PawnBitboard &= ^piece
-	newGameState.KnightBitboard &= ^piece
-	newGameState.BishopBitboard &= ^piece
-	newGameState.RookBitboard &= ^piece
-	newGameState.QueenBitboard &= ^piece
-	newGameState.KingBitboard &= ^piece
-
-	newGameState.WhiteBitboard &= ^move
-	newGameState.BlackBitboard &= ^move
-	newGameState.PawnBitboard &= ^move
-	newGameState.KnightBitboard &= ^move
-	newGameState.BishopBitboard &= ^move
-	newGameState.RookBitboard &= ^move
-	newGameState.QueenBitboard &= ^move
-	newGameState.KingBitboard &= ^move
-
-	if gs.WhiteBitboard&piece != 0 {
-		newGameState.WhiteBitboard |= move
-	} else {
-		newGameState.BlackBitboard |= move
-	}
-	switch {
-	case gs.PawnBitboard&piece != 0:
-		newGameState.PawnBitboard |= move
-	case gs.KnightBitboard&piece != 0:
-		newGameState.KnightBitboard |= move
-	case gs.BishopBitboard&piece != 0:
-		newGameState.BishopBitboard |= move
-	case gs.RookBitboard&piece != 0:
-		newGameState.RookBitboard |= move
-	case gs.QueenBitboard&piece != 0:
-		newGameState.QueenBitboard |= move
-	case gs.KingBitboard&piece != 0:
-		newGameState.KingBitboard |= move
-	}
-	return newGameState
+	return applyBitboardMove(gs, piece, move, "q")
 }
 
 func isKingInCheck(gs dao.GameState, isWhiteKing bool) bool {

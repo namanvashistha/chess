@@ -26,7 +26,7 @@
 	const amPlayer = (g) =>
 		myId != null && ((g.white_user && g.white_user.id === myId) || (g.black_user && g.black_user.id === myId));
 	const hasOpenSeat = (g) => !g.white_user || !g.black_user;
-	const isFinished = (g) => g.winner === 'w' || g.winner === 'b';
+	const isFinished = (g) => !!g.winner; // 'w' | 'b' | 'd' (draw)
 
 	let mine = $derived(games.filter((g) => amPlayer(g)));
 	let open = $derived(games.filter((g) => !amPlayer(g) && hasOpenSeat(g) && !isFinished(g)));
