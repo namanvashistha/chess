@@ -10,7 +10,6 @@ type Initialization struct {
 	UserRepo   repository.UserRepository
 	userSvc    service.UserService
 	UserCtrl   controller.UserController
-	RoleRepo   repository.RoleRepository
 	ChessCtrl  controller.ChessController
 	chessSvc   service.ChessService
 	chessRepo  repository.ChessRepository
@@ -21,7 +20,6 @@ type Initialization struct {
 func NewInitialization(userRepo repository.UserRepository,
 	userService service.UserService,
 	userCtrl controller.UserController,
-	roleRepo repository.RoleRepository,
 	ChessCtrl controller.ChessController,
 	chessSvc service.ChessService,
 	chessRepo repository.ChessRepository,
@@ -31,7 +29,6 @@ func NewInitialization(userRepo repository.UserRepository,
 		UserRepo:   userRepo,
 		userSvc:    userService,
 		UserCtrl:   userCtrl,
-		RoleRepo:   roleRepo,
 		ChessCtrl:  ChessCtrl,
 		chessSvc:   chessSvc,
 		chessRepo:  chessRepo,

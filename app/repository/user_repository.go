@@ -62,11 +62,6 @@ func (u UserRepositoryImpl) Save(user *dao.User) (dao.User, error) {
 	return *user, nil
 }
 
-func (u UserRepositoryImpl) UpdateUserById() {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (u UserRepositoryImpl) DeleteUserById(id int) error {
 	err := u.db.Delete(&dao.User{}, id).Error
 	if err != nil {

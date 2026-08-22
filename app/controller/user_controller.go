@@ -36,8 +36,8 @@ func (u UserControllerImpl) AddUserData(c *gin.Context) {
 
 func (u UserControllerImpl) GetUserByToken(c *gin.Context) {
 	var request dto.TokenGetRequest
-	if err := c.ShouldBindJSON(&request); err != nil {
-		respond(c, nil, pkg.NewError(constant.InvalidRequest, "invalid request body", err))
+	if err := bindJSON(c, &request); err != nil {
+		respond(c, nil, err)
 		return
 	}
 	data, err := u.svc.GetUserByToken(request.Token)
@@ -51,8 +51,8 @@ func (u UserControllerImpl) UpdateUserData(c *gin.Context) {
 		return
 	}
 	var request dto.UpdateUserRequest
-	if err := c.ShouldBindJSON(&request); err != nil {
-		respond(c, nil, pkg.NewError(constant.InvalidRequest, "invalid request body", err))
+	if err := bindJSON(c, &request); err != nil {
+		respond(c, nil, err)
 		return
 	}
 	data, updErr := u.svc.UpdateUser(actor, userID, request.Name)
