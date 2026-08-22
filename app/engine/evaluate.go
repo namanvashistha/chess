@@ -133,6 +133,36 @@ const (
 	maxPhase = 24
 )
 
+// passedPawnBonus is indexed by how far a pawn has advanced (rank 0 = its own
+// back rank). A pawn one square from promoting is worth close to a piece.
+var passedPawnBonus = [8]int{0, 10, 20, 35, 60, 100, 150, 0}
+
+// passedMaskWhite[sq] covers every square a black pawn could occupy to stop a
+// white pawn on sq: the three files around it, on every rank ahead. If none of
+// them holds an enemy pawn, the pawn is passed.
+var passedMaskWhite, passedMaskBlack [64]uint64
+
+func init() {
+	for sq := 0; sq < 64; sq++ {
+		rank, file := sq/8, sq%8
+		var files uint64
+		for f := file - 1; f <= file+1; f++ {
+			if f >= 0 && f <= 7 {
+				files |= fileAMask << uint(f)
+			}
+		}
+		var ahead, behind uint64
+		for r := rank + 1; r <= 7; r++ {
+			ahead |= uint64(0xFF) << uint(r*8)
+		}
+		for r := rank - 1; r >= 0; r-- {
+			behind |= uint64(0xFF) << uint(r*8)
+		}
+		passedMaskWhite[sq] = files & ahead
+		passedMaskBlack[sq] = files & behind
+	}
+}
+
 var fileMasks = func() [8]uint64 {
 	var f [8]uint64
 	for i := 0; i < 8; i++ {
@@ -160,6 +190,7 @@ func evaluate(gs dao.GameState) int {
 	score += pawnStructureScore(gs)
 	score += bishopPairScore(gs)
 	score += rookFileScore(gs)
+	score += passedPawnScore(gs)
 
 	// A small bonus for having the move; without it the engine sees perfectly
 	// symmetrical positions as dead equal and is indifferent to losing a tempo.
@@ -237,6 +268,32 @@ func pawnStructureScore(gs dao.GameState) int {
 		return penalty
 	}
 	return side(black) - side(white)
+}
+
+// passedPawnScore rewards pawns no enemy pawn can stop.
+//
+// Every pawn was worth exactly 100, so the engine could not tell a passed pawn
+// on the seventh rank -- one move from a queen, and worth tying down a piece to
+// stop -- from a doubled pawn on its own back rank. In endgames that difference
+// is usually the whole game.
+func passedPawnScore(gs dao.GameState) int {
+	whitePawns := gs.PawnBitboard & gs.WhiteBitboard
+	blackPawns := gs.PawnBitboard & gs.BlackBitboard
+
+	score := 0
+	for p := whitePawns; p != 0; p &= p - 1 {
+		sq := bits.TrailingZeros64(p & -p)
+		if passedMaskWhite[sq]&blackPawns == 0 {
+			score += passedPawnBonus[sq/8]
+		}
+	}
+	for p := blackPawns; p != 0; p &= p - 1 {
+		sq := bits.TrailingZeros64(p & -p)
+		if passedMaskBlack[sq]&whitePawns == 0 {
+			score -= passedPawnBonus[7-sq/8]
+		}
+	}
+	return score
 }
 
 func bishopPairScore(gs dao.GameState) int {
