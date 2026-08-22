@@ -7,7 +7,7 @@ import (
 )
 
 type Initialization struct {
-	userRepo   repository.UserRepository
+	UserRepo   repository.UserRepository
 	userSvc    service.UserService
 	UserCtrl   controller.UserController
 	RoleRepo   repository.RoleRepository
@@ -28,7 +28,7 @@ func NewInitialization(userRepo repository.UserRepository,
 	socketSvc service.WebSocketService,
 	SocketCtrl controller.WebSocketController) *Initialization {
 	return &Initialization{
-		userRepo:   userRepo,
+		UserRepo:   userRepo,
 		userSvc:    userService,
 		UserCtrl:   userCtrl,
 		RoleRepo:   roleRepo,

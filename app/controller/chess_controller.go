@@ -13,7 +13,6 @@ type ChessController interface {
 	CreateBotChessGame(c *gin.Context)
 	CreateLocalChessGame(c *gin.Context)
 	JoinChessGame(c *gin.Context)
-	MakeMove(c *gin.Context)
 }
 
 type ChessControllerImpl struct {
@@ -42,10 +41,6 @@ func (u ChessControllerImpl) CreateLocalChessGame(c *gin.Context) {
 
 func (u ChessControllerImpl) JoinChessGame(c *gin.Context) {
 	u.svc.JoinChessGame(c)
-}
-
-func (u ChessControllerImpl) MakeMove(c *gin.Context) {
-	u.svc.MakeMove(c)
 }
 
 func ChessControllerInit(chessService service.ChessService) *ChessControllerImpl {

@@ -327,7 +327,7 @@ func generateKingMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, l
 
 		if gs.WhiteBitboard&piece != 0 {
 			kingMoves &= ^gs.WhiteBitboard
-			attackedSquares := getAttackedSquares(gs.BlackBitboard, pseudo_legal_moves)
+			attackedSquares := getAttackedSquares(gs, gs.BlackBitboard, pseudo_legal_moves)
 			kingMoves &= ^attackedSquares
 
 			if piece == (1 << PositionToIndex("e1")) {
@@ -358,7 +358,7 @@ func generateKingMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, l
 			}
 		} else if gs.BlackBitboard&piece != 0 {
 			kingMoves &= ^gs.BlackBitboard
-			attackedSquares := getAttackedSquares(gs.WhiteBitboard, pseudo_legal_moves)
+			attackedSquares := getAttackedSquares(gs, gs.WhiteBitboard, pseudo_legal_moves)
 			kingMoves &= ^attackedSquares
 
 			if piece == (1 << PositionToIndex("e8")) {
@@ -394,14 +394,31 @@ func generateKingMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, l
 	}
 }
 
-func getAttackedSquares(enemyBitboard uint64, moves map[uint64]uint64) uint64 {
+// attackSetFor returns the squares a piece guards, for the purpose of check
+// detection and king safety.
+//
+// For every piece except a king this is simply its pseudo-legal move set. A king
+// is special: generateKingMoves stores its *safety-filtered* moves into
+// pseudo_legal_moves (it may not step onto a square the enemy attacks), but a
+// king still guards every adjacent square whether or not it may legally move
+// there. Reading that filtered set back as an attack set meant any square beside
+// a king that was also attacked by the other side disappeared from the king's
+// attack set -- so the enemy king could legally move next to it. It also made
+// the result depend on which king had the lower square index, since that one was
+// generated before the other's entry existed.
+func attackSetFor(gs dao.GameState, piece, pseudoMoves uint64) uint64 {
+	if gs.KingBitboard&piece != 0 {
+		return KingAttackBitboard[piece]
+	}
+	return pseudoMoves
+}
+
+func getAttackedSquares(gs dao.GameState, enemyBitboard uint64, moves map[uint64]uint64) uint64 {
 	attackedSquares := uint64(0)
 
 	for enemyBitboard != 0 {
 		piece := enemyBitboard & -enemyBitboard
-		if (moves[piece]) != 0 {
-			attackedSquares |= moves[piece]
-		}
+		attackedSquares |= attackSetFor(gs, piece, moves[piece])
 		enemyBitboard &= enemyBitboard - 1
 	}
 
@@ -466,7 +483,7 @@ func CheckIfKingIsInCheck(gs dao.GameState, moves map[uint64]uint64, isWhiteKing
 			continue
 		}
 
-		if attackSet&kingPosition != 0 {
+		if attackSetFor(gs, piece, attackSet)&kingPosition != 0 {
 			return true, piece
 		}
 	}

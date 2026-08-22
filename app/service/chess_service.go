@@ -20,7 +20,6 @@ type ChessService interface {
 	CreateBotChessGame(c *gin.Context)
 	CreateLocalChessGame(c *gin.Context)
 	JoinChessGame(c *gin.Context)
-	MakeMove(c *gin.Context)
 }
 
 type ChessServiceImpl struct {
@@ -73,7 +72,13 @@ func (u ChessServiceImpl) CreateChessGame(c *gin.Context) {
 		pkg.PanicException(constant.InvalidRequest)
 	}
 
-	creatorUser, _ := u.chessRepository.FindUserByToken(request.Token)
+	creatorUser, err := u.chessRepository.FindUserByToken(request.Token)
+	if err != nil || creatorUser.ID == 0 {
+		// Discarding this error meant an unknown token produced a game owned by
+		// user 0, which then rejected every move as "user 0 is not in the game".
+		log.Error("Error fetching user by token:", err)
+		pkg.PanicException(constant.Unauthorized)
+	}
 	newGame := dao.ChessGame{
 		InviteCode: pkg.GenerateRandomString(20),
 		Winner:     "",
@@ -264,48 +269,6 @@ func (u ChessServiceImpl) JoinChessGame(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, game.ID))
-}
-
-func (u ChessServiceImpl) MakeMove(c *gin.Context) {
-	defer pkg.PanicHandler(c)
-
-	log.Info("Processing move")
-	var request dto.Move
-	if err := c.ShouldBindJSON(&request); err != nil {
-		log.Error("Invalid move request:", err)
-		pkg.PanicException(constant.InvalidRequest)
-	}
-
-	// Fetch the current game state
-	gameId := request.GameId
-	game, err := u.chessRepository.GetChessGameFromCache(gameId)
-	if err != nil || game.ID == 0 {
-		log.Info("Cache miss. Fetching game state from DB.", gameId)
-		game, err = u.chessRepository.FindChessGameById(gameId)
-		if err != nil {
-			log.Error("Error fetching game state:", err)
-			pkg.PanicException(constant.DataNotFound)
-		}
-	}
-	user, err := u.chessRepository.FindUserByToken(request.Token)
-	if err != nil {
-		log.Error("Error fetching user by token:", err)
-		pkg.PanicException(constant.DataNotFound)
-	}
-	// Apply move
-	err = engine.MakeMove(&game, request, user)
-	if err != nil {
-		log.Error("Error processing move:", err)
-		pkg.PanicException(constant.UnknownError)
-	}
-
-	// Save to both cache and database
-	if saveErr := u.chessRepository.SaveChessGameToDB(&game); saveErr == nil {
-		_ = u.chessRepository.SaveChessGameToCache(&game)
-	}
-
-	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, pkg.Null()))
-
 }
 
 func ChessServiceInit(chessRepository repository.ChessRepository) *ChessServiceImpl {

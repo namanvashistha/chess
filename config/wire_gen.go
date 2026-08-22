@@ -29,8 +29,6 @@ func Init() *Initialization {
 	socketServiceImpl := service.WebSocketServiceInit(chessRepositoryImpl)
 	socketControllerImpl := controller.WebSocketControllerInit(socketServiceImpl)
 
-	go service.WebSocketServiceInit(chessRepositoryImpl)
-	
 	initialization := NewInitialization(userRepositoryImpl, userServiceImpl, userControllerImpl, roleRepositoryImpl, chessControllerImpl, chessServiceImpl, chessRepositoryImpl, socketServiceImpl, socketControllerImpl)
 	return initialization
 }

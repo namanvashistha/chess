@@ -11,6 +11,10 @@ services:
       - DB_DSN=${DB_DSN:-host=postgres user=namanvashistha dbname=chess password=your_password port=5432 sslmode=disable}
       - REDIS_ADDR=${REDIS_ADDR:-redis:6379}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+      # WebSocket origin allowlist. Empty (the default) means same-origin only;
+      # set a comma-separated list of origins to permit others, or "*" to allow
+      # any origin. See pkg.CheckWebSocketOrigin.
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-}
     depends_on:
       redis:
         condition: service_healthy

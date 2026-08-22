@@ -1,66 +1,60 @@
 package pkg
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"reflect"
-	"strconv"
 	"strings"
-	"time"
 
 	petname "github.com/dustinkirkland/golang-petname"
 )
 
-func GenerateRandomString(length int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	seed := rand.NewSource(time.Now().UnixNano())
-	random := rand.New(seed)
-
+// randomStringFrom returns a cryptographically random string of the given
+// length drawn from charset. Session tokens and invite codes are guessable
+// credentials, so they must not come from math/rand: that generator is
+// deterministic and was previously seeded from time.Now(), which made a token
+// recoverable from its creation time (and made two tokens minted in the same
+// clock tick identical).
+func randomStringFrom(charset string, length int) string {
 	result := make([]byte, length)
+	max := big.NewInt(int64(len(charset)))
 	for i := range result {
-		result[i] = charset[random.Intn(len(charset))]
+		n, err := rand.Int(rand.Reader, max)
+		if err != nil {
+			// crypto/rand fails only if the OS entropy source is unavailable,
+			// in which case we must not fall back to a weak generator.
+			panic("pkg: crypto/rand unavailable: " + err.Error())
+		}
+		result[i] = charset[n.Int64()]
 	}
 	return string(result)
+}
+
+func GenerateRandomString(length int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	return randomStringFrom(charset, length)
 }
 
 func GenerateRandomNumericString(length int) string {
-	const charset = "0123456789"
-	seed := rand.NewSource(time.Now().UnixNano())
-	random := rand.New(seed)
-
-	result := make([]byte, length)
-	for i := range result {
-		result[i] = charset[random.Intn(len(charset))]
-	}
-	return string(result)
+	return randomStringFrom("0123456789", length)
 }
 
 func GenerateRandomBool() bool {
-	seed := rand.NewSource(time.Now().UnixNano())
-	random := rand.New(seed)
-	return random.Intn(2) == 0
+	n, err := rand.Int(rand.Reader, big.NewInt(2))
+	if err != nil {
+		panic("pkg: crypto/rand unavailable: " + err.Error())
+	}
+	return n.Int64() == 0
 }
 
 func GenerateRandomUserName() string {
 	return fmt.Sprintf("%s-%s", petname.Generate(2, "-"), GenerateRandomNumericString(4))
 }
 
-func ExtractString(payload map[string]interface{}, key string) (string, error) {
-	value, exists := payload[key]
-	if !exists {
-		return "", fmt.Errorf("missing key: %s", key)
-	}
-
-	strValue, ok := value.(string)
-	if !ok {
-		return "", fmt.Errorf("key '%s' is not a string, found type %T", key, value)
-	}
-
-	return strValue, nil
-}
-
-// Generic function to bind the payload to any struct
+// BindPayloadToStruct copies string values out of a decoded JSON object into the
+// matching json-tagged string fields of obj.
 func BindPayloadToStruct(payload map[string]interface{}, obj interface{}) error {
 	// Ensure the object is a pointer to a struct
 	val := reflect.ValueOf(obj)
@@ -95,37 +89,13 @@ func BindPayloadToStruct(payload map[string]interface{}, obj interface{}) error 
 			return fmt.Errorf("failed to bind key '%s': not a string, found %T", fieldName, raw)
 		}
 
-		// Set the struct field
-		val.Elem().Field(i).SetString(strValue)
+		// Only string fields can be bound; anything else would panic on Set.
+		target := val.Elem().Field(i)
+		if target.Kind() != reflect.String {
+			return fmt.Errorf("failed to bind key '%s': target field is %s, not a string", fieldName, target.Kind())
+		}
+		target.SetString(strValue)
 	}
 
 	return nil
-}
-
-func ConvertUint64ToString(input interface{}) {
-	// Get the value of the input
-	val := reflect.ValueOf(input)
-
-	// Ensure that input is a pointer to a struct
-	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Struct {
-		fmt.Println("Input must be a pointer to a struct.")
-		return
-	}
-
-	// Get the value of the struct (dereferencing the pointer)
-	val = val.Elem()
-
-	// Iterate over all fields of the struct
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Field(i)
-
-		// If the field is of type uint64, convert it to string
-		if field.Kind() == reflect.Uint64 {
-			strValue := strconv.FormatUint(field.Uint(), 10)
-			// Create a string field to store the converted value
-			stringField := reflect.ValueOf(&strValue).Elem()
-			// Set the field with the string value
-			field.Set(stringField)
-		}
-	}
 }

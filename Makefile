@@ -1,4 +1,9 @@
-.PHONY: build uci test run up dev
+.PHONY: build uci test vet run up dev
+
+# This project has no cgo dependencies, and the Docker build already sets this.
+# Keeping it off locally also avoids a Go 1.22 / recent-macOS link failure
+# ("missing LC_UUID load command") in test binaries that pull in net.
+export CGO_ENABLED = 0
 
 # Build the HTTP/WebSocket game server.
 build:
@@ -8,10 +13,14 @@ build:
 uci:
 	go build -o bin/uci ./cmd/uci
 
-# Run the test suite. vet is disabled because of a pre-existing finding in
-# app/engine/layout.go unrelated to the engine logic under test.
+# Run the test suite. `go vet` runs as part of `go test` (do not disable it:
+# it catches printf mismatches, lost struct tags and bad mutex copies).
 test:
-	go test -vet=off ./...
+	go test ./...
+
+# Static analysis only.
+vet:
+	go vet ./...
 
 run:
 	go run .

@@ -134,31 +134,19 @@ func (r ChessRepositoryImpl) GetChessGameFromCache(gameId string) (dao.ChessGame
 }
 
 // Fetch the chess game state from the database
-// func (r ChessRepositoryImpl) GetChessGameFromDB(gameId string) (dao.ChessGame, error) {
-// 	var game dao.ChessGame
-// 	err := r.db.
-// 		Preload("WhiteUser", func(db *gorm.DB) *gorm.DB {
-// 			return db.Select("id, name")
-// 		}).
-// 		Preload("BlackUser", func(db *gorm.DB) *gorm.DB {
-// 			return db.Select("id, name")
-// 		}).
-// 		Preload("State").First(&game, id).Error
-// 	if err != nil {
-// 		log.Error("Error fetching chess game state from DB:", err)
-// 		return game, err
-// 	}
-// 	return game, nil
-// }
 
 // Save the chess game state to the cache
+// gameCacheTTL is how long a game stays in Redis. The previous value was
+// time.Minute*100 behind a comment reading "Cache for 10 minutes".
+const gameCacheTTL = 10 * time.Minute
+
 func (r ChessRepositoryImpl) SaveChessGameToCache(game *dao.ChessGame) error {
 	gameJSON, err := json.Marshal(game)
 	if err != nil {
 		log.Error("Error marshalling game for Redis:", err)
 		return err
 	}
-	err = r.redisClient.Set("chess_game:"+fmt.Sprint(game.ID), gameJSON, time.Minute*100) // Cache for 10 minutes
+	err = r.redisClient.Set("chess_game:"+fmt.Sprint(game.ID), gameJSON, gameCacheTTL)
 	if err != nil {
 		log.Error("Error saving game to Redis:", err)
 	}
@@ -193,12 +181,18 @@ func (u ChessRepositoryImpl) FindUserByToken(token string) (dao.User, error) {
 
 // FindOrCreateBotUser returns the singleton computer-opponent user, creating it
 // the first time a bot game is requested.
+//
+// The bot is looked up by name and given a random token. It used to be keyed on
+// constant.BotToken, a fixed credential committed to the repository, which the
+// bot then replayed through the normal token-authentication path. Bot moves now
+// bypass that lookup entirely (see WebSocketServiceImpl.applyMove), so nothing
+// needs to know this token.
 func (u ChessRepositoryImpl) FindOrCreateBotUser() (dao.User, error) {
 	var user dao.User
-	if err := u.db.Where("token = ?", constant.BotToken).First(&user).Error; err == nil {
+	if err := u.db.Where("name = ?", constant.BotName).First(&user).Error; err == nil {
 		return user, nil
 	}
-	user = dao.User{Name: constant.BotName, Token: constant.BotToken, Status: 1}
+	user = dao.User{Name: constant.BotName, Token: pkg.GenerateRandomString(80), Status: 1}
 	if err := u.db.Create(&user).Error; err != nil {
 		log.Error("Error creating bot user. Error: ", err)
 		return dao.User{}, err

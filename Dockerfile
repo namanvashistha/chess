@@ -18,7 +18,7 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 COPY . .
-RUN CGO_ENABLED=0 go build -v -o /out/main main.go
+RUN CGO_ENABLED=0 go build -v -o /out/main .
 
 # --- Stage 3: minimal runtime image ---
 FROM alpine:3.20

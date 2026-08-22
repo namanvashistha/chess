@@ -71,9 +71,9 @@ func TestParseFENErrors(t *testing.T) {
 	bad := []string{
 		"",
 		"only/three w - -",
-		"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP w KQkq - 0 1", // 7 ranks
-		"rnbqkbnr/pppppppp/8/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", // 9 ranks
-		"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNX w KQkq - 0 1",   // bad piece X
+		"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP w KQkq - 0 1",             // 7 ranks
+		"rnbqkbnr/pppppppp/8/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",  // 9 ranks
+		"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNX w KQkq - 0 1",    // bad piece X
 		StartFEN[:len(StartFEN)-len("w KQkq - 0 1")] + "x KQkq - 0 1", // bad side
 	}
 	for _, fen := range bad {

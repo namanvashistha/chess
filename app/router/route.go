@@ -1,20 +1,13 @@
 package router
 
 import (
+	"chess-engine/app/middleware"
 	"chess-engine/config"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 )
-
-// WebSocket Upgrader: Upgrades HTTP connections to WebSocket connections.
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all origins for simplicity; consider tightening this for security.
-	},
-}
 
 // Init initializes the router with routes for API and WebSocket.
 func Init(init *config.Initialization) *gin.Engine {
@@ -41,16 +34,19 @@ func Init(init *config.Initialization) *gin.Engine {
 	// WebSocket route
 	router.GET("/ws/:gameId", init.SocketCtrl.HandleWebSocket)
 
+	requireAuth := middleware.RequireAuth(init.UserRepo)
+
 	// API routes
 	api := router.Group("/api")
 	{
 		user := api.Group("/user")
 		{
-			// user.GET("", init.UserCtrl.GetAllUserData)
 			user.POST("", init.UserCtrl.AddUserData)
 			user.POST("/me", init.UserCtrl.GetUserByToken)
-			user.PUT("/:userID", init.UserCtrl.UpdateUserData)
-			user.DELETE("/:userID", init.UserCtrl.DeleteUser)
+			// Mutating another account is only possible for its owner: these two
+			// routes previously had no authentication at all.
+			user.PUT("/:userID", requireAuth, init.UserCtrl.UpdateUserData)
+			user.DELETE("/:userID", requireAuth, init.UserCtrl.DeleteUser)
 		}
 		chess := api.Group("/chess")
 		{
@@ -60,7 +56,6 @@ func Init(init *config.Initialization) *gin.Engine {
 			chess.POST("/game/local", init.ChessCtrl.CreateLocalChessGame)
 			chess.GET("/game/:gameId", init.ChessCtrl.GetChessGameById)
 			chess.POST("/game/join", init.ChessCtrl.JoinChessGame)
-			chess.POST("/state/move", init.ChessCtrl.MakeMove)
 		}
 	}
 
@@ -79,15 +74,3 @@ func Init(init *config.Initialization) *gin.Engine {
 
 	return router
 }
-
-// // handleWebSocketConnection upgrades the connection and delegates to the WebSocketController.
-// func handleWebSocketConnection(c *gin.Context, websocketController controller.WebSocketController) {
-// 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upgrade connection"})
-// 		return
-// 	}
-// 	defer conn.Close()
-
-// 	websocketController.HandleWebSocket(c)
-// }

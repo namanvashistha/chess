@@ -51,43 +51,11 @@ func ConvertGameStateToMap(gameState dao.GameState) map[string]string {
 		} else if gameState.BlackBitboard&bit != 0 {
 			board[squareKey] = getPieceCode(bit, false, gameState)
 		}
-		// log.Info("squareKey: ", squareKey)
-		// log.Info("board[squareKey]: ", board[squareKey])
 
 	}
 
 	return board
 }
-
-// func ConvertAllowedMovesToMap(allowedMoves map[uint64]uint64) map[string][]string {
-// 	log.Info(allowedMoves)
-// 	moves := make(map[string][]string)
-
-// 	files := []string{"a", "b", "c", "d", "e", "f", "g", "h"}
-// 	ranks := []string{"8", "7", "6", "5", "4", "3", "2", "1"}
-
-// 	// Create the board layout
-// 	for i := 0; i < 64; i++ {
-// 		row := i / 8
-// 		col := i % 8
-// 		squareKey := fmt.Sprintf("%s%s", files[col], ranks[row])
-// 		bit := uint64(1) << uint(i)
-
-// 		// Check for pieces in the bitboards and assign the corresponding piece code
-// 		if _, ok := allowedMoves[bit]; ok {
-// 			moves[squareKey] = []string{}
-// 			for j := 0; j < 64; j++ {
-// 				if allowedMoves[bit]&(1<<uint(j)) != 0 {
-// 					row := j / 8
-// 					col := j % 8
-// 					moves[squareKey] = append(moves[squareKey], fmt.Sprintf("%s%s", files[col], ranks[row]))
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	return moves
-// }
 
 // FilterMovesByTurn keeps only the moves of pieces belonging to the side whose
 // turn it is. Move generation produces entries for both colours (the check
@@ -118,14 +86,12 @@ func ConvertLegalMovesToMap(allowedMoves map[uint64]uint64) map[string][]string 
 	for piecePos, moveBitboard := range allowedMoves {
 		pieceSquare := bitToSquare(piecePos, files, ranks)
 		moves[pieceSquare] = []string{}
-		// log.Info("piecePos:pieceSquare:moveBitboard ", piecePos, ":", pieceSquare, ":", moveBitboard)
 
 		// Iterate over all possible moves
 		for bitIndex := 0; bitIndex < 64; bitIndex++ {
 			if moveBitboard&(uint64(1)<<uint(bitIndex)) != 0 {
 				targetSquare := bitToSquare(uint64(1)<<uint(bitIndex), files, ranks)
 				moves[pieceSquare] = append(moves[pieceSquare], targetSquare)
-				// log.Info("bitIndex:pieceSquare:targetSquare ", bitIndex, ":", pieceSquare, ":", targetSquare)
 			}
 
 		}
