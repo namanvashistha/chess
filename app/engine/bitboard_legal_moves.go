@@ -5,34 +5,54 @@ import (
 	"strings"
 )
 
+// GenerateLegalMovesForAllPositions returns the legal moves for the side to
+// move, plus a status string ("", "white_check", "black_checkmate",
+// "stalemate", ...).
+//
+// Only the side to move is generated. It used to validate both colours and then
+// throw half the result away in FilterMovesByTurn -- on Kiwipete that meant
+// validating 103 candidate moves to produce 48 legal ones, and each validation
+// costs a full move generation.
 func GenerateLegalMovesForAllPositions(gs dao.GameState) (map[uint64]uint64, string) {
-	pseudoLegaMoves, legalMoves := GenerateInitialMoves(gs)
-	legalMoves = filterLegalMoves(gs, legalMoves, pseudoLegaMoves)
+	pseudoLegalMoves, legalMoves := GenerateInitialMoves(gs)
+	legalMoves = filterLegalMoves(gs, legalMoves, pseudoLegalMoves)
 
-	isWhiteKingInCheck, _ := CheckIfKingIsInCheck(gs, pseudoLegaMoves, true)
-	if isWhiteKingInCheck && gs.Turn == "w" {
-		if !checkIsMoveLeft(gs.WhiteBitboard, legalMoves) {
-			return legalMoves, "white_checkmate"
-		}
-		return legalMoves, "white_check"
+	whiteToMove := gs.Turn != "b"
+	sideBitboard, side := gs.WhiteBitboard, "white"
+	if !whiteToMove {
+		sideBitboard, side = gs.BlackBitboard, "black"
 	}
 
-	isBlackKingInCheck, _ := CheckIfKingIsInCheck(gs, pseudoLegaMoves, false)
-	if isBlackKingInCheck {
-		if !checkIsMoveLeft(gs.BlackBitboard, legalMoves) {
-			return legalMoves, "black_checkmate"
-		}
-		return legalMoves, "black_check"
-	}
+	inCheck, _ := CheckIfKingIsInCheck(gs, pseudoLegalMoves, whiteToMove)
+	hasMove := checkIsMoveLeft(sideBitboard, legalMoves)
 
+	switch {
+	case !hasMove && inCheck:
+		return legalMoves, side + "_checkmate"
+	case !hasMove:
+		// Stalemate was never reported: the old code only counted moves when the
+		// side was already in check, so a stalemated game returned "" and played
+		// on forever.
+		return legalMoves, "stalemate"
+	case inCheck:
+		return legalMoves, side + "_check"
+	}
 	return legalMoves, ""
 }
 
 func filterLegalMoves(gs dao.GameState, legalMoves map[uint64]uint64, pseudoLegalMoves map[uint64]uint64) map[uint64]uint64 {
 
+	sideToMove := gs.WhiteBitboard
+	if gs.Turn == "b" {
+		sideToMove = gs.BlackBitboard
+	}
+
 	filteredMoves := make(map[uint64]uint64)
 
 	for piece, moves := range pseudoLegalMoves {
+		if piece&sideToMove == 0 {
+			continue // the opponent's moves are never returned; do not pay to validate them
+		}
 		for move := moves; move != 0; move &= move - 1 {
 			movePosition := move & -move
 
@@ -45,6 +65,9 @@ func filterLegalMoves(gs dao.GameState, legalMoves map[uint64]uint64, pseudoLega
 	}
 
 	for piece := range legalMoves {
+		if piece&sideToMove == 0 {
+			continue
+		}
 		pieceMoves := legalMoves[piece]
 		if gs.PawnBitboard&piece != 0 {
 

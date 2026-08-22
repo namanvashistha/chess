@@ -172,3 +172,30 @@ func mustUCI(t *testing.T, gs dao.GameState, uci string) dto.Move {
 	}
 	return m
 }
+
+// Stalemate was never detected: the status function only counted remaining
+// moves when the side to move was already in check, so a stalemated position
+// returned "" and the game carried on.
+func TestStalemateIsReported(t *testing.T) {
+	cases := []struct {
+		name, fen, want string
+	}{
+		// Black king a8, white queen c7, white king a6 -- black has no move and
+		// is not in check.
+		{"stalemate", "k7/2Q5/K7/8/8/8/8/8 b - - 0 1", "stalemate"},
+		// Back-rank mate: Ra8+ along the eighth rank, escape squares f8/h8 covered
+		// by the rook and f7/g7/h7 blocked by black's own pawns.
+		{"checkmate", "R5k1/5ppp/8/8/8/8/8/6K1 b - - 0 1", "black_checkmate"},
+		// Ordinary position.
+		{"none", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", ""},
+	}
+	for _, c := range cases {
+		gs, err := ParseFEN(c.fen)
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		if _, got := GenerateLegalMovesForAllPositions(gs); got != c.want {
+			t.Errorf("%s: status = %q, want %q", c.name, got, c.want)
+		}
+	}
+}

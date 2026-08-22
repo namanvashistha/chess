@@ -165,6 +165,9 @@ func (ws *WebSocketServiceImpl) applyMove(gameId string, move dto.Move, user dao
 		if gameStatus == "black_checkmate" {
 			game.Winner = "w"
 		}
+		if gameStatus == "stalemate" {
+			game.Winner = "d"
+		}
 
 		// Draws. Checkmate takes precedence, so this only runs when the game is
 		// not already decided. Without it a game could never end in a draw at all:
