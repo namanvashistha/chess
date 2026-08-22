@@ -124,11 +124,7 @@ func negamax(c *searchCtx, gs dao.GameState, depth, alpha, beta int) int {
 	}
 
 	if depth == 0 {
-		score := evalMaterial(gs)
-		if gs.Turn == "b" {
-			score = -score
-		}
-		return score
+		return quiescence(c, gs, alpha, beta, maxQuiescenceDepth)
 	}
 
 	moves := sideToMoveMovesOrdered(gs)
