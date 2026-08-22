@@ -87,13 +87,7 @@ matchmaking:
   allow_matchmaking: true
   allow_during_games: false
   challenge_variant: "standard"
-  challenge_timeout: 30
-  # REQUIRED whenever allow_matchmaking is true: lichess-bot refuses to start
-  # without a time control to offer, and the error is a config validation
-  # exception at startup, so the container crash-loops rather than degrading.
-  # These are the challenges the bot sends out; the `challenge:` block above
-  # governs what it accepts.
-  #
+  challenge_timeout: 1
   # Seconds. 600/900 with a 5-10s increment keeps its own games in the rapid
   # range it plays least badly.
   challenge_initial_time:
