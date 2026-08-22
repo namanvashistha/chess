@@ -85,7 +85,7 @@ matchmaking:
   # Off for the first run so you can challenge the bot yourself and watch it
   # play. Flip to true once it works and the bot will seek out its own games,
   # which is what actually accumulates a rating.
-  allow_matchmaking: false
+  allow_matchmaking: true
   allow_during_games: false
   challenge_variant: "standard"
   challenge_timeout: 30
