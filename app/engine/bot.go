@@ -171,15 +171,13 @@ func evalMaterial(gs dao.GameState) int {
 }
 
 // sideToMoveMoves lists the legal moves for the side to move, with promotions
-// expanded into all four pieces. GenerateLegalMoveList returns them in a
-// deterministic order, which is what makes the search reproducible.
+// expanded into all four pieces.
+//
+// The order is deterministic without sorting: appendLegalMoves walks the
+// bitboards least-significant-bit first in a fixed piece order, unlike the
+// map-based generator whose iteration order Go randomises.
 func sideToMoveMoves(gs dao.GameState) []botMove {
-	legal := GenerateLegalMoveList(gs)
-	out := make([]botMove, 0, len(legal))
-	for _, m := range legal {
-		out = append(out, botMove{src: m.Src, dst: m.Dst, promo: m.Promotion})
-	}
-	return out
+	return appendLegalMoves(gs, make([]botMove, 0, 48))
 }
 
 // sideToMoveMovesOrdered orders captures first (most valuable victim first) so

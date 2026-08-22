@@ -61,3 +61,50 @@ func TestFastCheckDetectionMatchesExhaustive(t *testing.T) {
 		t.Log("fast and exhaustive check detection agree on every reachable position")
 	}
 }
+
+// The search uses appendLegalMoves (flat slice, no maps) while the server and
+// UI still use GenerateLegalMovesForAllPositions (grouped by square). Perft
+// validates the first; this asserts the second agrees with it, so the web game
+// and the engine can never diverge on what is legal.
+func TestGeneratorsAgree(t *testing.T) {
+	fens := []string{
+		"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+		"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+		"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+		"r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
+		"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 0 1",
+		"8/2p5/3p4/KP5r/1R3pPk/8/4P3/8 b - g3 0 1", // en passant available
+		"r3k2r/8/8/8/8/8/8/R3K2R b KQkq - 0 1",     // castling both sides
+	}
+
+	for _, fen := range fens {
+		gs, err := ParseFEN(fen)
+		if err != nil {
+			t.Fatalf("ParseFEN(%q): %v", fen, err)
+		}
+
+		fast := map[string]bool{}
+		for _, m := range appendLegalMoves(gs, nil) {
+			fast[bitToSquare(m.src, defFiles, defRanks)+bitToSquare(m.dst, defFiles, defRanks)] = true
+		}
+
+		grouped, _ := GenerateLegalMovesForAllPositions(gs)
+		slow := map[string]bool{}
+		for src, dsts := range FilterMovesByTurn(grouped, gs) {
+			for d := dsts; d != 0; d &= d - 1 {
+				slow[bitToSquare(src, defFiles, defRanks)+bitToSquare(d&-d, defFiles, defRanks)] = true
+			}
+		}
+
+		for mv := range fast {
+			if !slow[mv] {
+				t.Errorf("%s: fast generator has %s, map generator does not", fen, mv)
+			}
+		}
+		for mv := range slow {
+			if !fast[mv] {
+				t.Errorf("%s: map generator has %s, fast generator does not", fen, mv)
+			}
+		}
+	}
+}
