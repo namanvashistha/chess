@@ -46,6 +46,34 @@ services:
       retries: 3
       start_period: 20s
 
+  # Copies the UCI engine and its lichess-bot config out of the chess image and
+  # into the shared volume, then exits. Runs on every `up`, so a new engine
+  # build reaches the bot just by pulling the image -- no Go on the box, and no
+  # binary committed to the repo.
+  lichess-config:
+    image: ghcr.io/namanvashistha/chess:latest
+    command: >
+      sh -c "cp /app/uci /app/lichess/config.yml /config/ && chmod 755 /config/uci"
+    volumes:
+      - lichess_config:/config
+    restart: "no"
+
+  # Plays the engine on lichess.org as a declared BOT account, which is what
+  # gives it a real, human-calibrated rating. Outbound HTTPS only: no ports, no
+  # caddy label, not on the backend network.
+  lichess-bot:
+    image: ghcr.io/lichess-bot-devs/lichess-bot:latest
+    depends_on:
+      lichess-config:
+        condition: service_completed_successfully
+    environment:
+      # Overrides the placeholder in config.yml. The token itself lives in the
+      # Komodo secret variable, never in this repo.
+      - LICHESS_BOT_TOKEN=${LICHESS_API_TOKEN:?set LICHESS_API_TOKEN}
+    volumes:
+      - lichess_config:/lichess-bot/config
+    restart: unless-stopped
+
   redis:
     image: redis:7.0
     networks:
@@ -83,3 +111,4 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  lichess_config:

@@ -1,0 +1,92 @@
+# lichess-bot configuration.
+#
+# This file is baked into the chess image and copied into the lichess-bot
+# config volume at startup (see the lichess-config service in
+# docker-compose.homelab.yaml).
+#
+# The token is deliberately NOT here. lichess-bot reads LICHESS_BOT_TOKEN from
+# the environment and it overrides this value, so the real token lives only in
+# the Komodo secret variable LICHESS_API_TOKEN.
+token: "set-via-LICHESS_BOT_TOKEN"
+url: "https://lichess.org/"
+
+engine:
+  # The init container drops both the binary and this file into the mounted
+  # config directory, which lichess-bot sees as /lichess-bot/config.
+  dir: "/lichess-bot/config"
+  name: "uci"
+  working_dir: ""
+  protocol: "uci"
+  # Must stay false: the engine accepts "ponderhit" but never starts a ponder
+  # search, so lichess-bot would sit waiting on a search that never runs.
+  ponder: false
+  uci_options:
+    # Only options the engine actually advertises are set here. It ignores
+    # unknown ones per the UCI spec, but there is no reason to send them.
+    #
+    # A generous move overhead because the engine is slow (~20k nodes/sec) and
+    # the cost of overshooting the clock is losing the game outright.
+    Move Overhead: 300
+
+challenge:
+  # One game at a time: the search is single-threaded and slow.
+  concurrency: 1
+  games_reserved_for_humans: 0
+  sort_by: "best"
+  preference: "none"
+  accept_bot: true
+  only_bot: false
+  max_increment: 60
+  # Requiring an increment protects a slow engine from flagging in a won
+  # position, which is otherwise its most common way to lose.
+  min_increment: 3
+  max_base: 1800
+  min_base: 600
+  max_days: 14
+  min_days: 1
+  variants:
+    - standard
+  # No bullet or blitz. At this speed the engine reaches roughly depth 3-5 with
+  # seconds to think; give it minutes.
+  time_controls:
+    - rapid
+    - classical
+  modes:
+    - casual
+    - rated
+  bullet_requires_increment: true
+  max_simultaneous_games_per_user: 1
+
+abort_time: 30
+fake_think_time: false
+rate_limiting_delay: 0
+# lichess-bot's own safety buffer, on top of the engine's Move Overhead.
+move_overhead: 2000
+max_takebacks_accepted: 0
+quit_after_all_games_finish: false
+
+correspondence:
+  move_time: 60
+  checkin_period: 300
+  disconnect_time: 150
+  ponder: false
+
+greeting:
+  hello: "Hi! I'm {me}, a hand-written Go engine. Good luck!"
+  goodbye: "Good game!"
+  hello_spectators: "Hi! I'm {me}, a hand-written Go engine."
+  goodbye_spectators: "Thanks for watching!"
+
+matchmaking:
+  # Off for the first run so you can challenge the bot yourself and watch it
+  # play. Flip to true once it works and the bot will seek out its own games,
+  # which is what actually accumulates a rating.
+  allow_matchmaking: false
+  allow_during_games: false
+  challenge_variant: "standard"
+  challenge_timeout: 30
+  opponent_rating_difference: 300
+  rating_preference: "none"
+  challenge_mode: "rated"
+  challenge_filter: none
+  include_challenge_block_list: false

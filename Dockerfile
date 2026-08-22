@@ -19,6 +19,10 @@ COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 COPY . .
 RUN CGO_ENABLED=0 go build -v -o /out/main .
+# The UCI engine binary. It ships in this image so the lichess-bot container can
+# copy it out of a shared volume, rather than needing a Go toolchain on the box
+# or a compiled binary committed to the repo.
+RUN CGO_ENABLED=0 go build -v -o /out/uci ./cmd/uci
 
 # --- Stage 3: minimal runtime image ---
 FROM alpine:3.20
@@ -27,5 +31,8 @@ COPY --from=build /out/main ./main
 # Static assets served via relative paths in app/router/route.go.
 COPY --from=build /src/app/static ./app/static
 COPY --from=web /web/build ./web/build
+# Consumed by the lichess-config init container, not by the server itself.
+COPY --from=build /out/uci ./uci
+COPY --from=build /src/deploy/lichess/config.yml ./lichess/config.yml
 EXPOSE 9000
 CMD ["/app/main"]
