@@ -194,7 +194,6 @@ func (ws *WebSocketServiceImpl) applyMove(gameId string, move dto.Move, user dao
 		}
 	}
 
-	game.BoardLayout = engine.GetBoardLayout()
 	game.CurrentState = engine.ConvertGameStateToMap(game.State)
 
 	// Only regenerate when the move was rejected; `len(legalMoves) == 0` was a

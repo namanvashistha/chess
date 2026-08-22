@@ -16,7 +16,6 @@ type ChessGame struct {
 	Moves        []GameMove          `gorm:"foreignKey:GameID" json:"moves"`
 	LegalMoves   map[string][]string `json:"legal_moves" gorm:"-"` // Excluded from GORM
 	CurrentState map[string]string   `json:"current_state" gorm:"-"`
-	BoardLayout  [8][8][2]string     `json:"board_layout" gorm:"-"` // Excluded from GORM
 	BaseModel
 }
 

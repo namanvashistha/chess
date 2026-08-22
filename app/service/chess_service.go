@@ -30,7 +30,6 @@ func (u ChessServiceImpl) GetChessGameById(gameID string) (dao.ChessGame, error)
 		return dao.ChessGame{}, pkg.NewError(constant.DataNotFound, "game not found", err)
 	}
 
-	game.BoardLayout = engine.GetBoardLayout()
 	game.CurrentState = engine.ConvertGameStateToMap(game.State)
 	legalMoves, _ := engine.GenerateLegalMovesForAllPositions(game.State)
 	game.LegalMoves = engine.ConvertLegalMovesToMap(engine.FilterMovesByTurn(legalMoves, game.State))

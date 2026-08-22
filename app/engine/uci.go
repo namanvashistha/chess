@@ -23,10 +23,13 @@ func ParseUCIMove(gs dao.GameState, uci string) (dto.Move, error) {
 		return dto.Move{}, fmt.Errorf("invalid UCI move %q", uci)
 	}
 
-	piece := ConvertGameStateToMap(gs)[source]
-	if piece == "" {
+	// One square, not a whole board map: ConvertGameStateToMap allocates 64
+	// entries to answer a single lookup.
+	srcBit := uint64(1) << uint(PositionToIndex(source))
+	if (gs.WhiteBitboard|gs.BlackBitboard)&srcBit == 0 {
 		return dto.Move{}, fmt.Errorf("no piece on source square %q for move %q", source, uci)
 	}
+	piece := getPieceCode(srcBit, gs.WhiteBitboard&srcBit != 0, gs)
 
 	move := dto.Move{Piece: piece, Source: source, Destination: destination}
 	if len(uci) == 5 {
