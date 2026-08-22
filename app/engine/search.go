@@ -289,9 +289,41 @@ func negamaxPV(c *searchCtx, gs dao.GameState, depth, alpha, beta, ply int, pv *
 		return quiescence(c, gs, alpha, beta, maxQuiescenceDepth)
 	}
 
+	inCheck := isKingInCheck(gs, gs.Turn != "b")
+
+	// Null-move pruning: hand the opponent a free move. If the position is still
+	// good enough to fail high after that, it is far too good for the opponent to
+	// enter, and the whole subtree can be skipped.
+	//
+	// Disabled in check (passing is not an option), near the leaves, and when the
+	// side to move has only pawns -- that is zugzwang territory, where being
+	// forced to move is itself the problem and the "free move" assumption
+	// inverts.
+	if depth >= 3 && ply > 0 && !inCheck && hasNonPawnMaterial(gs) {
+		reduction := 2
+		if depth >= 6 {
+			reduction = 3
+		}
+		null := gs
+		null.Turn = oppTurn(gs.Turn)
+		null.EnPassant = 0
+		null.HalfmoveClock = gs.HalfmoveClock + 1
+
+		var discard []dto.Move
+		score := -negamaxPV(c, null, depth-1-reduction, -beta, -beta+1, ply+1, &discard)
+		if c.aborted {
+			return 0
+		}
+		// Mate scores are not trusted through a null move: the mate may only
+		// exist because the opponent was handed a tempo they never had.
+		if score >= beta && !isMateScore(score) {
+			return score
+		}
+	}
+
 	moves := sideToMoveMoves(gs)
 	if len(moves) == 0 {
-		if isKingInCheck(gs, gs.Turn == "w") {
+		if inCheck {
 			return -mateScore - depth // prefer faster mates
 		}
 		return 0 // stalemate
@@ -303,9 +335,39 @@ func negamaxPV(c *searchCtx, gs dao.GameState, depth, alpha, beta, ply int, pv *
 	best := -searchInf
 	var bestMove botMove
 	var bestChildPV []dto.Move
-	for _, m := range moves {
+	for i, m := range moves {
+		child := applyBotMove(gs, m)
 		var childPV []dto.Move
-		score := -negamaxPV(c, applyBotMove(gs, m), depth-1, -beta, -alpha, ply+1, &childPV)
+		var score int
+
+		if i == 0 {
+			// The first move is the ordering's best guess at the principal
+			// variation, so it gets a full window.
+			score = -negamaxPV(c, child, depth-1, -beta, -alpha, ply+1, &childPV)
+		} else {
+			// Late move reduction: with decent ordering, a quiet move this far
+			// down the list is very unlikely to be best. Search it shallower and
+			// only pay full price if it surprises us.
+			reduction := 0
+			if depth >= 3 && i >= 4 && !inCheck && !isNoisyMove(gs, m) {
+				reduction = 1
+				if i >= 8 && depth >= 5 {
+					reduction = 2
+				}
+			}
+
+			// Principal variation search: every move after the first only has to
+			// be proven worse than the best so far, which a null window does far
+			// more cheaply than a full one.
+			score = -negamaxPV(c, child, depth-1-reduction, -alpha-1, -alpha, ply+1, &childPV)
+
+			// It beat alpha, so the cheap search was not enough: redo it properly.
+			if !c.aborted && score > alpha && (reduction > 0 || score < beta) {
+				childPV = nil
+				score = -negamaxPV(c, child, depth-1, -beta, -alpha, ply+1, &childPV)
+			}
+		}
+
 		if c.aborted {
 			c.path = c.path[:len(c.path)-1]
 			return best

@@ -232,6 +232,16 @@ func buildMove(gs dao.GameState, m botMove) *dto.Move {
 	return &move
 }
 
+// hasNonPawnMaterial reports whether the side to move has any piece other than
+// pawns and the king. Null-move pruning is unsound without one.
+func hasNonPawnMaterial(gs dao.GameState) bool {
+	own := gs.WhiteBitboard
+	if gs.Turn == "b" {
+		own = gs.BlackBitboard
+	}
+	return own&(gs.KnightBitboard|gs.BishopBitboard|gs.RookBitboard|gs.QueenBitboard) != 0
+}
+
 func oppTurn(turn string) string {
 	if turn == "w" {
 		return "b"
