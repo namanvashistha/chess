@@ -88,14 +88,17 @@ matchmaking:
   allow_during_games: false
   challenge_variant: "standard"
   challenge_timeout: 1
-  # Seconds. 600/900 with a 5-10s increment keeps its own games in the rapid
-  # range it plays least badly.
+  # Seconds. The engine reaches depth 8 in ~240ms from the start position, so
+  # even a 3-minute base leaves it ~8s a move (budget is remaining/30 + inc),
+  # which is depth 11-13. Blitz therefore costs almost no strength and yields
+  # roughly five times as many games per hour, which is what a rating needs to
+  # converge. Longer controls are still accepted from humans -- see `challenge:`.
   challenge_initial_time:
-    - 600
-    - 900
+    - 180
+    - 300
   challenge_increment:
-    - 5
-    - 10
+    - 2
+    - 3
   opponent_rating_difference: 300
   rating_preference: "none"
   # Rated, or the games produce no rating.
