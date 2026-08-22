@@ -4,111 +4,70 @@ import (
 	"chess-engine/app/constant"
 	"chess-engine/app/domain/dao"
 	"chess-engine/app/domain/dto"
-	"chess-engine/app/middleware"
 	"chess-engine/app/pkg"
 	"chess-engine/app/repository"
-	"net/http"
-	"strconv"
 	"strings"
-
-	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 )
 
+// UserService is transport-agnostic: it takes plain values and returns
+// (value, error). It used to take *gin.Context, which welded HTTP into the
+// business layer and made every method untestable without a live request.
 type UserService interface {
-	GetAllUser(c *gin.Context)
-	GetUserByToken(c *gin.Context)
-	AddUserData(c *gin.Context)
-	UpdateUserData(c *gin.Context)
-	DeleteUser(c *gin.Context)
+	GetAllUser() ([]dao.User, error)
+	GetUserByToken(token string) (dao.User, error)
+	AddUser() (dto.CreatedUser, error)
+	UpdateUser(actor dao.User, userID int, name string) (dao.User, error)
+	DeleteUser(actor dao.User, userID int) error
 }
 
 type UserServiceImpl struct {
 	userRepository repository.UserRepository
 }
 
-// requireSelf resolves the authenticated user and the :userID path parameter and
-// rejects the request unless they are the same account. Without this, PUT/DELETE
-// on /api/user/:userID acted on any id the caller supplied.
-func requireSelf(c *gin.Context) dao.User {
-	authUser, ok := middleware.AuthUser(c)
-	if !ok {
-		log.Error("route is missing the auth middleware")
-		pkg.PanicException(constant.Unauthorized)
+// authorizeSelf rejects any attempt to act on an account other than the
+// caller's own.
+func authorizeSelf(actor dao.User, userID int) error {
+	if actor.ID == 0 {
+		return pkg.NewError(constant.Unauthorized, "not authenticated", nil)
 	}
-
-	userID, err := strconv.Atoi(c.Param("userID"))
-	if err != nil {
-		log.Error("Invalid userID path parameter:", err)
-		pkg.PanicException(constant.InvalidRequest)
+	if actor.ID != userID {
+		return pkg.NewError(constant.Unauthorized, "cannot act on another account", nil)
 	}
-	if userID != authUser.ID {
-		log.Errorf("user %d attempted to act on user %d", authUser.ID, userID)
-		pkg.PanicException(constant.Unauthorized)
-	}
-	return authUser
+	return nil
 }
 
-func (u UserServiceImpl) UpdateUserData(c *gin.Context) {
-	defer pkg.PanicHandler(c)
-
-	log.Info("start to execute program update user data by id")
-	authUser := requireSelf(c)
-
-	var request dto.UpdateUserRequest
-	if err := c.ShouldBindJSON(&request); err != nil {
-		log.Error("Happened error when mapping request from FE. Error", err)
-		pkg.PanicException(constant.InvalidRequest)
+func (u UserServiceImpl) UpdateUser(actor dao.User, userID int, name string) (dao.User, error) {
+	if err := authorizeSelf(actor, userID); err != nil {
+		return dao.User{}, err
 	}
 
-	name := strings.TrimSpace(request.Name)
+	name = strings.TrimSpace(name)
 	if name == "" {
-		log.Error("Update rejected: name is empty")
-		pkg.PanicException(constant.InvalidRequest)
+		return dao.User{}, pkg.NewError(constant.InvalidRequest, "name is required", nil)
 	}
 
-	data, err := u.userRepository.FindUserById(authUser.ID)
+	data, err := u.userRepository.FindUserById(actor.ID)
 	if err != nil {
-		log.Error("Happened error when get data from database. Error", err)
-		pkg.PanicException(constant.DataNotFound)
+		return dao.User{}, pkg.NewError(constant.DataNotFound, "user not found", err)
 	}
 
-	// Actually apply the request. This method used to bind the body, discard it
-	// entirely, hardcode Status = 1, and then re-check the *previous* call's
-	// error variable instead of the one from Save.
 	data.Name = name
-
 	saved, err := u.userRepository.Save(&data)
 	if err != nil {
-		log.Error("Happened error when updating data to database. Error", err)
-		pkg.PanicException(constant.UnknownError)
+		return dao.User{}, pkg.NewError(constant.UnknownError, "could not save user", err)
 	}
-
-	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, saved))
+	return saved, nil
 }
 
-func (u UserServiceImpl) GetUserByToken(c *gin.Context) {
-	defer pkg.PanicHandler(c)
-
-	var request dto.TokenGetRequest
-	if err := c.ShouldBindJSON(&request); err != nil {
-		log.Error("Happened error when mapping request from FE. Error", err)
-		pkg.PanicException(constant.InvalidRequest)
+func (u UserServiceImpl) GetUserByToken(token string) (dao.User, error) {
+	user, err := u.userRepository.FindUserByToken(token)
+	if err != nil || user.ID == 0 {
+		return dao.User{}, pkg.NewError(constant.DataNotFound, "user not found", err)
 	}
-	log.Info("start to execute program get user by token")
-	data, err := u.userRepository.FindUserByToken(request.Token)
-	if err != nil || data.ID == 0 {
-		log.Error("Happened error when get data from database. Error", err)
-		pkg.PanicException(constant.DataNotFound)
-	}
-
-	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, data))
+	return user, nil
 }
 
-func (u UserServiceImpl) AddUserData(c *gin.Context) {
-	defer pkg.PanicHandler(c)
-
-	log.Info("start to execute program add data user")
+func (u UserServiceImpl) AddUser() (dto.CreatedUser, error) {
 	request := dao.User{
 		Token:  pkg.GenerateRandomString(80),
 		Name:   pkg.GenerateRandomUserName(),
@@ -117,51 +76,38 @@ func (u UserServiceImpl) AddUserData(c *gin.Context) {
 
 	data, err := u.userRepository.Save(&request)
 	if err != nil {
-		log.Error("Happened error when saving data to database. Error", err)
-		pkg.PanicException(constant.UnknownError)
+		return dto.CreatedUser{}, pkg.NewError(constant.UnknownError, "could not create user", err)
 	}
 
-	// The only response that carries the token: dao.User hides it so the game
+	// The only response carrying the token: dao.User hides it so the game
 	// broadcast cannot leak it.
-	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, dto.CreatedUser{
+	return dto.CreatedUser{
 		ID:       data.ID,
 		Name:     data.Name,
 		Status:   data.Status,
 		MetaData: data.MetaData,
 		Token:    data.Token,
-	}))
+	}, nil
 }
 
-func (u UserServiceImpl) GetAllUser(c *gin.Context) {
-	defer pkg.PanicHandler(c)
-
-	log.Info("start to execute get all data user")
-
+func (u UserServiceImpl) GetAllUser() ([]dao.User, error) {
 	data, err := u.userRepository.FindAllUser()
 	if err != nil {
-		log.Error("Happened Error when find all user data. Error: ", err)
-		pkg.PanicException(constant.UnknownError)
+		return nil, pkg.NewError(constant.UnknownError, "could not list users", err)
 	}
-
-	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, data))
+	return data, nil
 }
 
-func (u UserServiceImpl) DeleteUser(c *gin.Context) {
-	defer pkg.PanicHandler(c)
-
-	log.Info("start to execute delete data user by id")
-	authUser := requireSelf(c)
-
-	if err := u.userRepository.DeleteUserById(authUser.ID); err != nil {
-		log.Error("Happened Error when try delete data user from DB. Error:", err)
-		pkg.PanicException(constant.UnknownError)
+func (u UserServiceImpl) DeleteUser(actor dao.User, userID int) error {
+	if err := authorizeSelf(actor, userID); err != nil {
+		return err
 	}
-
-	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, pkg.Null()))
+	if err := u.userRepository.DeleteUserById(actor.ID); err != nil {
+		return pkg.NewError(constant.UnknownError, "could not delete user", err)
+	}
+	return nil
 }
 
 func UserServiceInit(userRepository repository.UserRepository) *UserServiceImpl {
-	return &UserServiceImpl{
-		userRepository: userRepository,
-	}
+	return &UserServiceImpl{userRepository: userRepository}
 }
