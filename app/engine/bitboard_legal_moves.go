@@ -23,7 +23,7 @@ func GenerateLegalMovesForAllPositions(gs dao.GameState) (map[uint64]uint64, str
 		sideBitboard, side = gs.BlackBitboard, "black"
 	}
 
-	inCheck, _ := CheckIfKingIsInCheck(gs, pseudoLegalMoves, whiteToMove)
+	inCheck := isKingInCheck(gs, whiteToMove)
 	hasMove := checkIsMoveLeft(sideBitboard, legalMoves)
 
 	switch {
@@ -100,11 +100,17 @@ func simulateMove(gs dao.GameState, piece uint64, move uint64) dao.GameState {
 	return applyBitboardMove(gs, piece, move, "q")
 }
 
+// isKingInCheck reports whether the given colour's king is attacked.
+//
+// This is the hot path of legality checking: it runs once per candidate move.
+// It used to call GenerateInitialMoves -- a full pseudo-legal generation for
+// both colours, allocating two maps -- and now asks about one square directly.
 func isKingInCheck(gs dao.GameState, isWhiteKing bool) bool {
-	pseudo_legal_moves, _ := GenerateInitialMoves(gs)
-
-	isInCheck, _ := CheckIfKingIsInCheck(gs, pseudo_legal_moves, isWhiteKing)
-	return isInCheck
+	king := kingSquare(gs, isWhiteKing)
+	if king == 0 {
+		return false
+	}
+	return isSquareAttacked(gs, king, !isWhiteKing)
 }
 
 func GenerateInitialMoves(gs dao.GameState) (map[uint64]uint64, map[uint64]uint64) {
