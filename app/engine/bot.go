@@ -208,33 +208,6 @@ func captureScore(gs dao.GameState, m botMove) int {
 	return score
 }
 
-// promoteOrderedMoves moves the transposition-table suggestion to the front,
-// followed by the killers, preserving the existing MVV-LVA order otherwise.
-//
-// The table move is the best move found for this exact position at a shallower
-// depth, so it is overwhelmingly likely to be best again. Searching it first is
-// most of what makes iterative deepening pay for itself.
-func promoteOrderedMoves(moves []botMove, ttMove botMove, hasTT bool, killers [2]botMove) {
-	front := 0
-	promote := func(target botMove) {
-		for i := front; i < len(moves); i++ {
-			if moves[i] == target {
-				moves[front], moves[i] = moves[i], moves[front]
-				front++
-				return
-			}
-		}
-	}
-	if hasTT {
-		promote(ttMove)
-	}
-	for _, k := range killers {
-		if k.src != 0 {
-			promote(k)
-		}
-	}
-}
-
 func pieceValueAt(gs dao.GameState, bit uint64) int {
 	switch {
 	case gs.PawnBitboard&bit != 0:

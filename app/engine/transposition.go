@@ -110,11 +110,17 @@ func (t *TranspositionTable) probe(key uint64, depth, alpha, beta int) (move bot
 	return move, hasMove, 0, false
 }
 
-// store writes an entry, always replacing whatever was there. Depth-preferred
-// replacement is a refinement worth making once there is a benchmark to show it
-// helps; always-replace is the honest starting point.
+// store writes an entry, preferring to keep deeper results.
+//
+// A slot is overwritten when it holds a different position (the common case --
+// two positions colliding on the same index), or when this search reached at
+// least as deep. Always-replace threw away a depth-10 result to store a depth-1
+// one from the quiescence-adjacent frontier.
 func (t *TranspositionTable) store(key uint64, depth int, score int, flag ttFlag, best botMove) {
 	if t == nil {
+		return
+	}
+	if e := &t.entries[key&t.mask]; e.key == key && int(e.depth) > depth {
 		return
 	}
 	if depth > 127 {

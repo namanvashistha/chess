@@ -3,6 +3,8 @@ package engine
 import (
 	"chess-engine/app/domain/dao"
 	"chess-engine/app/domain/dto"
+	"math/bits"
+	"sort"
 	"time"
 )
 
@@ -169,6 +171,54 @@ type searchCtx struct {
 	// cutoff. A move that refuted one line usually refutes its siblings, so
 	// trying them early prunes far more.
 	killers [maxSearchDepth + maxQuiescenceDepth + 2][2]botMove
+	// history scores quiet moves by [side][from][to], accumulated across the
+	// whole search. Killers only help at the same ply; history carries the
+	// knowledge "this move keeps working" everywhere in the tree.
+	history [2][64][64]int32
+}
+
+// sideIndex is 0 for White, 1 for Black.
+func sideIndex(gs dao.GameState) int {
+	if gs.Turn == "b" {
+		return 1
+	}
+	return 0
+}
+
+// recordCutoff credits a quiet move that caused a beta cutoff. The depth-squared
+// weight means a cutoff found deep in the tree, where it took more work to
+// establish, counts for more.
+func (c *searchCtx) recordCutoff(gs dao.GameState, m botMove, depth, ply int) {
+	c.recordKiller(ply, m)
+	from := bits.TrailingZeros64(m.src)
+	to := bits.TrailingZeros64(m.dst)
+	c.history[sideIndex(gs)][from][to] += int32(depth * depth)
+}
+
+// orderMoves sorts moves best-first for the main search: the transposition
+// table's suggestion, then captures by MVV-LVA, then killers, then quiet moves
+// by history score.
+func (c *searchCtx) orderMoves(gs dao.GameState, moves []botMove, ttMove botMove, hasTT bool, ply int) {
+	killers := c.killerMoves(ply)
+	side := sideIndex(gs)
+
+	score := func(m botMove) int {
+		if hasTT && m == ttMove {
+			return 1 << 30
+		}
+		if s := captureScore(gs, m); s != 0 {
+			return s
+		}
+		if m == killers[0] {
+			return 90000
+		}
+		if m == killers[1] {
+			return 89000
+		}
+		return int(c.history[side][bits.TrailingZeros64(m.src)][bits.TrailingZeros64(m.dst)])
+	}
+
+	sort.SliceStable(moves, func(i, j int) bool { return score(moves[i]) > score(moves[j]) })
 }
 
 // recordKiller remembers a quiet move that caused a cutoff, keeping the two most
@@ -239,14 +289,14 @@ func negamaxPV(c *searchCtx, gs dao.GameState, depth, alpha, beta, ply int, pv *
 		return quiescence(c, gs, alpha, beta, maxQuiescenceDepth)
 	}
 
-	moves := sideToMoveMovesOrdered(gs)
+	moves := sideToMoveMoves(gs)
 	if len(moves) == 0 {
 		if isKingInCheck(gs, gs.Turn == "w") {
 			return -mateScore - depth // prefer faster mates
 		}
 		return 0 // stalemate
 	}
-	promoteOrderedMoves(moves, ttMove, hasTTMove, c.killerMoves(ply))
+	c.orderMoves(gs, moves, ttMove, hasTTMove, ply)
 
 	c.path = append(c.path, key)
 
@@ -270,10 +320,10 @@ func negamaxPV(c *searchCtx, gs dao.GameState, depth, alpha, beta, ply int, pv *
 			alpha = best
 		}
 		if alpha >= beta {
-			// Killers are quiet moves only: captures are already ordered first
-			// by MVV-LVA, so recording one would displace a useful slot.
+			// Quiet moves only: captures are already ordered first by MVV-LVA,
+			// so crediting one would displace a genuinely useful entry.
 			if !isNoisyMove(gs, m) {
-				c.recordKiller(ply, m)
+				c.recordCutoff(gs, m, depth, ply)
 			}
 			break
 		}
