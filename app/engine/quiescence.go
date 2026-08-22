@@ -39,7 +39,7 @@ func isNoisyMove(gs dao.GameState, m botMove) bool {
 
 // staticEval scores the position in centipawns from the side to move's view.
 func staticEval(gs dao.GameState) int {
-	score := evalMaterial(gs)
+	score := evaluate(gs)
 	if gs.Turn == "b" {
 		return -score
 	}
