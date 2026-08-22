@@ -37,18 +37,22 @@ challenge:
   accept_bot: true
   only_bot: false
   max_increment: 60
-  # Requiring an increment protects a slow engine from flagging in a won
-  # position, which is otherwise its most common way to lose.
-  min_increment: 3
+  # No increment required. The engine budgets time as (remaining / 30) + inc,
+  # so even a 3-minute base leaves it ~6s a move and it never approaches the
+  # flag; requiring an increment only turned away ordinary challenges like
+  # 10+0, which is what Lichess offers by default.
+  min_increment: 0
   max_base: 1800
-  min_base: 600
+  min_base: 180
   max_days: 14
   min_days: 1
   variants:
     - standard
-  # No bullet or blitz. At this speed the engine reaches roughly depth 3-5 with
-  # seconds to think; give it minutes.
+  # No bullet: under a minute the engine barely clears depth 2 and the games
+  # tell you nothing. Blitz and up are fine -- it is slow in depth, not in
+  # responsiveness, and it respects whatever budget it is given.
   time_controls:
+    - blitz
     - rapid
     - classical
   modes:
