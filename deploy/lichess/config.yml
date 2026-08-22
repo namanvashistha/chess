@@ -82,15 +82,29 @@ greeting:
   goodbye_spectators: "Thanks for watching!"
 
 matchmaking:
-  # Off for the first run so you can challenge the bot yourself and watch it
-  # play. Flip to true once it works and the bot will seek out its own games,
-  # which is what actually accumulates a rating.
+  # The bot seeks out its own games instead of only waiting to be challenged.
+  # This is what actually accumulates a rating.
   allow_matchmaking: true
   allow_during_games: false
   challenge_variant: "standard"
   challenge_timeout: 30
+  # REQUIRED whenever allow_matchmaking is true: lichess-bot refuses to start
+  # without a time control to offer, and the error is a config validation
+  # exception at startup, so the container crash-loops rather than degrading.
+  # These are the challenges the bot sends out; the `challenge:` block above
+  # governs what it accepts.
+  #
+  # Seconds. 600/900 with a 5-10s increment keeps its own games in the rapid
+  # range it plays least badly.
+  challenge_initial_time:
+    - 600
+    - 900
+  challenge_increment:
+    - 5
+    - 10
   opponent_rating_difference: 300
   rating_preference: "none"
+  # Rated, or the games produce no rating.
   challenge_mode: "rated"
   challenge_filter: none
   include_challenge_block_list: false
