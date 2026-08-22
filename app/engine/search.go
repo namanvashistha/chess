@@ -18,6 +18,10 @@ type SearchOptions struct {
 	// search cannot see a repetition that reaches back before the root, so an
 	// engine with a winning position happily shuffles into a threefold draw.
 	History []uint64
+	// Table is the transposition table. Optional -- a nil table simply disables
+	// the cache. It is passed in rather than held globally so concurrent
+	// searches (the server runs one per game) cannot race on it.
+	Table *TranspositionTable
 }
 
 // SearchResult is the outcome of (a completed iteration of) a search.
@@ -81,8 +85,14 @@ func Search(gs dao.GameState, opts SearchOptions, info func(SearchResult)) Searc
 	rootPath = append(rootPath, opts.History...)
 	rootPath = append(rootPath, PositionKey(gs))
 
+	c := &searchCtx{deadline: deadline, stop: opts.Stop, tt: opts.Table}
+
 	for depth := 1; depth <= maxDepth; depth++ {
-		c := &searchCtx{deadline: deadline, stop: opts.Stop, path: rootPath}
+		// Killers and the table carry across iterations on purpose; only the
+		// per-iteration bookkeeping resets.
+		c.aborted = false
+		c.nodes = 0
+		c.path = rootPath
 		best := -searchInf
 		var bestMove dto.Move
 		var bestPV []dto.Move
@@ -94,7 +104,7 @@ func Search(gs dao.GameState, opts SearchOptions, info func(SearchResult)) Searc
 				break
 			}
 			var childPV []dto.Move
-			score := -negamaxPV(c, applyBotMove(gs, m), depth-1, -searchInf, -alpha, &childPV)
+			score := -negamaxPV(c, applyBotMove(gs, m), depth-1, -searchInf, -alpha, 1, &childPV)
 			if c.aborted {
 				break
 			}
@@ -151,9 +161,27 @@ type searchCtx struct {
 	deadline time.Time
 	stop     <-chan struct{}
 	aborted  bool
+	tt       *TranspositionTable
 	// path holds the position keys from the start of the game down to the
 	// current node. Pre-root game history is seeded from SearchOptions.History.
 	path []uint64
+	// killers holds, per ply, two quiet moves that recently caused a beta
+	// cutoff. A move that refuted one line usually refutes its siblings, so
+	// trying them early prunes far more.
+	killers [maxSearchDepth + maxQuiescenceDepth + 2][2]botMove
+}
+
+// recordKiller remembers a quiet move that caused a cutoff, keeping the two most
+// recent and never storing the same move twice.
+func (c *searchCtx) recordKiller(ply int, m botMove) {
+	if ply < 0 || ply >= len(c.killers) {
+		return
+	}
+	if c.killers[ply][0] == m {
+		return
+	}
+	c.killers[ply][1] = c.killers[ply][0]
+	c.killers[ply][0] = m
 }
 
 // repeats reports whether key already appears on the current path.
@@ -184,8 +212,9 @@ func (c *searchCtx) drawAtNode(gs dao.GameState, key uint64) bool {
 }
 
 // negamaxPV is negamax with node counting, principal-variation collection,
-// repetition/fifty-move draw detection, and cooperative abort on time/Stop.
-func negamaxPV(c *searchCtx, gs dao.GameState, depth, alpha, beta int, pv *[]dto.Move) int {
+// repetition/fifty-move draw detection, transposition-table probing, and
+// cooperative abort on time/Stop.
+func negamaxPV(c *searchCtx, gs dao.GameState, depth, alpha, beta, ply int, pv *[]dto.Move) int {
 	c.nodes++
 
 	// Check for time/Stop periodically to keep the overhead negligible.
@@ -199,6 +228,13 @@ func negamaxPV(c *searchCtx, gs dao.GameState, depth, alpha, beta int, pv *[]dto
 		return 0
 	}
 
+	alphaOrig := alpha
+	ttMove, hasTTMove, ttScore, usable := c.tt.probe(key, depth, alpha, beta)
+	// Never cut at the root: a move still has to be returned.
+	if usable && ply > 0 {
+		return ttScore
+	}
+
 	if depth == 0 {
 		return quiescence(c, gs, alpha, beta, maxQuiescenceDepth)
 	}
@@ -210,20 +246,23 @@ func negamaxPV(c *searchCtx, gs dao.GameState, depth, alpha, beta int, pv *[]dto
 		}
 		return 0 // stalemate
 	}
+	promoteOrderedMoves(moves, ttMove, hasTTMove, c.killerMoves(ply))
 
 	c.path = append(c.path, key)
 
 	best := -searchInf
+	var bestMove botMove
 	var bestChildPV []dto.Move
 	for _, m := range moves {
 		var childPV []dto.Move
-		score := -negamaxPV(c, applyBotMove(gs, m), depth-1, -beta, -alpha, &childPV)
+		score := -negamaxPV(c, applyBotMove(gs, m), depth-1, -beta, -alpha, ply+1, &childPV)
 		if c.aborted {
 			c.path = c.path[:len(c.path)-1]
 			return best
 		}
 		if score > best {
 			best = score
+			bestMove = m
 			mv := botMoveToDTO(gs, m)
 			bestChildPV = append([]dto.Move{mv}, childPV...)
 		}
@@ -231,13 +270,36 @@ func negamaxPV(c *searchCtx, gs dao.GameState, depth, alpha, beta int, pv *[]dto
 			alpha = best
 		}
 		if alpha >= beta {
+			// Killers are quiet moves only: captures are already ordered first
+			// by MVV-LVA, so recording one would displace a useful slot.
+			if !isNoisyMove(gs, m) {
+				c.recordKiller(ply, m)
+			}
 			break
 		}
 	}
 
 	c.path = c.path[:len(c.path)-1]
+
+	flag := ttExact
+	switch {
+	case best <= alphaOrig:
+		flag = ttUpper
+	case best >= beta:
+		flag = ttLower
+	}
+	c.tt.store(key, depth, best, flag, bestMove)
+
 	*pv = bestChildPV
 	return best
+}
+
+// killerMoves returns the killers stored for a ply, or none if out of range.
+func (c *searchCtx) killerMoves(ply int) [2]botMove {
+	if ply < 0 || ply >= len(c.killers) {
+		return [2]botMove{}
+	}
+	return c.killers[ply]
 }
 
 func abortRequested(deadline time.Time, stop <-chan struct{}) bool {

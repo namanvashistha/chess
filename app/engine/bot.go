@@ -180,18 +180,59 @@ func sideToMoveMoves(gs dao.GameState) []botMove {
 	return appendLegalMoves(gs, make([]botMove, 0, 48))
 }
 
-// sideToMoveMovesOrdered orders captures first (most valuable victim first) so
-// alpha-beta prunes more.
+// sideToMoveMovesOrdered orders captures first, most valuable victim captured by
+// least valuable attacker (MVV-LVA), so alpha-beta prunes more.
 //
-// SliceStable, not Slice: an unstable sort over equally-valued moves reorders
+// SliceStable, not Slice: an unstable sort over equally-scored moves reorders
 // them unpredictably, which reintroduces the non-determinism that the ordered
 // generator exists to remove.
 func sideToMoveMovesOrdered(gs dao.GameState) []botMove {
 	moves := sideToMoveMoves(gs)
 	sort.SliceStable(moves, func(i, j int) bool {
-		return pieceValueAt(gs, moves[i].dst) > pieceValueAt(gs, moves[j].dst)
+		return captureScore(gs, moves[i]) > captureScore(gs, moves[j])
 	})
 	return moves
+}
+
+// captureScore ranks a move for ordering. Winning captures first (queen taken by
+// a pawn beats queen taken by a queen), then promotions, then quiet moves.
+func captureScore(gs dao.GameState, m botMove) int {
+	score := 0
+	if victim := pieceValueAt(gs, m.dst); victim != 0 {
+		// Victim dominates; the attacker only breaks ties, hence the factor.
+		score = 100000 + victim*16 - pieceValueAt(gs, m.src)
+	}
+	if m.promo != "" {
+		score += 90000 + botPieceValue[m.promo[0]]
+	}
+	return score
+}
+
+// promoteOrderedMoves moves the transposition-table suggestion to the front,
+// followed by the killers, preserving the existing MVV-LVA order otherwise.
+//
+// The table move is the best move found for this exact position at a shallower
+// depth, so it is overwhelmingly likely to be best again. Searching it first is
+// most of what makes iterative deepening pay for itself.
+func promoteOrderedMoves(moves []botMove, ttMove botMove, hasTT bool, killers [2]botMove) {
+	front := 0
+	promote := func(target botMove) {
+		for i := front; i < len(moves); i++ {
+			if moves[i] == target {
+				moves[front], moves[i] = moves[i], moves[front]
+				front++
+				return
+			}
+		}
+	}
+	if hasTT {
+		promote(ttMove)
+	}
+	for _, k := range killers {
+		if k.src != 0 {
+			promote(k)
+		}
+	}
 }
 
 func pieceValueAt(gs dao.GameState, bit uint64) int {

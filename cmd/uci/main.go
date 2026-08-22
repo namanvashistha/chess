@@ -27,6 +27,7 @@ const (
 	defaultMoveOverhead = 30 * time.Millisecond
 	defaultMovesToGo    = 30
 	minThinkTime        = 10 * time.Millisecond
+	defaultHashMB       = 16
 )
 
 type uciEngine struct {
@@ -39,6 +40,9 @@ type uciEngine struct {
 	// see a repetition that reaches back before the root.
 	history      []uint64
 	moveOverhead time.Duration
+	// table persists across searches and across moves, so a position examined
+	// while thinking about move 20 is still cached at move 21.
+	table *engine.TranspositionTable
 
 	searchMu sync.Mutex
 	stopCh   chan struct{} // non-nil while a search is running
@@ -50,6 +54,7 @@ func main() {
 		out:          bufio.NewWriter(os.Stdout),
 		state:        engine.StartState(),
 		moveOverhead: defaultMoveOverhead,
+		table:        engine.NewTranspositionTable(defaultHashMB),
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -69,6 +74,7 @@ func main() {
 			eng.stopSearch()
 			eng.state = engine.StartState()
 			eng.history = nil
+			eng.table.Clear()
 		case "setoption":
 			eng.handleSetOption(fields)
 		case "position":
@@ -92,7 +98,6 @@ func main() {
 func (e *uciEngine) handleUCI() {
 	e.println("id name " + engineName)
 	e.println("id author " + engineAuthor)
-	// Advertised for GUI compatibility; accepted but currently inert (no TT yet).
 	e.println("option name Hash type spin default 16 min 1 max 1024")
 	e.println("option name Move Overhead type spin default 30 min 0 max 5000")
 	e.println("uciok")
@@ -120,12 +125,19 @@ func (e *uciEngine) handleSetOption(fields []string) {
 			i++
 		}
 	}
-	if strings.EqualFold(name, "Move Overhead") {
+	switch {
+	case strings.EqualFold(name, "Move Overhead"):
 		if ms, err := strconv.Atoi(strings.TrimSpace(value)); err == nil && ms >= 0 {
 			e.moveOverhead = time.Duration(ms) * time.Millisecond
 		}
+	case strings.EqualFold(name, "Hash"):
+		// Previously advertised and silently ignored, because there was no
+		// transposition table to size.
+		if mb, err := strconv.Atoi(strings.TrimSpace(value)); err == nil && mb >= 1 {
+			e.stopSearch()
+			e.table = engine.NewTranspositionTable(mb)
+		}
 	}
-	// Other options (e.g. Hash) are accepted but ignored.
 }
 
 // handlePosition parses: position (startpos | fen <6 fields>) [moves m1 m2 ...]
@@ -234,6 +246,7 @@ func (e *uciEngine) handleGo(fields []string) {
 	e.searchMu.Unlock()
 
 	opts.History = e.history
+	opts.Table = e.table
 
 	gs := e.state
 	e.wg.Add(1)
