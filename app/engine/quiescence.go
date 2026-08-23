@@ -89,6 +89,13 @@ func quiescence(c *searchCtx, gs dao.GameState, alpha, beta, qdepth int) int {
 			if !isNoisyMove(gs, m) {
 				continue
 			}
+			// Skip captures that simply lose material. Searching QxP-defended-by-a-pawn
+			// only to discover it drops a queen is work arithmetic can avoid.
+			// En passant is exempt: the victim is not on the destination square,
+			// so SEE would misread it.
+			if m.dst&(gs.WhiteBitboard|gs.BlackBitboard) != 0 && see(gs, m.src, m.dst) < 0 {
+				continue
+			}
 			// Delta pruning: winning this piece outright still leaves the score
 			// short of alpha, so the line cannot matter.
 			if standPat+pieceValueAt(gs, m.dst)+deltaMargin < alpha {
