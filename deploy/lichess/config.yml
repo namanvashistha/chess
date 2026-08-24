@@ -82,9 +82,10 @@ greeting:
   goodbye_spectators: "Thanks for watching!"
 
 matchmaking:
-  # The bot seeks out its own games instead of only waiting to be challenged.
-  # This is what actually accumulates a rating.
-  allow_matchmaking: true
+  # Off: the bot no longer seeks out its own games. It still plays anyone who
+  # challenges it -- see `challenge:` above -- but stops generating traffic on
+  # its own, so the rating only moves when someone else starts a game.
+  allow_matchmaking: false
   allow_during_games: false
   challenge_variant: "standard"
   challenge_timeout: 1
