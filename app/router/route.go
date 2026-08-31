@@ -34,7 +34,9 @@ func Init(init *config.Initialization) *gin.Engine {
 	// Liveness + dependency readiness. Unauthenticated and outside /api so the
 	// container healthcheck and uptime probes can reach it; answers 503 when
 	// Postgres or Redis is unreachable.
-	router.GET("/health", init.HealthCtrl.Check)
+	// HEAD as well as GET: uptime monitors default to HEAD, and gin 404s a
+	// method it has no route for rather than falling back to the GET handler.
+	router.Match([]string{http.MethodGet, http.MethodHead}, "/health", init.HealthCtrl.Check)
 
 	// WebSocket route
 	router.GET("/ws/:gameId", init.SocketCtrl.HandleWebSocket)
