@@ -31,6 +31,11 @@ func Init(init *config.Initialization) *gin.Engine {
 		c.File("./app/static/html/bitboard.html")
 	})
 
+	// Liveness + dependency readiness. Unauthenticated and outside /api so the
+	// container healthcheck and uptime probes can reach it; answers 503 when
+	// Postgres or Redis is unreachable.
+	router.GET("/health", init.HealthCtrl.Check)
+
 	// WebSocket route
 	router.GET("/ws/:gameId", init.SocketCtrl.HandleWebSocket)
 

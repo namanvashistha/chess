@@ -27,8 +27,9 @@ func Init() *Initialization {
 	chessControllerImpl := controller.ChessControllerInit(chessServiceImpl)
 	socketServiceImpl := service.WebSocketServiceInit(chessRepositoryImpl)
 	socketControllerImpl := controller.WebSocketControllerInit(socketServiceImpl)
+	healthControllerImpl := controller.HealthControllerInit(gormDB, redisClient)
 
-	initialization := NewInitialization(userRepositoryImpl, userServiceImpl, userControllerImpl, chessControllerImpl, chessServiceImpl, chessRepositoryImpl, socketServiceImpl, socketControllerImpl)
+	initialization := NewInitialization(userRepositoryImpl, userServiceImpl, userControllerImpl, chessControllerImpl, chessServiceImpl, chessRepositoryImpl, socketServiceImpl, socketControllerImpl, healthControllerImpl)
 	return initialization
 }
 
@@ -51,3 +52,5 @@ var chessSvcSet = wire.NewSet(service.ChessServiceInit, wire.Bind(new(service.Ch
 var socketSvcSet = wire.NewSet(service.WebSocketServiceInit, wire.Bind(new(service.WebSocketService), new(*service.WebSocketServiceImpl)))
 
 var socketCtrlSet = wire.NewSet(controller.WebSocketControllerInit, wire.Bind(new(controller.WebSocketController), new(*controller.WebSocketControllerImpl)))
+
+var healthCtrlSet = wire.NewSet(controller.HealthControllerInit, wire.Bind(new(controller.HealthController), new(*controller.HealthControllerImpl)))

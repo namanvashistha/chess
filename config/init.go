@@ -15,6 +15,7 @@ type Initialization struct {
 	chessRepo  repository.ChessRepository
 	SocketCtrl controller.WebSocketController
 	socketSvc  service.WebSocketService
+	HealthCtrl controller.HealthController
 }
 
 func NewInitialization(userRepo repository.UserRepository,
@@ -24,7 +25,8 @@ func NewInitialization(userRepo repository.UserRepository,
 	chessSvc service.ChessService,
 	chessRepo repository.ChessRepository,
 	socketSvc service.WebSocketService,
-	SocketCtrl controller.WebSocketController) *Initialization {
+	SocketCtrl controller.WebSocketController,
+	healthCtrl controller.HealthController) *Initialization {
 	return &Initialization{
 		UserRepo:   userRepo,
 		userSvc:    userService,
@@ -34,5 +36,6 @@ func NewInitialization(userRepo repository.UserRepository,
 		chessRepo:  chessRepo,
 		socketSvc:  socketSvc,
 		SocketCtrl: SocketCtrl,
+		HealthCtrl: healthCtrl,
 	}
 }

@@ -59,3 +59,9 @@ func (r *RedisClient) Delete(key string) error {
 	}
 	return nil
 }
+
+// Ping checks that the Redis connection is still usable. The caller supplies
+// the context so a health check can bound how long it waits.
+func (r *RedisClient) Ping(ctx context.Context) error {
+	return r.client.Ping(ctx).Err()
+}

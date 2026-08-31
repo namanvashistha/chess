@@ -46,7 +46,11 @@ var socketCtrlSet = wire.NewSet(controller.WebSocketControllerInit,
 	wire.Bind(new(controller.WebSocketController), new(*controller.WebSocketControllerImpl)),
 )
 
+var healthCtrlSet = wire.NewSet(controller.HealthControllerInit,
+	wire.Bind(new(controller.HealthController), new(*controller.HealthControllerImpl)),
+)
+
 func Init() *Initialization {
-	wire.Build(NewInitialization, db, userCtrlSet, userServiceSet, userRepoSet, chessCtrlSet, chessSvcSet, chessRepoSet, socketCtrlSet, socketSvcSet)
+	wire.Build(NewInitialization, db, userCtrlSet, userServiceSet, userRepoSet, chessCtrlSet, chessSvcSet, chessRepoSet, socketCtrlSet, socketSvcSet, healthCtrlSet)
 	return nil
 }
