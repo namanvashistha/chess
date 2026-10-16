@@ -6,8 +6,10 @@ import UIKit
 /// glass.
 enum Palette {
     // board
-    static let squareLight = Color.dynamic(light: 0xD9D4C8, dark: 0xBDB7AA)
-    static let squareDark = Color.dynamic(light: 0x8E9A90, dark: 0x717D73)
+    // A step further apart than the first cut, so pieces of either colour
+    // separate from both squares.
+    static let squareLight = Color.dynamic(light: 0xDDD8CB, dark: 0xC1BBAE)
+    static let squareDark = Color.dynamic(light: 0x84918A, dark: 0x67736B)
     static let coordinate = Color.dynamic(light: 0x6F7A70, dark: 0x4F5A52)
 
     // The accent is evergreen: a deeper cut of the slate square, so the whole
@@ -95,6 +97,22 @@ struct PrimaryButtonStyle: ButtonStyle {
                     .shadow(color: Palette.accent.opacity(0.35), radius: 14, y: pressed ? 6 : 12)
             )
             .offset(y: pressed ? 4 : 0)
+            .scaleEffect(pressed ? 0.985 : 1)
             .animation(.spring(response: 0.2, dampingFraction: 0.6), value: pressed)
+            .onChange(of: pressed) { _, down in if down { Haptics.tap(.medium, intensity: 0.6) } }
+    }
+}
+
+/// Cards and chips: they give a little under the finger and spring back.
+struct PressableStyle: ButtonStyle {
+    var scale: CGFloat = 0.965
+
+    func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
+        configuration.label
+            .scaleEffect(pressed ? scale : 1)
+            .brightness(pressed ? -0.02 : 0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.55), value: pressed)
+            .onChange(of: pressed) { _, down in if down { Haptics.tap(.soft, intensity: 0.8) } }
     }
 }

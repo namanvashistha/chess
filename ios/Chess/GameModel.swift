@@ -55,6 +55,8 @@ struct Rays: Equatable {
     let moves: [BoardMove]
     /// Moves drawn as a knight's L rather than a straight line.
     let knight: Set<BoardMove>
+    /// Moves drawn in the danger colour: attackers, when inspecting a piece.
+    var danger: Set<BoardMove> = []
 }
 
 /// What the coach is saying.
@@ -173,9 +175,25 @@ final class GameModel {
     private(set) var trail: [TrailEntry] = []
     private(set) var hintsLeft = 3
     /// The trail entry the coach card is showing, if the player tapped one.
-    private(set) var reviewing: Int?
+    private(set) var reviewing: Int? {
+        didSet { if reviewing == nil { reviewBoard = nil; reviewMove = nil } }
+    }
+    /// While reviewing, the board as it stood after that move.
+    private(set) var reviewBoard: [Character]?
+    private(set) var reviewMove: BoardMove?
+
+    /// The pieces to draw: the live game's, or the reviewed position's.
+    var shownPieces: [PieceItem] {
+        guard let reviewBoard else { return pieces }
+        return reviewBoard.indices.compactMap { sq in
+            reviewBoard[sq] == "." ? nil : PieceItem(id: -1 - sq, code: reviewBoard[sq], square: sq)
+        }
+    }
+
+    var shownLastMove: BoardMove? { reviewBoard == nil ? lastMove : reviewMove }
 
     @ObservationIgnored private var game: ChesscoreGame
+    @ObservationIgnored private var beforeInspect: CoachCard?
     @ObservationIgnored private var legal: [String] = []
     @ObservationIgnored private var ids: [Int?] = Array(repeating: nil, count: 64)
     @ObservationIgnored private var nextID = 0
@@ -291,14 +309,109 @@ final class GameModel {
             coach = trail.last?.card ?? coach
         } else {
             reviewing = entry.id
+            showPosition(afterPly: entry.ply)
             coach = CoachCard(id: bump(), kind: entry.card.kind, badge: entry.card.badge,
                               title: "\((entry.ply / 2) + 1). \(entry.san) · \(entry.card.title)", text: entry.card.text)
         }
     }
 
+    /// Steps the review one rated move earlier (-1) or later (+1). Stepping
+    /// past the latest move returns to the game.
+    func step(_ delta: Int) {
+        guard !trail.isEmpty else { return }
+        let index = reviewing.flatMap { id in trail.firstIndex { $0.id == id } } ?? trail.count
+        let next = index + delta
+        if next >= trail.count {
+            if reviewing != nil { endReview(); emit(.select) }
+            return
+        }
+        guard next >= 0, next != index else { return }
+        selected = nil
+        rays = nil
+        review(trail[next])
+        emit(.select)
+    }
+
+    func endReview() {
+        guard reviewing != nil else { return }
+        reviewing = nil
+        coach = trail.last?.card ?? coach
+    }
+
+    private func showPosition(afterPly ply: Int) {
+        guard let g = ChesscoreNewGame() else { return }
+        var before: [Character] = Array(g.board())
+        for (i, uci) in moves.prefix(ply + 1).enumerated() {
+            if i == ply { before = Array(g.board()) }
+            _ = g.play(uci)
+        }
+        reviewBoard = Array(g.board())
+        reviewMove = moves.indices.contains(ply) ? BoardMove(uci: moves[ply], board: before) : nil
+    }
+
+    // MARK: - Touch
+
+    /// Picks up one of the mover's pieces to drag. Returns false if it can't move.
+    func pickUp(_ square: Square) -> Bool {
+        guard playerToMove, reviewing == nil else { return false }
+        let piece = board[square]
+        guard piece != ".", (piece.isUppercase ? "w" : "b") == turn else { return false }
+        if selected != square {
+            selected = square
+            rays = makeRays(.options, targets)
+            emit(.select)
+        }
+        return true
+    }
+
+    /// Drops the dragged piece. A legal square plays the move; anywhere else
+    /// it goes back and stays selected.
+    func drop(on square: Square?) {
+        guard let from = selected else { return }
+        if let square, square != from, targets.contains(where: { $0.to == square }) {
+            play(from: from, to: square)
+        }
+    }
+
+    /// Long-press: lines from every piece guarding this one and every piece
+    /// attacking it, and a line from the coach saying which is which.
+    @discardableResult
+    func inspect(_ square: Square) -> Bool {
+        guard reviewing == nil, !busy, board.indices.contains(square), board[square] != "." else { return false }
+        let name = Squares.name(square)
+        func lines(_ list: String, danger: Bool) -> [BoardMove] {
+            list.split(separator: " ").compactMap { Squares.parse($0) }.map { BoardMove(from: $0, to: square, capture: danger) }
+        }
+        let guards = lines(game.guards(name), danger: false)
+        let attackers = lines(game.attackers(name), danger: true)
+        selected = nil
+        var r = makeRays(.options, guards + attackers)
+        r.danger = Set(attackers)
+        rays = r
+        beforeInspect = coach
+        let piece = board[square]
+        let whose = mode == .engine ? (piece.isUppercase ? "Your" : "\(opponent.name)'s") : (piece.isUppercase ? "White's" : "Black's")
+        func count(_ n: Int, _ word: String) -> String { n == 0 ? "no \(word)s" : n == 1 ? "1 \(word)" : "\(n) \(word)s" }
+        let text: String = switch (guards.count, attackers.count) {
+        case (_, 0): "Nothing attacks it" + (guards.isEmpty ? "." : ", and it's guarded by \(count(guards.count, "piece")).")
+        case (0, _): "Attacked by \(count(attackers.count, "piece")) and nothing guards it."
+        default: "Attacked by \(count(attackers.count, "piece")), guarded by \(count(guards.count, "piece"))."
+        }
+        say(.coach, "◎", "\(whose) \(Self.pieceName(piece)) on \(name)", text)
+        emit(.select)
+        return true
+    }
+
+    func endInspect() {
+        rays = nil
+        if let beforeInspect { coach = beforeInspect }
+        beforeInspect = nil
+    }
+
     // MARK: - Taps
 
     func tap(_ square: Square) {
+        if reviewing != nil { endReview(); return }
         guard playerToMove else { return }
         if let from = selected, targets.contains(where: { $0.to == square }) {
             play(from: from, to: square)

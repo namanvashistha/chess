@@ -22,12 +22,19 @@ struct GlassPiece: View {
                 contactShadow(s)
                 Color.clear
                     .glassEffect(.regular.tint(isWhite ? .white.opacity(0.35) : .black.opacity(0.55)), in: shape)
+                // A hairline halo just outside the silhouette: dark around White,
+                // light around Black. It reads as the edge of an object on a
+                // surface, not as an outline.
                 shape.fill(fill)
+                    .shadow(color: isWhite ? .black.opacity(0.5) : .white.opacity(0.32), radius: s * 0.014)
                     .overlay(shape.fill(highlight).blendMode(.screen))
                 shape.stroke(litEdge, lineWidth: s * 0.06)
                     .clipShape(shape)
                 shape.stroke(shadeEdge, lineWidth: s * 0.06)
                     .clipShape(shape)
+                // A fine contour so the shape holds even on a square of its own tone.
+                shape.stroke(isWhite ? Color.black.opacity(0.2) : Color.white.opacity(0.12),
+                             lineWidth: max(0.6, s * 0.01))
                 PieceDetail(kind: kind)
                     .stroke(isWhite ? Color(white: 0.5, opacity: 0.55) : Color(white: 0.9, opacity: 0.35),
                             style: StrokeStyle(lineWidth: s * 0.016, lineCap: .round))
@@ -62,7 +69,7 @@ struct GlassPiece: View {
         isWhite
             ? LinearGradient(stops: [.init(color: .white.opacity(0.9), location: 0),
                                      .init(color: Color(white: 0.965, opacity: 0.84), location: 0.45),
-                                     .init(color: Color(red: 0.74, green: 0.765, blue: 0.80, opacity: 0.94), location: 1)],
+                                     .init(color: Color(red: 0.70, green: 0.725, blue: 0.765, opacity: 0.96), location: 1)],
                              startPoint: .topLeading, endPoint: .bottomTrailing)
             : LinearGradient(stops: [.init(color: Color(red: 0.31, green: 0.34, blue: 0.38, opacity: 0.86), location: 0),
                                      .init(color: Color(red: 0.13, green: 0.15, blue: 0.18, opacity: 0.92), location: 0.5),
@@ -86,8 +93,8 @@ struct GlassPiece: View {
     private var shadeEdge: LinearGradient {
         let c = Color(red: 0.16, green: 0.19, blue: 0.21)
         return LinearGradient(stops: [.init(color: c.opacity(0), location: 0),
-                                      .init(color: c.opacity(0.24), location: 0.5),
-                                      .init(color: c.opacity(0.72), location: 1)],
+                                      .init(color: c.opacity(0.32), location: 0.5),
+                                      .init(color: c.opacity(0.82), location: 1)],
                               startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 }

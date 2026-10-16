@@ -10,6 +10,18 @@ struct BoardView: View {
     /// Draws a still board (the home screen's hero) with no interaction.
     var still = false
 
+    /// One finger on the board: a tap, a drag that carries a piece, or a
+    /// long press that shows what guards and attacks a piece.
+    struct Touch: Equatable {
+        var start: Square
+        var point: CGPoint
+        var dragging = false
+        var inspecting = false
+        var moved = false
+    }
+    @State private var touch: Touch?
+    @State private var hold: Task<Void, Never>?
+
     var body: some View {
         GeometryReader { geo in
             let size = geo.size.width
@@ -20,7 +32,7 @@ struct BoardView: View {
                 if !still {
                     RaysLayer(rays: model.rays, size: size)
                 }
-                PiecesLayer(model: model, size: size)
+                PiecesLayer(model: model, size: size, drag: touch?.dragging == true ? touch : nil)
                 ForEach(model.bursts) { b in
                     ShardBurst(dark: b.dark, size: size / 8)
                         .position(center(b.square, size))
@@ -33,17 +45,60 @@ struct BoardView: View {
             }
             .shadow(color: .black.opacity(0.28), radius: 18, y: 14)
             .contentShape(Rectangle())
-            .gesture(SpatialTapGesture().onEnded { tap in
-                guard !still else { return }
-                let q = size / 8
-                let col = Int(tap.location.x / q), row = Int(tap.location.y / q)
-                guard (0..<8).contains(col), (0..<8).contains(row) else { return }
-                model.tap(row * 8 + col)
-            }, including: still ? .none : .all)
+            .gesture(touchGesture(size), including: still ? .none : .all)
         }
         .aspectRatio(1, contentMode: .fit)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Chess board")
+    }
+}
+
+extension BoardView {
+    private func square(at p: CGPoint, _ size: CGFloat) -> Square? {
+        let q = size / 8
+        let col = Int(floor(p.x / q)), row = Int(floor(p.y / q))
+        guard (0..<8).contains(col), (0..<8).contains(row) else { return nil }
+        return row * 8 + col
+    }
+
+    private func touchGesture(_ size: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { v in
+                if touch == nil {
+                    guard let sq = square(at: v.startLocation, size) else { return }
+                    touch = Touch(start: sq, point: v.location)
+                    hold?.cancel()
+                    hold = Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(420))
+                        guard !Task.isCancelled, var t = touch, !t.dragging, !t.moved else { return }
+                        if model.inspect(t.start) { t.inspecting = true; touch = t }
+                    }
+                }
+                guard var t = touch else { return }
+                t.point = v.location
+                if !t.dragging && !t.inspecting && !t.moved && hypot(v.translation.width, v.translation.height) > size / 8 * 0.2 {
+                    hold?.cancel()
+                    if model.pickUp(t.start) { t.dragging = true } else { t.moved = true }
+                }
+                touch = t
+            }
+            .onEnded { v in
+                hold?.cancel()
+                guard let t = touch else { return }
+                if t.inspecting {
+                    model.endInspect()
+                    touch = nil
+                } else if t.dragging {
+                    let target = square(at: v.location, size)
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.7)) {
+                        touch = nil
+                        model.drop(on: target)
+                    }
+                } else {
+                    touch = nil
+                    if !t.moved { model.tap(t.start) }
+                }
+            }
     }
 }
 
@@ -59,7 +114,7 @@ private struct SquaresLayer: View {
 
     var body: some View {
         let q = size / 8
-        let last = model.lastMove
+        let last = model.shownLastMove
         let check = model.checkSquare
         VStack(spacing: 0) {
             ForEach(0..<8, id: \.self) { row in
@@ -77,7 +132,7 @@ private struct SquaresLayer: View {
                                 RadialGradient(colors: [Palette.danger.opacity(0.75), .clear], center: .center,
                                                startRadius: 0, endRadius: q * 0.6)
                             }
-                            if model.loose.contains(sq) && model.rays == nil {
+                            if model.loose.contains(sq) && model.rays == nil && model.reviewing == nil {
                                 Circle().strokeBorder(Palette.danger.opacity(0.7), lineWidth: 2).padding(q * 0.06)
                             }
                             coordinates(row: row, col: col, q: q)
@@ -156,7 +211,8 @@ private struct RaysLayer: View {
                 case .hint: Palette.great
                 }
                 ForEach(Array(rays.moves.enumerated()), id: \.element) { k, m in
-                    Ray(move: m, knight: rays.knight.contains(m), size: size, color: color,
+                    Ray(move: m, knight: rays.knight.contains(m), size: size,
+                        color: rays.danger.contains(m) ? Palette.danger : color,
                         width: size / 8 * (rays.kind == .thinking ? 0.05 : 0.075),
                         opacity: rays.kind == .thinking ? 0.7 : 1, delay: rays.kind == .thinking ? 0 : Double(k) * 0.02)
                 }
@@ -214,23 +270,28 @@ private struct Ray: View {
 private struct PiecesLayer: View {
     let model: GameModel
     let size: CGFloat
+    /// The piece under the finger, if one is being dragged.
+    let drag: BoardView.Touch?
 
     var body: some View {
         let q = size / 8
         ZStack {
-            ForEach(model.pieces) { piece in
+            ForEach(model.shownPieces) { piece in
                 let lifted = piece.square == model.selected
                 let toppled = piece.id == model.toppled
+                let dragged = drag?.start == piece.square && lifted
                 GlassPiece(code: piece.code, lifted: lifted)
                     .frame(width: q, height: q)
-                    .scaleEffect(lifted ? 1.1 : 1, anchor: .bottom)
+                    .scaleEffect(dragged ? 1.28 : lifted ? 1.1 : 1, anchor: .bottom)
+                    .animation(.spring(response: 0.22, dampingFraction: 0.65), value: dragged)
                     .offset(y: lifted ? -q * 0.09 : 0)
                     .rotationEffect(.degrees(toppled ? 82 : 0), anchor: UnitPoint(x: 0.5, y: 0.88))
                     .offset(x: toppled ? q * 0.15 : 0)
                     .animation(.spring(response: 0.26, dampingFraction: 0.6), value: lifted)
                     .animation(.spring(response: 0.9, dampingFraction: 0.55), value: toppled)
-                    .position(center(piece.square, size))
-                    .zIndex(piece.id == model.movingPiece ? 20 : Double(Squares.row(piece.square)))
+                    // Held a little above the finger so the finger doesn't hide it.
+                    .position(dragged ? CGPoint(x: drag!.point.x, y: drag!.point.y - q * 0.25) : center(piece.square, size))
+                    .zIndex(dragged ? 30 : piece.id == model.movingPiece ? 20 : Double(Squares.row(piece.square)))
                     .transition(.opacity.animation(.easeOut(duration: 0.12)))
             }
         }

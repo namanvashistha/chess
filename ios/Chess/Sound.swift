@@ -1,4 +1,15 @@
 import AVFoundation
+import UIKit
+
+/// A small tap felt under the finger when a control is pressed. Light by
+/// default; respects the haptics setting.
+@MainActor
+enum Haptics {
+    static func tap(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .light, intensity: CGFloat = 0.7) {
+        guard Sound.hapticsOn else { return }
+        UIImpactFeedbackGenerator(style: style).impactOccurred(intensity: intensity)
+    }
+}
 
 /// Glass sounds, synthesized at launch so the app ships no audio files: a
 /// clear tap for a move, a crack for a capture, a rising chime for a great

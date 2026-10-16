@@ -292,6 +292,24 @@ func (g *Game) Loose(color string) string {
 	return strings.Join(g.g.Loose(color), " ")
 }
 
+// Guards returns the squares of the pieces defending the piece on square,
+// space-separated.
+func (g *Game) Guards(square string) string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	guards, _ := g.g.Watchers(square)
+	return strings.Join(guards, " ")
+}
+
+// Attackers returns the squares of the opponent's pieces attacking the piece
+// on square, space-separated.
+func (g *Game) Attackers(square string) string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	_, attackers := g.g.Watchers(square)
+	return strings.Join(attackers, " ")
+}
+
 // Describe says what a legal move does, for narrating the opponent's move.
 func (g *Game) Describe(uci string) string {
 	g.mu.Lock()

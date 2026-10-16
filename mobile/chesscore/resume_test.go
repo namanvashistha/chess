@@ -24,6 +24,10 @@ func TestCallsTheAppMakes(t *testing.T) {
 			_ = g.LegalMoves()
 			_ = g.Loose("w")
 			_ = g.Loose("b")
+			for _, sq := range []string{"e4", "d5", "a1", "zz", ""} {
+				_ = g.Guards(sq)
+				_ = g.Attackers(sq)
+			}
 		}
 		_ = g.Eval(2)
 		_ = g.Candidates(4)

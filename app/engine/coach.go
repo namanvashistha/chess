@@ -263,3 +263,32 @@ func (g *Game) Loose(color string) []string {
 func defended(gs GameState, i int, white bool) bool {
 	return isSquareAttacked(gs, uint64(1)<<uint(i), white)
 }
+
+// Watchers returns the pieces bearing on the piece that stands on square:
+// guards are its own side's pieces defending it, attackers the opponent's.
+// Both are square names. An empty or unknown square has neither.
+func (g *Game) Watchers(square string) (guards, attackers []string) {
+	if len(square) != 2 || square[0] < 'a' || square[0] > 'h' || square[1] < '1' || square[1] > '8' {
+		return nil, nil
+	}
+	i := int(square[0]-'a') + 8*int(square[1]-'1')
+	gs := g.Position()
+	bit := uint64(1) << uint(i)
+	occupied := gs.WhiteBitboard | gs.BlackBitboard
+	if occupied&bit == 0 {
+		return nil, nil
+	}
+	own := gs.BlackBitboard
+	if gs.WhiteBitboard&bit != 0 {
+		own = gs.WhiteBitboard
+	}
+	for att := attackersTo(gs, bit, occupied) &^ bit; att != 0; att &= att - 1 {
+		j := bits.TrailingZeros64(att)
+		if own&(uint64(1)<<uint(j)) != 0 {
+			guards = append(guards, squareName(j))
+		} else {
+			attackers = append(attackers, squareName(j))
+		}
+	}
+	return guards, attackers
+}

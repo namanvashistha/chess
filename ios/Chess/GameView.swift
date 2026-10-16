@@ -68,7 +68,7 @@ private struct HomeScreen: View {
                     BrandMark()
                     Text("Cozy Chess").font(Typeface.display(16, .bold))
                     Spacer()
-                    Button { settings = true } label: {
+                    Button { Haptics.tap(); settings = true } label: {
                         Image(systemName: "gearshape").font(.system(size: 15, weight: .medium)).frame(width: 30, height: 30)
                     }
                     .buttonStyle(.glass)
@@ -109,7 +109,7 @@ private struct HomeScreen: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
 
-                Button { start(.passAndPlay, opponent) } label: {
+                Button { Haptics.tap(); start(.passAndPlay, opponent) } label: {
                     Label("Pass & play on this phone", systemImage: "person.2").frame(maxWidth: .infinity, minHeight: 40)
                 }
                 .font(Typeface.display(15, .bold))
@@ -127,13 +127,10 @@ private struct HomeScreen: View {
         .sheet(isPresented: $settings) { SettingsSheet().presentationDetents([.height(260)]) }
     }
 
-    /// The tagline for a new player; their numbers once they have some.
+    /// The tagline, or a nudge back to the game in progress. Numbers stay in
+    /// Recent games: the header welcomes, it doesn't keep score.
     private var supportingLine: String {
-        var parts: [String] = []
-        if Stats.streak > 1 { parts.append("\(Stats.streak)-day streak") }
-        if let a = Stats.averageAccuracy { parts.append("\(a)% accuracy") }
-        if saved != nil && parts.isEmpty { return "Your game is where you left it." }
-        return parts.isEmpty ? "See the game, one calm move at a time." : parts.joined(separator: "  ·  ")
+        saved == nil ? "See the game, one calm move at a time." : "Your game is where you left it."
     }
 
     private var greeting: String {
@@ -192,6 +189,7 @@ private struct ContinueCard: View {
                         .foregroundStyle(Palette.accentText)
                     Text(saved.passAndPlay ? "Pass & play" : "vs \(Opponent(rawValue: saved.opponent)?.name ?? "Flint")")
                         .font(Typeface.display(21))
+                        .lineLimit(1).minimumScaleFactor(0.8)
                     Text("Move \(saved.moves.count / 2 + 1)" + (saved.trail.isEmpty ? "" : " · \(saved.trail.count) rated"))
                         .font(.system(size: 13.5)).foregroundStyle(Palette.mist)
                     TrailDots(trail: Array(saved.trail.suffix(12)))
@@ -203,7 +201,7 @@ private struct ContinueCard: View {
             .padding(12)
             .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableStyle(scale: 0.98))
         .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 22))
     }
 }
@@ -238,6 +236,8 @@ private struct OpponentButton: View {
         Button(action: action) {
             VStack(spacing: 6) {
                 OpponentAvatar(opponent: opponent, size: 34)
+                    .scaleEffect(selected ? 1.08 : 1)
+                    .animation(.spring(response: 0.35, dampingFraction: 0.5), value: selected)
                 Text(opponent.name).font(Typeface.display(15, .bold))
                 Text(opponent.subtitle).font(.system(size: 11.5)).foregroundStyle(Palette.mist)
             }
@@ -245,7 +245,7 @@ private struct OpponentButton: View {
             .padding(.vertical, 12)
             .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableStyle())
         .glassEffect(selected ? .regular.tint(Palette.accent.opacity(0.25)).interactive() : .regular.interactive(),
                      in: .rect(cornerRadius: 16))
         .overlay {
@@ -379,6 +379,8 @@ struct StaticBoard: View {
 private struct GameScreen: View {
     let model: GameModel
     let back: () -> Void
+    /// How far the screen has been pulled from the left edge, on the way home.
+    @State private var pull: CGFloat = 0
 
     var body: some View {
         ZStack {
@@ -389,6 +391,12 @@ private struct GameScreen: View {
                 CapturedRow(pieces: model.captured(by: "w"), lead: model.materialLead(for: "w"))
                 CoachView(card: model.coach, opponent: model.opponent)
                     .padding(.top, 4)
+                    .contentShape(.rect)
+                    // Swipe right for the move before, left for the move after.
+                    .gesture(DragGesture(minimumDistance: 24).onEnded { v in
+                        guard abs(v.translation.width) > abs(v.translation.height), abs(v.translation.width) > 40 else { return }
+                        withAnimation(.smooth(duration: 0.3)) { model.step(v.translation.width > 0 ? -1 : 1) }
+                    })
                 MoveTrail(model: model)
                 Spacer(minLength: 0)
                 Dock(model: model)
@@ -403,6 +411,25 @@ private struct GameScreen: View {
             }
         }
         .animation(.spring(response: 0.5, dampingFraction: 0.75), value: model.finish)
+        .animation(.smooth(duration: 0.25), value: model.reviewing)
+        .offset(x: pull)
+        // The iOS back gesture: pull from the left edge to go home.
+        .overlay(alignment: .leading) {
+            Color.clear
+                .frame(width: 16)
+                .contentShape(.rect)
+                .padding(.top, 80)
+                .gesture(DragGesture(minimumDistance: 8, coordinateSpace: .global)
+                    .onChanged { v in pull = max(0, v.translation.width) }
+                    .onEnded { v in
+                        if v.translation.width > 110 || v.predictedEndTranslation.width > 260 {
+                            Haptics.tap()
+                            back()
+                        } else {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { pull = 0 }
+                        }
+                    })
+        }
     }
 }
 
@@ -412,7 +439,7 @@ private struct TopBar: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Button(action: back) {
+            Button { Haptics.tap(); back() } label: {
                 Image(systemName: "chevron.left").font(.system(size: 15, weight: .semibold)).frame(width: 30, height: 30)
             }
             .buttonStyle(.glass)
@@ -580,7 +607,7 @@ private struct MoveTrail: View {
                                     .padding(.horizontal, 10).padding(.vertical, 7)
                                     .contentShape(.capsule)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(PressableStyle(scale: 0.92))
                                 .glassEffect(model.reviewing == e.id ? .regular.tint(Palette.accent.opacity(0.3)) : .regular,
                                              in: .capsule)
                                 .id(e.id)
@@ -596,6 +623,22 @@ private struct MoveTrail: View {
                     .onChange(of: model.trail.count) { _, _ in
                         if let last = model.trail.last { withAnimation { proxy.scrollTo(last.id, anchor: .trailing) } }
                     }
+                    .onChange(of: model.reviewing) { _, id in
+                        if let id { withAnimation { proxy.scrollTo(id, anchor: .center) } }
+                    }
+                }
+                if model.reviewing != nil {
+                    HStack {
+                        Label("Swipe the card to step through", systemImage: "hand.draw")
+                            .font(.system(size: 12.5)).foregroundStyle(Palette.mist)
+                        Spacer()
+                        Button("Back to game") { Haptics.tap(); model.endReview() }
+                            .font(.system(size: 13, weight: .semibold))
+                            .buttonStyle(.glass)
+                            .buttonBorderShape(.capsule)
+                    }
+                    .padding(.horizontal, 2)
+                    .transition(.opacity)
                 }
             }
         }
@@ -607,6 +650,8 @@ private struct MoveTrail: View {
 private struct Dock: View {
     let model: GameModel
     @State private var confirm: Confirm?
+    @State private var undos = 0
+    @State private var hints = 0
     /// One content height for every dock button, so the row lines up.
     private static let height: CGFloat = 26
 
@@ -623,7 +668,15 @@ private struct Dock: View {
     var body: some View {
         GlassEffectContainer(spacing: 8) {
             HStack(spacing: 8) {
-                Button(action: model.undo) { Image(systemName: "arrow.uturn.backward").frame(width: 30, height: Self.height) }
+                Button {
+                    Haptics.tap()
+                    undos += 1
+                    model.undo()
+                } label: {
+                    Image(systemName: "arrow.uturn.backward")
+                        .symbolEffect(.rotate.counterClockwise.byLayer, options: .speed(2), value: undos)
+                        .frame(width: 30, height: Self.height)
+                }
                     .buttonStyle(.glass)
                     .buttonBorderShape(.capsule)
                     .disabled(model.busy || model.trail.isEmpty)
@@ -643,14 +696,19 @@ private struct Dock: View {
                 .confirmationDialog(confirm?.title ?? "", isPresented: confirming, titleVisibility: .visible,
                                     presenting: confirm) { c in
                     Button(c.action, role: .destructive) {
+                        Haptics.tap(.medium)
                         if c == .newGame { model.start(model.mode, opponent: model.opponent) } else { model.resign() }
                     }
                 } message: { c in
                     Text(c.message)
                 }
-                Button(action: model.hint) {
+                Button {
+                    Haptics.tap()
+                    hints += 1
+                    model.hint()
+                } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: "sparkles")
+                        Image(systemName: "sparkles").symbolEffect(.bounce, value: hints)
                         Text(model.hintsLeft > 0 ? "Show me" : "No hints")
                         if model.hintsLeft > 0 {
                             Text("\(model.hintsLeft)").font(.system(size: 12, weight: .bold)).monospacedDigit()
@@ -695,12 +753,16 @@ private struct FinishCard: View {
                     Stat(value: "\(finish.blunders)", label: "Blunders")
                 }
                 .padding(.bottom, 12)
-                Button("Play again", action: again).buttonStyle(PrimaryButtonStyle())
-                Button("Home", action: home)
-                    .font(Typeface.display(15, .bold))
-                    .buttonStyle(.plain)
-                    .foregroundStyle(Palette.mist)
-                    .padding(.top, 8)
+                VStack(spacing: 14) {
+                    Button("Play again", action: again).buttonStyle(PrimaryButtonStyle())
+                    // Below the primary button's pressed-in edge, as a real secondary action.
+                    Button { Haptics.tap(); home() } label: { Text("Home").frame(maxWidth: .infinity, minHeight: 30) }
+                        .font(Typeface.display(16, .bold))
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.capsule)
+                        .controlSize(.large)
+                        .padding(.top, 6)
+                }
             }
             .padding(.horizontal, 22).padding(.vertical, 26)
             .glassEffect(.regular, in: .rect(cornerRadius: 30))
