@@ -22,6 +22,7 @@ final class Sound {
     private let engine = AVAudioEngine()
     private var players: [AVAudioPlayerNode] = []
     private var next = 0
+    private var idle: Task<Void, Never>?
     private var buffers: [Feedback.Kind: AVAudioPCMBuffer] = [:]
     private let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
 
@@ -59,6 +60,15 @@ final class Sound {
         next = (next + 1) % players.count
         p.scheduleBuffer(buffer, at: nil, options: .interrupts)
         if !p.isPlaying { p.play() }
+        // Let the audio hardware sleep once the sound has rung out, instead of
+        // running for the whole session.
+        idle?.cancel()
+        idle = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled, let self else { return }
+            self.players.forEach { $0.stop() }
+            self.engine.pause()
+        }
     }
 
     /// Renders (frequency, start, length, gain) partials with a fast attack and

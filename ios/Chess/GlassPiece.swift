@@ -4,13 +4,15 @@ import SwiftUI
 /// glass for Black, lit from the top left, with a contact shadow where its base
 /// meets the board.
 ///
-/// The body is the system Liquid Glass material cut to the piece's own shape,
-/// so it picks up the square beneath it. A gradient over it gives the milk or
-/// smoke, and two clipped strokes give the lit and the shaded edge.
+/// The glass is baked: a translucent tint lets the square show through, a
+/// gradient over it gives the milk or smoke, and two clipped strokes give the
+/// lit and the shaded edge. It used to be the live Liquid Glass material, but
+/// 32 live refractions redrawn every frame ran the GPU hot; this looks nearly
+/// the same and renders once, as one cached layer.
 struct GlassPiece: View {
     let code: Character // FEN letter
     var lifted = false
-    /// Skips the live glass layer, for drawing into an image, which can't capture it.
+    /// Kept for callers that draw pieces into images; pieces are always baked now.
     var flat = false
 
     private var isWhite: Bool { code.isUppercase }
@@ -22,10 +24,8 @@ struct GlassPiece: View {
             let shape = PieceSilhouette(kind: kind)
             ZStack {
                 contactShadow(s)
-                if !flat {
-                    Color.clear
-                        .glassEffect(.regular.tint(isWhite ? .white.opacity(0.35) : .black.opacity(0.55)), in: shape)
-                }
+                // The glass tint, so the square beneath reads through the piece.
+                shape.fill(isWhite ? Color.white.opacity(0.35) : Color.black.opacity(0.55))
                 // A hairline halo just outside the silhouette: dark around White,
                 // light around Black. It reads as the edge of an object on a
                 // surface, not as an outline.
@@ -48,6 +48,8 @@ struct GlassPiece: View {
             .padding(.horizontal, s * 0.04)
             .padding(.top, s * 0.02)
             .padding(.bottom, s * 0.05)
+            // One offscreen layer per piece, drawn once and reused while it glides.
+            .drawingGroup()
         }
         .aspectRatio(1, contentMode: .fit)
         .accessibilityHidden(true)
