@@ -147,6 +147,16 @@ struct SavedGame: Codable {
     static func clear() { UserDefaults.standard.removeObject(forKey: key) }
 }
 
+/// A move worth replaying: the boards either side of it and what the coach said.
+struct BestMove {
+    let before: [Character]
+    let after: [Character]
+    let move: BoardMove
+    let moveNumber: Int
+    let kind: CoachCard.Kind
+    let text: String
+}
+
 /// A capture's glass shards.
 struct Burst: Identifiable, Equatable {
     let id: Int
@@ -172,6 +182,8 @@ struct Finish: Equatable {
     let blunders: Int
     /// Good and great moves together, for the finish card.
     var goodMoves = 0
+    /// The player's best move of the game, replayed at the top of the card.
+    var best: BestMove?
     /// The opponent this win opened up, if it was the one that did.
     var unlocked: Opponent?
     /// The first win ever against this opponent.
@@ -502,6 +514,19 @@ final class GameModel {
         return (Array(g.board()), moves.indices.contains(ply) ? BoardMove(uci: moves[ply], board: before) : nil)
     }
 
+    /// The player's best move: the strongest verdict, the latest among equals.
+    /// The finish card leads with it, so every game ends on something good.
+    private func bestMove() -> BestMove? {
+        let rank: [CoachCard.Kind: Int] = [.great: 4, .good: 3, .inaccuracy: 2, .mistake: 1, .blunder: 0]
+        let mine = mode == .engine ? trail.filter { $0.ply % 2 == 0 } : trail
+        guard let e = mine.max(by: { (rank[$0.card.kind] ?? 0, $0.ply) < (rank[$1.card.kind] ?? 0, $1.ply) }),
+              (rank[e.card.kind] ?? 0) >= 3,
+              let after = position(afterPly: e.ply), let move = after.move,
+              let before = position(afterPly: e.ply - 1) else { return nil }
+        return BestMove(before: before.board, after: after.board, move: move, moveNumber: e.ply / 2 + 1,
+                        kind: e.card.kind, text: e.card.text)
+    }
+
     // MARK: - Sharing
 
     /// The great move the coach card is showing, live or in review.
@@ -774,6 +799,7 @@ final class GameModel {
             try? await Task.sleep(for: .seconds(0.9))
             var shown = f
             shown.goodMoves = trail.filter { $0.card.kind == .good || $0.card.kind == .great }.count
+            shown.best = bestMove()
             finish = shown
             emit(.lose)
             Stats.record(accuracy: f.accuracy, great: f.great)
@@ -953,6 +979,7 @@ final class GameModel {
                 else { final.towardNext = (next, Stats.wins(against: opponent)) }
             }
         }
+        final.best = bestMove()
         Task {
             try? await Task.sleep(for: .seconds(1.1))
             finish = final

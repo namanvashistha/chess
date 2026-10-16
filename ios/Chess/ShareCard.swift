@@ -100,7 +100,6 @@ struct ShareMomentButton: View {
         ShareLink(item: moment, preview: SharePreview(moment.title, image: thumbnail ?? Image(systemName: "sparkles"))) {
             if let label {
                 Label(label, systemImage: "square.and.arrow.up")
-                    .frame(maxWidth: .infinity, minHeight: 30)
             } else {
                 Image(systemName: "square.and.arrow.up")
                     .font(.system(size: 14, weight: .semibold))

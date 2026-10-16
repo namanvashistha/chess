@@ -993,6 +993,8 @@ private struct Dock: View {
     }
 }
 
+/// The end of a game, in one calm column: what happened, your best move played
+/// again, one line of numbers, what's next, and the way on.
 private struct FinishCard: View {
     let finish: Finish
     let share: ShareMoment?
@@ -1004,96 +1006,102 @@ private struct FinishCard: View {
     var body: some View {
         ZStack {
             Rectangle().fill(.ultraThinMaterial).ignoresSafeArea()
-            VStack(spacing: 6) {
-                Text(finish.outcome == .won ? "♔" : finish.outcome == .lost ? "♚" : "½")
-                    .font(Typeface.display(54))
-                if finish.firstWin {
-                    Label("First win", systemImage: "star.fill")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Palette.great)
-                        .padding(.horizontal, 10).padding(.vertical, 4)
-                        .background(Palette.greatFill, in: .capsule)
+            VStack(spacing: 20) {
+                // What happened.
+                VStack(spacing: 4) {
+                    Text(finish.title).font(Typeface.display(28)).tracking(-0.5)
+                        .multilineTextAlignment(.center)
+                    Text(finish.firstWin ? "Your first win · \(finish.text)" : finish.text)
+                        .font(.system(size: 14.5)).foregroundStyle(Palette.mist)
+                        .multilineTextAlignment(.center)
                 }
-                Text(finish.title).font(Typeface.display(28)).tracking(-0.5).multilineTextAlignment(.center)
-                Text(finish.text).font(.system(size: 15)).foregroundStyle(Palette.mist).multilineTextAlignment(.center)
-                    .padding(.bottom, 10)
-                HStack(spacing: 8) {
-                    Stat(value: finish.accuracy.map { "\($0)%" } ?? "–", label: "Accuracy")
-                    Stat(value: "\(finish.great)", label: "Great")
-                    Stat(value: "\(finish.goodMoves)", label: "Good moves")
-                }
-                .padding(.bottom, 12)
-                if let toward = finish.towardNext {
-                    HStack(spacing: 10) {
-                        HStack(spacing: 4) {
-                            ForEach(0..<Opponent.winsToUnlock, id: \.self) { k in
-                                Circle().fill(k < toward.wins ? Palette.accent : Palette.mist.opacity(0.3)).frame(width: 8, height: 8)
+
+                // The best move, played again.
+                if let best = finish.best {
+                    VStack(spacing: 10) {
+                        BestMoveReplay(best: best)
+                            .frame(width: 196, height: 196)
+                        VStack(spacing: 2) {
+                            HStack(spacing: 5) {
+                                if let symbol = best.kind.symbol { Image(systemName: symbol).font(.system(size: 11, weight: .bold)) }
+                                Text("Your best move · move \(best.moveNumber)")
                             }
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(verdictColor(best.kind))
+                            Text(best.text).font(.system(size: 13)).foregroundStyle(Palette.mist)
+                                .multilineTextAlignment(.center).lineLimit(2)
                         }
-                        Text("\(Opponent.winsToUnlock - toward.wins) more \(Opponent.winsToUnlock - toward.wins == 1 ? "win" : "wins") to face the \(toward.next.name)")
-                            .font(.system(size: 13.5, weight: .medium))
-                        Spacer(minLength: 0)
                     }
-                    .padding(12)
-                    .background(Palette.statFill, in: .rect(cornerRadius: 16))
-                    .padding(.bottom, 12)
                 }
-                if let next = finish.unlocked {
-                    HStack(spacing: 10) {
-                        Image(systemName: "lock.open.fill").foregroundStyle(Palette.great)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("The \(next.name) awaits").font(Typeface.display(16))
-                            Text(next.subtitle).font(.system(size: 12.5)).foregroundStyle(Palette.mist)
+
+                // One line of numbers, and what comes next.
+                VStack(spacing: 8) {
+                    Text(numbers).font(.system(size: 13, weight: .medium)).monospacedDigit()
+                        .foregroundStyle(Palette.mist)
+                    if let next = finish.unlocked {
+                        Label("The \(next.name) is open", systemImage: "lock.open.fill")
+                            .font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Palette.great)
+                    } else if let toward = finish.towardNext {
+                        HStack(spacing: 8) {
+                            HStack(spacing: 3) {
+                                ForEach(0..<Opponent.winsToUnlock, id: \.self) { k in
+                                    Circle().fill(k < toward.wins ? Palette.accent : Palette.mist.opacity(0.3)).frame(width: 6, height: 6)
+                                }
+                            }
+                            let left = Opponent.winsToUnlock - toward.wins
+                            Text("\(left) more \(left == 1 ? "win" : "wins") to face the \(toward.next.name)")
                         }
-                        Spacer()
+                        .font(.system(size: 13.5, weight: .medium))
                     }
-                    .padding(12)
-                    .background(Palette.greatFill.opacity(0.6), in: .rect(cornerRadius: 16))
-                    .padding(.bottom, 12)
                 }
-                VStack(spacing: 14) {
+
+                // The way on, laid out like the game's dock: home beside the one
+                // clear next step.
+                HStack(alignment: .top, spacing: 10) {
+                    Button { Haptics.tap(); home() } label: {
+                        Image(systemName: "house.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(Palette.ink)
+                            .frame(width: 58, height: 58)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(PressableStyle(scale: 0.94))
+                    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 20))
+                    .accessibilityLabel("Home")
                     if let next = finish.unlocked, let tryNext {
                         Button("Play the \(next.name)") { tryNext() }.buttonStyle(PrimaryButtonStyle())
                     } else {
                         Button("Play again", action: again).buttonStyle(PrimaryButtonStyle())
                     }
-                    // Below the primary button's pressed-in edge, as real secondary actions.
-                    HStack(spacing: 10) {
-                        Button { Haptics.tap(); home() } label: { Text("Home").frame(maxWidth: .infinity, minHeight: 30) }
-                        if let share {
-                            ShareMomentButton(moment: share, label: "Share")
-                        }
-                    }
-                    .font(Typeface.display(16, .bold))
-                    .buttonStyle(.glass)
-                    .buttonBorderShape(.capsule)
-                    .controlSize(.large)
-                    .padding(.top, 6)
+                }
+                .padding(.top, 4)
+            }
+            .padding(.horizontal, 24).padding(.top, 28).padding(.bottom, 26)
+            .glassEffect(.regular, in: .rect(cornerRadius: 32))
+            .overlay(alignment: .topTrailing) {
+                if let share {
+                    ShareMomentButton(moment: share)
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.circle)
+                        .padding(14)
                 }
             }
-            .padding(.horizontal, 22).padding(.vertical, 26)
-            .glassEffect(.regular, in: .rect(cornerRadius: 30))
             .overlay(alignment: .top) {
                 if finish.outcome == .won { Celebration().offset(y: 40) }
             }
-            .padding(24)
+            .padding(22)
         }
         .foregroundStyle(Palette.ink)
     }
-}
 
-private struct Stat: View {
-    let value: String
-    let label: String
-
-    var body: some View {
-        VStack(spacing: 2) {
-            Text(value).font(Typeface.display(22)).monospacedDigit()
-            Text(label.uppercased()).font(.system(size: 10.5, weight: .semibold)).tracking(0.5).foregroundStyle(Palette.mist)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(Palette.statFill, in: .rect(cornerRadius: 16))
+    /// "94% accuracy · 2 great · 3 good", leaving out what's zero or unknown.
+    private var numbers: String {
+        var parts: [String] = []
+        if let a = finish.accuracy { parts.append("\(a)% accuracy") }
+        if finish.great > 0 { parts.append("\(finish.great) great") }
+        let good = finish.goodMoves - finish.great
+        if good > 0 { parts.append("\(good) good") }
+        return parts.isEmpty ? "Every game teaches something" : parts.joined(separator: " · ")
     }
 }
 
@@ -1125,5 +1133,71 @@ private struct Celebration: View {
         .allowsHitTesting(false)
         .accessibilityHidden(true)
         .onAppear { flown = true }
+    }
+}
+
+/// The finish card's replay: the board before the move, then the piece glides
+/// to where it went and anything it took fades. Tap to see it again.
+private struct BestMoveReplay: View {
+    let best: BestMove
+    @State private var played = false
+
+    var body: some View {
+        GeometryReader { geo in
+            let size = geo.size.width, q = size / 8
+            let m = best.move
+            let lift = CGPoint(x: CGFloat(Squares.file(m.from) - Squares.file(m.to)) * q,
+                               y: CGFloat(Squares.row(m.from) - Squares.row(m.to)) * q)
+            ZStack(alignment: .topLeading) {
+                VStack(spacing: 0) {
+                    ForEach(0..<8, id: \.self) { r in
+                        HStack(spacing: 0) {
+                            ForEach(0..<8, id: \.self) { c in
+                                let sq = r * 8 + c
+                                ZStack {
+                                    Rectangle().fill((r + c) % 2 == 1 ? Palette.squareDark : Palette.squareLight)
+                                    if sq == m.from || sq == m.to {
+                                        Rectangle().fill(Palette.lastMove.opacity(sq == m.to ? (played ? 0.45 : 0.15) : 0.26))
+                                    }
+                                }
+                                .frame(width: q, height: q)
+                            }
+                        }
+                    }
+                }
+                // What it took, fading as the piece arrives.
+                if best.before[m.to] != "." {
+                    GlassPiece(code: best.before[m.to])
+                        .frame(width: q, height: q)
+                        .position(center(m.to, size))
+                        .opacity(played ? 0 : 1)
+                }
+                ForEach(0..<64, id: \.self) { i in
+                    if best.after[i] != "." {
+                        GlassPiece(code: best.after[i], lifted: i == m.to && !played)
+                            .frame(width: q, height: q)
+                            .position(center(i, size))
+                            .offset(x: i == m.to && !played ? lift.x : 0, y: i == m.to && !played ? lift.y : 0)
+                            .zIndex(i == m.to ? 20 : Double(i / 8))
+                    }
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .shadow(color: .black.opacity(0.18), radius: 8, y: 5)
+        .contentShape(Rectangle())
+        .onTapGesture { replay() }
+        .task { replay() }
+        .accessibilityLabel("Your best move, move \(best.moveNumber)")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private func replay() {
+        played = false
+        Task {
+            try? await Task.sleep(for: .seconds(0.7))
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) { played = true }
+            Haptics.tap(.soft, intensity: 0.6)
+        }
     }
 }
