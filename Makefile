@@ -1,4 +1,4 @@
-.PHONY: build uci test vet run up dev bench
+.PHONY: build uci test vet run up dev bench ios-engine
 
 # This project has no cgo dependencies, and the Docker build already sets this.
 # Keeping it off locally also avoids a Go 1.22 / recent-macOS link failure
@@ -57,3 +57,14 @@ up:
 # Local dev stack with hot reload (base + dev override).
 dev:
 	docker compose -f docker-compose.yaml -f docker-compose.dev.yml up --build
+
+# Build the engine into ios/Frameworks/Chesscore.xcframework for the iOS app.
+# Needs Xcode and gomobile/gobind pinned to the same x/mobile as mobile/go.mod
+# (newer x/mobile needs a newer Go). Build them without cgo, or macOS refuses
+# to load them ("missing LC_UUID load command"):
+#   CGO_ENABLED=0 go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20240806205939-81131f6468ab
+#   CGO_ENABLED=0 go install golang.org/x/mobile/cmd/gobind@v0.0.0-20240806205939-81131f6468ab
+# The bind sets CGO_ENABLED back to 1: gomobile links the framework through cgo.
+ios-engine:
+	cd mobile && CGO_ENABLED=0 go test ./... && CGO_ENABLED=1 gomobile bind -target=ios,iossimulator -iosversion=17.0 \
+		-o ../ios/Frameworks/Chesscore.xcframework ./chesscore
