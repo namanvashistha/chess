@@ -52,7 +52,7 @@ Learn chess the cozy way. A coach explains every move in plain words, lines of l
 
 Cozy Chess is chess without the pressure.
 
-Start against Easy, a true beginner you can beat from your very first game. Win three to open Medium, then Hard — or pass the phone to a friend. After every move a calm coach tells you, in plain words, whether it was great, good or a slip, and why.
+Start against the Club Player, a true beginner you can beat from your very first game. Win three to face the Master, then the Grandmaster — or pass the phone to a friend. After every move a calm coach tells you, in plain words, whether it was great, good or a slip, and why.
 
 SEE THE GAME
 • Lines of light show where a piece can go

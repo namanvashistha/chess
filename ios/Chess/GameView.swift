@@ -279,7 +279,7 @@ private struct OpponentButton: View {
                                     .frame(width: 5, height: 5)
                             }
                         }
-                        Text("Win 3 \(prev.name)").font(.system(size: 11)).foregroundStyle(Palette.mist)
+                        Text("\(Opponent.winsToUnlock) wins to open").font(.system(size: 11)).foregroundStyle(Palette.mist)
                     }
                 }
             }
@@ -297,7 +297,7 @@ private struct OpponentButton: View {
         }
         .animation(.easeOut(duration: 0.15), value: selected)
         .accessibilityAddTraits(selected ? .isSelected : [])
-        .accessibilityHint(open ? "" : "Locked. Win \(Opponent.winsToUnlock) \(opponent.previous?.name ?? "") games to open it.")
+        .accessibilityHint(open ? "" : "Locked. Beat the \(opponent.previous?.name ?? "") \(Opponent.winsToUnlock) times to open it.")
     }
 }
 
@@ -593,15 +593,19 @@ private struct TopBar: View {
                 }
             }
             Spacer()
-            VStack(alignment: .trailing, spacing: 1) {
-                Text(model.accuracy.map { "\($0)%" } ?? "–").font(Typeface.display(17)).monospacedDigit()
-                    .contentTransition(.numericText())
-                    .animation(.snappy, value: model.accuracy)
-                Text(model.accuracy == nil ? "AFTER \(GameModel.accuracyAfter) MOVES" : "ACCURACY")
-                    .font(.system(size: 9.5, weight: .semibold)).tracking(0.6).foregroundStyle(Palette.mist)
+            // Appears once there is something to show, rather than a placeholder.
+            if let accuracy = model.accuracy {
+                VStack(alignment: .trailing, spacing: 1) {
+                    Text("\(accuracy)%").font(Typeface.display(17)).monospacedDigit()
+                        .contentTransition(.numericText())
+                        .animation(.snappy, value: accuracy)
+                    Text("ACCURACY")
+                        .font(.system(size: 9.5, weight: .semibold)).tracking(0.6).foregroundStyle(Palette.mist)
+                }
+                .padding(.horizontal, 12).padding(.vertical, 7)
+                .glassEffect(.regular, in: .rect(cornerRadius: 14))
+                .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
-            .padding(.horizontal, 12).padding(.vertical, 7)
-            .glassEffect(.regular, in: .rect(cornerRadius: 14))
         }
         .padding(.top, 4)
     }
@@ -844,9 +848,11 @@ private struct Dock: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles").symbolEffect(.bounce, value: hints)
-                        Text(model.hintsLeft > 0 ? "Show me" : "No hints")
-                        if model.hintsLeft > 0 {
+                        Text(model.hintIsFree && !model.hintRevealed ? "Show the move" : model.hintsLeft > 0 ? "Show me" : "No hints")
+                        if model.hintsLeft > 0 && !(model.hintIsFree && !model.hintRevealed) {
                             Text("\(model.hintsLeft)").font(.system(size: 12, weight: .bold)).monospacedDigit()
+                                .contentTransition(.numericText())
+                                .animation(.snappy, value: model.hintsLeft)
                                 .padding(.horizontal, 6).padding(.vertical, 1)
                                 .background(.white.opacity(0.25), in: .capsule)
                         }
@@ -882,7 +888,14 @@ private struct FinishCard: View {
             VStack(spacing: 6) {
                 Text(finish.outcome == .won ? "♔" : finish.outcome == .lost ? "♚" : "½")
                     .font(Typeface.display(54))
-                Text(finish.title).font(Typeface.display(30)).tracking(-0.5)
+                if finish.firstWin {
+                    Label("First win", systemImage: "star.fill")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Palette.great)
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(Palette.greatFill, in: .capsule)
+                }
+                Text(finish.title).font(Typeface.display(28)).tracking(-0.5).multilineTextAlignment(.center)
                 Text(finish.text).font(.system(size: 15)).foregroundStyle(Palette.mist).multilineTextAlignment(.center)
                     .padding(.bottom, 10)
                 HStack(spacing: 8) {
@@ -891,11 +904,26 @@ private struct FinishCard: View {
                     Stat(value: "\(finish.blunders)", label: "Blunders")
                 }
                 .padding(.bottom, 12)
+                if let toward = finish.towardNext {
+                    HStack(spacing: 10) {
+                        HStack(spacing: 4) {
+                            ForEach(0..<Opponent.winsToUnlock, id: \.self) { k in
+                                Circle().fill(k < toward.wins ? Palette.accent : Palette.mist.opacity(0.3)).frame(width: 8, height: 8)
+                            }
+                        }
+                        Text("\(Opponent.winsToUnlock - toward.wins) more \(Opponent.winsToUnlock - toward.wins == 1 ? "win" : "wins") to face the \(toward.next.name)")
+                            .font(.system(size: 13.5, weight: .medium))
+                        Spacer(minLength: 0)
+                    }
+                    .padding(12)
+                    .background(Palette.statFill, in: .rect(cornerRadius: 16))
+                    .padding(.bottom, 12)
+                }
                 if let next = finish.unlocked {
                     HStack(spacing: 10) {
                         Image(systemName: "lock.open.fill").foregroundStyle(Palette.great)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text("\(next.name) is open").font(Typeface.display(16))
+                            Text("The \(next.name) awaits").font(Typeface.display(16))
                             Text(next.subtitle).font(.system(size: 12.5)).foregroundStyle(Palette.mist)
                         }
                         Spacer()
@@ -906,7 +934,7 @@ private struct FinishCard: View {
                 }
                 VStack(spacing: 14) {
                     if let next = finish.unlocked, let tryNext {
-                        Button("Play \(next.name.lowercased()) next") { tryNext() }.buttonStyle(PrimaryButtonStyle())
+                        Button("Play the \(next.name)") { tryNext() }.buttonStyle(PrimaryButtonStyle())
                     } else {
                         Button("Play again", action: again).buttonStyle(PrimaryButtonStyle())
                     }
@@ -926,6 +954,9 @@ private struct FinishCard: View {
             }
             .padding(.horizontal, 22).padding(.vertical, 26)
             .glassEffect(.regular, in: .rect(cornerRadius: 30))
+            .overlay(alignment: .top) {
+                if finish.outcome == .won { Celebration().offset(y: 40) }
+            }
             .padding(24)
         }
         .foregroundStyle(Palette.ink)
@@ -949,4 +980,31 @@ private struct Stat: View {
 
 #Preview {
     RootView()
+}
+
+/// A win: glass flecks in the app's colours rise and fall once.
+private struct Celebration: View {
+    @State private var flown = false
+    private let flecks: [(dx: CGFloat, dy: CGFloat, rot: Double, delay: Double, color: Int, size: CGFloat)] = (0..<28).map { _ in
+        (CGFloat.random(in: -170...170), CGFloat.random(in: -190 ... -60), Double.random(in: -360...360),
+         Double.random(in: 0...0.15), Int.random(in: 0..<3), CGFloat.random(in: 6...11))
+    }
+
+    var body: some View {
+        ZStack {
+            ForEach(flecks.indices, id: \.self) { i in
+                let f = flecks[i]
+                RoundedRectangle(cornerRadius: 2)
+                    .fill([Palette.great, Palette.accent, Palette.inaccuracy][f.color])
+                    .frame(width: f.size, height: f.size * 0.6)
+                    .rotationEffect(.degrees(flown ? f.rot : 0))
+                    .offset(x: flown ? f.dx : 0, y: flown ? f.dy : 0)
+                    .opacity(flown ? 0 : 1)
+                    .animation(.timingCurve(0.1, 0.8, 0.3, 1, duration: 1.4).delay(f.delay), value: flown)
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onAppear { flown = true }
+    }
 }

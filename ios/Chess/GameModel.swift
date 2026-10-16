@@ -92,7 +92,8 @@ struct GameRecord: Identifiable, Equatable, Codable {
     /// The name to show. Records saved before the rename say Pebble, Flint or Obsidian.
     var opponentName: String {
         if let level, let o = Opponent(rawValue: level) { return o.name }
-        return ["Pebble": "Easy", "Flint": "Medium", "Obsidian": "Hard"][opponent] ?? opponent
+        return ["Pebble": "Club Player", "Flint": "Master", "Obsidian": "Grandmaster",
+                "Easy": "Club Player", "Medium": "Master", "Hard": "Grandmaster"][opponent] ?? opponent
     }
 }
 
@@ -106,6 +107,8 @@ struct SavedGame: Codable {
     let great: Int
     let blunders: Int
     let hintsLeft: Int
+    /// Extra hints already given for falling behind; missing in older saves.
+    var comebacks: Int?
     let fen: String
 
     private static let key = "savedGame"
@@ -141,16 +144,33 @@ struct Finish: Equatable {
     let blunders: Int
     /// The opponent this win opened up, if it was the one that did.
     var unlocked: Opponent?
+    /// The first win ever against this opponent.
+    var firstWin = false
+    /// Wins so far toward opening the next opponent, when it is still closed.
+    var towardNext: (next: Opponent, wins: Int)?
+
+    static func == (a: Finish, b: Finish) -> Bool {
+        a.outcome == b.outcome && a.title == b.title && a.text == b.text && a.accuracy == b.accuracy
+            && a.unlocked == b.unlocked && a.firstWin == b.firstWin
+    }
 }
 
 enum Opponent: Int, CaseIterable, Identifiable {
     case easy, medium, hard
     var id: Int { rawValue }
-    var name: String { ["Easy", "Medium", "Hard"][rawValue] }
-    var subtitle: String { ["Just learning", "Knows the basics", "Plays to win"][rawValue] }
+    /// Chess titles, so each win reads as a step up.
+    var name: String { ["Club Player", "Master", "Grandmaster"][rawValue] }
+    var subtitle: String { ["Beginner", "Intermediate", "Expert"][rawValue] }
     /// Easy is a true beginner; each level above it is the engine's next step up.
     var engineLevel: String { ["beginner", "easy", "medium"][rawValue] }
-    var startLabel: String { ["Start an easy game", "Start a medium game", "Start a hard game"][rawValue] }
+    var startLabel: String { "Play the \(name)" }
+
+    /// Hints at the start of a game: the gentler the opponent, the more help.
+    var hints: Int { [5, 4, 3][rawValue] }
+    /// Extra hints handed out when the player falls behind, at most this many a game.
+    var comebackHints: Int { [4, 2, 0][rawValue] }
+    /// How far behind, in centipawns, before an extra hint is offered.
+    var behindBy: Int { [100, 150, 0][rawValue] }
 
     /// Wins against the level below that open this one.
     static let winsToUnlock = 3
@@ -192,6 +212,8 @@ final class GameModel {
     private(set) var losses: [Int] = []
     private(set) var trail: [TrailEntry] = []
     private(set) var hintsLeft = 3
+    /// Extra hints given this game because the player fell behind.
+    @ObservationIgnored private var comebacks = 0
     /// The trail entry the coach card is showing, if the player tapped one.
     private(set) var reviewing: Int? {
         didSet { if reviewing == nil { reviewBoard = nil; reviewMove = nil } }
@@ -222,6 +244,10 @@ final class GameModel {
     @ObservationIgnored private var moves: [String] = []
     /// The hint already paid for in this position, shown again for free.
     @ObservationIgnored private var hintShown: (ply: Int, uci: String, text: String)?
+    /// The piece a hint is pointing at, before it shows the whole move.
+    private(set) var nudge: Square?
+    /// True once this position's hint has shown the whole move.
+    private(set) var hintRevealed = false
     /// Accuracy is shown once there is enough to say something.
     static let accuracyAfter = 3
 
@@ -278,9 +304,12 @@ final class GameModel {
         whiteShare = 0.5
         trail = []
         moves = []
-        hintsLeft = 3
+        hintsLeft = mode == .engine ? opponent.hints : 3
+        comebacks = 0
         reviewing = nil
         hintShown = nil
+        nudge = nil
+        hintRevealed = false
         if !keepingSave { SavedGame.clear() }
         refresh()
         moveSerial += 1
@@ -304,6 +333,7 @@ final class GameModel {
         great = saved.great
         blunders = saved.blunders
         hintsLeft = saved.hintsLeft
+        comebacks = saved.comebacks ?? 0
         ids = Array(repeating: nil, count: 64)
         refresh()
         if let last = moves.last { lastMove = BoardMove(uci: last, board: board) }
@@ -317,7 +347,8 @@ final class GameModel {
     private func save() {
         guard !isOver else { SavedGame.clear(); return }
         SavedGame(passAndPlay: mode == .passAndPlay, opponent: opponent.rawValue, moves: moves, trail: trail,
-                  losses: losses, great: great, blunders: blunders, hintsLeft: hintsLeft, fen: game.fen()).store()
+                  losses: losses, great: great, blunders: blunders, hintsLeft: hintsLeft, comebacks: comebacks,
+                  fen: game.fen()).store()
     }
 
     /// Shows a past move's verdict again; tapping it twice returns to the latest.
@@ -397,6 +428,81 @@ final class GameModel {
         let accuracy = finish.accuracy.map { " · \($0)% accuracy" } ?? ""
         return ShareMoment(board: board, move: lastMove, title: "I beat \(opponent.name)",
                            detail: finish.text + accuracy, footer: "Played on Cozy Chess")
+    }
+
+    /// When the player is clearly behind and nearly out of hints, gives one
+    /// more, up to the opponent's allowance for the game.
+    private func offerComebackHint(eval: Int) -> Bool {
+        guard mode == .engine, comebacks < opponent.comebackHints, hintsLeft <= 1,
+              eval <= -opponent.behindBy else { return false }
+        comebacks += 1
+        hintsLeft += 1
+        save()
+        return true
+    }
+
+    // MARK: - What to watch
+
+    private static let value: [Character: Int] = ["p": 1, "n": 3, "b": 3, "r": 5, "q": 9, "k": 0]
+
+    /// After the opponent moves: what it means for the player, in a title and a
+    /// line. Checks first, then what the move attacks, then anything left loose,
+    /// then a chance to win something, then a tip for this stage of the game.
+    private func watchFor(_ m: BoardMove?, taken: Character?) -> (title: String, text: String, urgent: Bool) {
+        let me = "w", them = "b"
+        func name(_ sq: Square) -> String { "\(Self.pieceName(board[sq])) on \(Squares.name(sq))" }
+        func squares(_ s: String) -> [Square] { s.split(separator: " ").compactMap { Squares.parse($0) } }
+        func isMine(_ sq: Square) -> Bool { board[sq] != "." && (board[sq].isUppercase ? "w" : "b") == me }
+
+        if inCheck {
+            return ("Your king is in check", "Move it, block the line, or take the checking piece.", true)
+        }
+        if let m {
+            let mover = Self.pieceName(board[m.to])
+            // What the moved piece now hits, biggest first.
+            let hit = (0..<64).filter { isMine($0) && board[$0] != "K" && squares(game.attackers(Squares.name($0))).contains(m.to) }
+                .sorted { (Self.value[Character(board[$0].lowercased())] ?? 0) > (Self.value[Character(board[$1].lowercased())] ?? 0) }
+            if let sq = hit.first(where: { game.guards(Squares.name($0)).isEmpty }) {
+                return ("Watch your \(name(sq))", "Their \(mover) now attacks it, and nothing guards it.", true)
+            }
+            if let taken {
+                let back = !game.attackers(Squares.name(m.to)).isEmpty
+                return ("They took your \(Self.pieceName(taken))",
+                        back ? "You can take back on \(Squares.name(m.to))." : "Look for a way to win it back.", false)
+            }
+            if let sq = hit.first, (Self.value[Character(board[sq].lowercased())] ?? 0) > (Self.value[Character(board[m.to].lowercased())] ?? 0) {
+                return ("Their \(mover) eyes your \(Self.pieceName(board[sq]))",
+                        "It's guarded, but their \(mover) is worth less, so a trade would cost you.", true)
+            }
+        }
+        if let sq = loose.sorted().first {
+            return ("Your \(name(sq)) is loose", "It's attacked and nothing guards it.", true)
+        }
+        if let sq = squares(game.loose(them)).first {
+            return ("A chance", "Their \(name(sq)) is under attack and unguarded.", false)
+        }
+        return (["Your move", "Your turn", "Over to you"][moves.count / 2 % 3], tip(), false)
+    }
+
+    /// A tip that fits the position, or one of the app's gestures, each shown once.
+    private func tip() -> String {
+        let castling = game.fen().split(separator: " ").dropFirst(2).first.map(String.init) ?? ""
+        let home: [(Square, Character)] = [(57, "N"), (62, "N"), (58, "B"), (61, "B")] // b1 g1 c1 f1
+        let undeveloped = home.filter { board[$0.0] == $0.1 }.count
+        if moves.count < 16 && undeveloped >= 2 {
+            return "Bring a knight or bishop toward the centre."
+        }
+        if moves.count < 30 && board[60] == "K" && castling.contains(where: { $0 == "K" || $0 == "Q" }) {
+            return "Castling tucks your king away and brings a rook into play."
+        }
+        let gestures = [("tip.hold", "Hold any piece to see what guards it and what attacks it."),
+                        ("tip.drag", "You can drag pieces as well as tap them."),
+                        ("tip.swipe", "Swipe this card to look back at earlier moves.")]
+        if let (key, text) = gestures.first(where: { !UserDefaults.standard.bool(forKey: $0.0) }) {
+            UserDefaults.standard.set(true, forKey: key)
+            return text
+        }
+        return "Before you move, ask what their last move wants."
     }
 
     // MARK: - Touch
@@ -482,12 +588,17 @@ final class GameModel {
     /// True when "Show me" would repeat a hint already used in this position.
     var hintIsFree: Bool { hintShown?.ply == moves.count }
 
+    /// Hints come in two steps. The first points at the piece to move; asking
+    /// again in the same position shows the move and why, at no extra cost.
     func hint() {
         guard playerToMove else { return }
         selected = nil
         if let shown = hintShown, shown.ply == moves.count, let m = BoardMove(uci: shown.uci, board: board) {
+            nudge = nil
+            hintRevealed = true
             rays = makeRays(.hint, [m])
             say(.great, "✦", "Try this", shown.text)
+            emit(.good)
             return
         }
         guard hintsLeft > 0 else { return }
@@ -505,14 +616,19 @@ final class GameModel {
                 guard !best.isEmpty, game === self.game, let m = BoardMove(uci: best, board: self.board) else { return }
                 let text = "\(san): \(why)"
                 self.hintShown = (ply, best, text)
-                self.rays = self.makeRays(.hint, [m])
-                self.say(.great, "✦", "Try this", text)
-                self.emit(.good)
+                self.hintRevealed = false
+                self.nudge = m.from
+                let piece = Self.pieceName(self.board[m.from])
+                self.say(.coach, "✦", "Look at your \(piece)",
+                         "Your \(piece) on \(Squares.name(m.from)) has a good move. Find it, or tap Show the move.")
+                self.emit(.select)
             }
         }
     }
 
     func undo() {
+        nudge = nil
+        hintRevealed = false
         var steps = mode == .engine ? 2 : 1
         if mode == .engine && turn == "b" { steps = 1 } // the engine has not replied yet
         guard !busy, status != "resigned", moves.count >= steps else { return }
@@ -633,23 +749,18 @@ final class GameModel {
             guard game === self.game else { return }
             rays = nil
             thinking = false
+            let taken = BoardMove(uci: choice, board: board).flatMap { $0.capture ? board[$0.to] : nil }
             let san = apply(choice)
             busy = false
-            let title = "Your opponent \(line)"
             if endIfOver() {
-                say(.opponent, san, title + ".", "That's the game.")
+                say(.opponent, san, "Your opponent \(line).", "That's the game.")
                 return
             }
             let eval = await Task.detached { game.eval(2) }.value
             setEval(eval)
-            if inCheck {
-                say(.warning, san, title + ".", "Your king is in check. Move it, block, or capture.")
-            } else if let sq = loose.sorted().first {
-                say(.opponent, san, title + ".",
-                    "Watch your \(Self.pieceName(board[sq])) on \(Squares.name(sq)): it's attacked and undefended.")
-            } else {
-                say(.opponent, san, title + ".", "Your move.")
-            }
+            let tip = watchFor(lastMove, taken: taken)
+            let extra = offerComebackHint(eval: eval) ? " You're behind, so here's an extra hint." : ""
+            say(tip.urgent ? .warning : .opponent, san, tip.title, tip.text + extra)
         }
     }
 
@@ -662,6 +773,8 @@ final class GameModel {
         moves.append(uci)
 
         history.append((ids, lastMove))
+        nudge = nil
+        hintRevealed = false
         let captured = moveIDs(from: from, to: to, before: before)
         lastMove = BoardMove(from: from, to: to)
         selected = nil
@@ -709,8 +822,14 @@ final class GameModel {
         if mode == .engine, f.outcome == .won {
             let next = Opponent(rawValue: opponent.rawValue + 1)
             let wasLocked = next.map { !$0.isUnlocked } ?? false
+            final.firstWin = Stats.wins(against: opponent) == 0
             Stats.addWin(against: opponent)
-            if let next, wasLocked, next.isUnlocked { final.unlocked = next }
+            final = Finish(outcome: .won, title: "You beat the \(opponent.name)!", text: f.text,
+                           accuracy: f.accuracy, great: f.great, blunders: f.blunders, firstWin: final.firstWin)
+            if let next, wasLocked {
+                if next.isUnlocked { final.unlocked = next }
+                else { final.towardNext = (next, Stats.wins(against: opponent)) }
+            }
         }
         Task {
             try? await Task.sleep(for: .seconds(1.1))

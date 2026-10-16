@@ -132,6 +132,11 @@ private struct SquaresLayer: View {
                                 RadialGradient(colors: [Palette.danger.opacity(0.75), .clear], center: .center,
                                                startRadius: 0, endRadius: q * 0.6)
                             }
+                            if sq == model.nudge {
+                                // A hint's first step: this piece has a good move.
+                                Rectangle().fill(Palette.great.opacity(0.22))
+                                Circle().strokeBorder(Palette.great, lineWidth: 2.5).padding(q * 0.05)
+                            }
                             if model.loose.contains(sq) && model.rays == nil && model.reviewing == nil {
                                 Circle().strokeBorder(Palette.danger.opacity(0.7), lineWidth: 2).padding(q * 0.06)
                             }
