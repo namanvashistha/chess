@@ -1,5 +1,6 @@
 import AVFoundation
 import UIKit
+import os
 
 /// A small tap felt under the finger when a control is pressed. Light by
 /// default; respects the haptics setting.
@@ -52,22 +53,28 @@ final class Sound {
     static var soundOn: Bool { UserDefaults.standard.object(forKey: "sound") as? Bool ?? true }
     static var hapticsOn: Bool { UserDefaults.standard.object(forKey: "haptics") as? Bool ?? true }
 
+    private let log = Logger(subsystem: "com.namanvashistha.cozychess", category: "sound")
+
     func play(_ kind: Feedback.Kind) {
         guard Self.soundOn, let buffer = buffers[kind] else { return }
-        if !engine.isRunning { try? engine.start() }
+        if !engine.isRunning {
+            engine.prepare()
+            do { try engine.start() } catch { log.error("engine start failed: \(error.localizedDescription, privacy: .public)") }
+        }
         guard engine.isRunning else { return }
         let p = players[next]
         next = (next + 1) % players.count
         p.scheduleBuffer(buffer, at: nil, options: .interrupts)
         if !p.isPlaying { p.play() }
-        // Let the audio hardware sleep once the sound has rung out, instead of
-        // running for the whole session.
+        // Let the audio hardware rest after a quiet spell, instead of running
+        // for the whole session. A full stop (not a pause) restarts cleanly on
+        // a phone; the next sound starts it again.
         idle?.cancel()
         idle = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: .seconds(30))
             guard !Task.isCancelled, let self else { return }
             self.players.forEach { $0.stop() }
-            self.engine.pause()
+            self.engine.stop()
         }
     }
 
