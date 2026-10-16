@@ -10,6 +10,8 @@ import SwiftUI
 struct GlassPiece: View {
     let code: Character // FEN letter
     var lifted = false
+    /// Skips the live glass layer, for drawing into an image, which can't capture it.
+    var flat = false
 
     private var isWhite: Bool { code.isUppercase }
     private var kind: Character { Character(code.lowercased()) }
@@ -20,8 +22,10 @@ struct GlassPiece: View {
             let shape = PieceSilhouette(kind: kind)
             ZStack {
                 contactShadow(s)
-                Color.clear
-                    .glassEffect(.regular.tint(isWhite ? .white.opacity(0.35) : .black.opacity(0.55)), in: shape)
+                if !flat {
+                    Color.clear
+                        .glassEffect(.regular.tint(isWhite ? .white.opacity(0.35) : .black.opacity(0.55)), in: shape)
+                }
                 // A hairline halo just outside the silhouette: dark around White,
                 // light around Black. It reads as the edge of an object on a
                 // surface, not as an outline.

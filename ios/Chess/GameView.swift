@@ -53,12 +53,17 @@ private extension Feedback.Kind {
 private struct HomeScreen: View {
     let start: (Mode, Opponent) -> Void
     let resume: () -> Void
-    @AppStorage("opponent") private var opponentRaw = Opponent.flint.rawValue
+    @AppStorage("opponent") private var opponentRaw = Opponent.easy.rawValue
     @State private var settings = false
     private let saved = SavedGame.load()
     private let recent = Stats.recent
 
-    private var opponent: Opponent { Opponent(rawValue: opponentRaw) ?? .flint }
+    /// The chosen opponent, falling back to Easy if the choice isn't open yet.
+    private var opponent: Opponent {
+        let o = Opponent(rawValue: opponentRaw) ?? .easy
+        return o.isUnlocked ? o : .easy
+    }
+    @State private var nudged: Opponent?
 
     var body: some View {
         ScrollView {
@@ -96,16 +101,22 @@ private struct HomeScreen: View {
                     SectionLabel(text: saved == nil ? "Choose your opponent" : "Or start a new game")
                     HStack(spacing: 8) {
                         ForEach(Opponent.allCases) { o in
-                            OpponentButton(opponent: o, selected: o == opponent) {
-                                opponentRaw = o.rawValue
-                                Sound.shared.play(.select)
+                            OpponentButton(opponent: o, selected: o == opponent, nudged: nudged == o) {
+                                if o.isUnlocked {
+                                    opponentRaw = o.rawValue
+                                    Sound.shared.play(.select)
+                                } else {
+                                    Haptics.tap(.rigid, intensity: 0.5)
+                                    nudged = o
+                                    Task { try? await Task.sleep(for: .seconds(0.5)); nudged = nil }
+                                }
                             }
                         }
                     }
                 }
 
                 Button { start(.engine, opponent) } label: {
-                    Label("Play \(opponent.name)", systemImage: "arrow.right").labelStyle(TrailingIcon())
+                    Label(opponent.startLabel, systemImage: "arrow.right").labelStyle(TrailingIcon())
                 }
                 .buttonStyle(PrimaryButtonStyle())
 
@@ -116,7 +127,10 @@ private struct HomeScreen: View {
                 .buttonStyle(.glass)
                 .controlSize(.large)
 
-                RecentGames(records: recent)
+                ProgressCard(records: recent)
+                    .padding(.top, 6)
+
+                RecentGames(records: Array(recent.prefix(5)))
                     .padding(.top, 6)
             }
             .padding(.horizontal, 20)
@@ -187,7 +201,7 @@ private struct ContinueCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Continue").font(.system(size: 12, weight: .bold)).tracking(1).textCase(.uppercase)
                         .foregroundStyle(Palette.accentText)
-                    Text(saved.passAndPlay ? "Pass & play" : "vs \(Opponent(rawValue: saved.opponent)?.name ?? "Flint")")
+                    Text(saved.passAndPlay ? "Pass & play" : "\(Opponent(rawValue: saved.opponent)?.name ?? "Easy") game")
                         .font(Typeface.display(21))
                         .lineLimit(1).minimumScaleFactor(0.8)
                     Text("Move \(saved.moves.count / 2 + 1)" + (saved.trail.isEmpty ? "" : " · \(saved.trail.count) rated"))
@@ -230,17 +244,47 @@ private struct TrailDots: View {
 private struct OpponentButton: View {
     let opponent: Opponent
     let selected: Bool
+    /// Briefly true after tapping a locked opponent: the tile shakes.
+    var nudged = false
     let action: () -> Void
 
     var body: some View {
+        let open = opponent.isUnlocked
         Button(action: action) {
             VStack(spacing: 6) {
-                OpponentAvatar(opponent: opponent, size: 34)
-                    .scaleEffect(selected ? 1.08 : 1)
-                    .animation(.spring(response: 0.35, dampingFraction: 0.5), value: selected)
+                ZStack(alignment: .bottomTrailing) {
+                    OpponentAvatar(opponent: opponent, size: 34)
+                        .scaleEffect(selected ? 1.08 : 1)
+                        .animation(.spring(response: 0.35, dampingFraction: 0.5), value: selected)
+                        .opacity(open ? 1 : 0.45)
+                    if !open {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Palette.mist)
+                            .padding(4)
+                            .background(.regularMaterial, in: .circle)
+                            .offset(x: 6, y: 4)
+                    }
+                }
                 Text(opponent.name).font(Typeface.display(15, .bold))
-                Text(opponent.subtitle).font(.system(size: 11.5)).foregroundStyle(Palette.mist)
+                    .foregroundStyle(open ? Palette.ink : Palette.mist)
+                if open {
+                    Text(opponent.subtitle).font(.system(size: 11.5)).foregroundStyle(Palette.mist)
+                } else if let prev = opponent.previous {
+                    // How close it is: one dot per win needed.
+                    VStack(spacing: 3) {
+                        HStack(spacing: 3) {
+                            ForEach(0..<Opponent.winsToUnlock, id: \.self) { k in
+                                Circle().fill(k < Stats.wins(against: prev) ? Palette.accent : Palette.mist.opacity(0.3))
+                                    .frame(width: 5, height: 5)
+                            }
+                        }
+                        Text("Win 3 \(prev.name)").font(.system(size: 11)).foregroundStyle(Palette.mist)
+                    }
+                }
             }
+            .offset(x: nudged ? 4 : 0)
+            .animation(nudged ? .spring(response: 0.08, dampingFraction: 0.2).repeatCount(3, autoreverses: true) : .default, value: nudged)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
             .contentShape(.rect)
@@ -253,6 +297,7 @@ private struct OpponentButton: View {
         }
         .animation(.easeOut(duration: 0.15), value: selected)
         .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityHint(open ? "" : "Locked. Win \(Opponent.winsToUnlock) \(opponent.previous?.name ?? "") games to open it.")
     }
 }
 
@@ -276,6 +321,67 @@ struct OpponentAvatar: View {
     }
 }
 
+/// How the player is doing over their last ten games: accuracy as bars, oldest
+/// first, and the great moves they've found. It only says "improving" when
+/// that's true.
+private struct ProgressCard: View {
+    let records: [GameRecord]
+
+    private var games: [Int] { Array(records.compactMap(\.accuracy).prefix(10).reversed()) }
+
+    private var improving: Bool {
+        let g = games
+        guard g.count >= 4 else { return false }
+        let half = g.count / 2
+        return Self.mean(g.suffix(half)) > Self.mean(g.prefix(half)) + 1
+    }
+
+    private static func mean(_ xs: ArraySlice<Int>) -> Double {
+        let total: Int = xs.reduce(0, +)
+        return Double(total) / Double(max(1, xs.count))
+    }
+
+    var body: some View {
+        let g = games
+        if g.count >= 2 {
+            VStack(alignment: .leading, spacing: 8) {
+                SectionLabel(text: "Your progress")
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(improving ? "You're improving" : "Accuracy, last \(g.count) games")
+                            .font(Typeface.display(17))
+                        Spacer()
+                        Text("\(Int(Self.mean(g[...]).rounded()))% avg").font(.system(size: 13, weight: .semibold)).foregroundStyle(Palette.mist)
+                    }
+                    // Scaled to this player's own range, so a few points of change show.
+                    let lo = Double((g.min() ?? 0) - 8), hi = Double(max((g.max() ?? 100), (g.min() ?? 0) + 10))
+                    HStack(alignment: .bottom, spacing: 6) {
+                        ForEach(Array(g.enumerated()), id: \.offset) { k, a in
+                            VStack(spacing: 4) {
+                                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                    .fill(k == g.count - 1 ? Palette.accent : Palette.accent.opacity(0.35))
+                                    .frame(width: 14, height: 8 + CGFloat((Double(a) - lo) / (hi - lo)) * 52)
+                                Text("\(a)").font(.system(size: 10, weight: .semibold)).monospacedDigit()
+                                    .foregroundStyle(Palette.mist)
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .frame(height: 82, alignment: .bottom)
+                    HStack(spacing: 6) {
+                        Text("!!").font(.system(size: 12, weight: .heavy)).foregroundStyle(Palette.great)
+                        Text("\(Stats.greatMoves) great \(Stats.greatMoves == 1 ? "move" : "moves") found")
+                            .font(.system(size: 13.5)).foregroundStyle(Palette.mist)
+                    }
+                }
+                .padding(14)
+                .glassEffect(.regular, in: .rect(cornerRadius: 18))
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+}
+
 private struct RecentGames: View {
     let records: [GameRecord]
 
@@ -290,12 +396,26 @@ private struct RecentGames: View {
                 VStack(spacing: 0) {
                     ForEach(Array(records.enumerated()), id: \.element.id) { k, r in
                         HStack(spacing: 12) {
-                            Text(r.outcome == "won" ? "♔" : r.outcome == "lost" ? "♚" : "½")
-                                .font(Typeface.display(20))
-                                .frame(width: 32)
+                            Group {
+                                if let o = r.level.flatMap(Opponent.init) ?? Opponent.allCases.first(where: { $0.name == r.opponentName }) {
+                                    OpponentAvatar(opponent: o, size: 30)
+                                } else {
+                                    Image(systemName: "person.2.fill").font(.system(size: 13)).foregroundStyle(Palette.mist)
+                                }
+                            }
+                            .frame(width: 32)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(r.outcome == "won" ? "Won vs \(r.opponent)" : r.outcome == "lost" ? "Lost to \(r.opponent)" : "Drew with \(r.opponent)")
-                                    .font(.system(size: 15, weight: .semibold))
+                                // Neutral: the opponent, not the score. Only a win gets a word.
+                                HStack(spacing: 6) {
+                                    Text(r.opponent == "Pass & play" ? "Pass & play" : "vs \(r.opponentName)")
+                                        .font(.system(size: 15, weight: .semibold))
+                                    if r.outcome == "won" {
+                                        Text("Won").font(.system(size: 11, weight: .bold))
+                                            .foregroundStyle(Palette.great)
+                                            .padding(.horizontal, 6).padding(.vertical, 1)
+                                            .background(Palette.greatFill, in: .capsule)
+                                    }
+                                }
                                 Text("\(r.moves) moves · \(r.date.formatted(.relative(presentation: .named)))")
                                     .font(.system(size: 12.5)).foregroundStyle(Palette.mist)
                             }
@@ -390,6 +510,15 @@ private struct GameScreen: View {
                 BoardView(model: model)
                 CapturedRow(pieces: model.captured(by: "w"), lead: model.materialLead(for: "w"))
                 CoachView(card: model.coach, opponent: model.opponent)
+                    .overlay(alignment: .topTrailing) {
+                        if let entry = model.shareableEntry {
+                            ShareMomentButton(moment: model.moment(for: entry))
+                                .buttonStyle(.glass)
+                                .buttonBorderShape(.circle)
+                                .padding(8)
+                                .transition(.scale.combined(with: .opacity))
+                        }
+                    }
                     .padding(.top, 4)
                     .contentShape(.rect)
                     // Swipe right for the move before, left for the move after.
@@ -406,7 +535,13 @@ private struct GameScreen: View {
             .foregroundStyle(Palette.ink)
 
             if let finish = model.finish {
-                FinishCard(finish: finish, again: { model.start(model.mode, opponent: model.opponent) }, home: back)
+                FinishCard(finish: finish, share: model.winMoment,
+                           again: { model.start(model.mode, opponent: model.opponent) },
+                           tryNext: finish.unlocked.map { next in {
+                               UserDefaults.standard.set(next.rawValue, forKey: "opponent")
+                               model.start(.engine, opponent: next)
+                           } },
+                           home: back)
                     .transition(.opacity.combined(with: .scale(scale: 0.94)))
             }
         }
@@ -735,7 +870,10 @@ private struct Dock: View {
 
 private struct FinishCard: View {
     let finish: Finish
+    let share: ShareMoment?
     let again: () -> Void
+    /// Starts a game against the opponent this win just opened.
+    let tryNext: (() -> Void)?
     let home: () -> Void
 
     var body: some View {
@@ -753,15 +891,37 @@ private struct FinishCard: View {
                     Stat(value: "\(finish.blunders)", label: "Blunders")
                 }
                 .padding(.bottom, 12)
+                if let next = finish.unlocked {
+                    HStack(spacing: 10) {
+                        Image(systemName: "lock.open.fill").foregroundStyle(Palette.great)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("\(next.name) is open").font(Typeface.display(16))
+                            Text(next.subtitle).font(.system(size: 12.5)).foregroundStyle(Palette.mist)
+                        }
+                        Spacer()
+                    }
+                    .padding(12)
+                    .background(Palette.greatFill.opacity(0.6), in: .rect(cornerRadius: 16))
+                    .padding(.bottom, 12)
+                }
                 VStack(spacing: 14) {
-                    Button("Play again", action: again).buttonStyle(PrimaryButtonStyle())
-                    // Below the primary button's pressed-in edge, as a real secondary action.
-                    Button { Haptics.tap(); home() } label: { Text("Home").frame(maxWidth: .infinity, minHeight: 30) }
-                        .font(Typeface.display(16, .bold))
-                        .buttonStyle(.glass)
-                        .buttonBorderShape(.capsule)
-                        .controlSize(.large)
-                        .padding(.top, 6)
+                    if let next = finish.unlocked, let tryNext {
+                        Button("Play \(next.name.lowercased()) next") { tryNext() }.buttonStyle(PrimaryButtonStyle())
+                    } else {
+                        Button("Play again", action: again).buttonStyle(PrimaryButtonStyle())
+                    }
+                    // Below the primary button's pressed-in edge, as real secondary actions.
+                    HStack(spacing: 10) {
+                        Button { Haptics.tap(); home() } label: { Text("Home").frame(maxWidth: .infinity, minHeight: 30) }
+                        if let share {
+                            ShareMomentButton(moment: share, label: "Share")
+                        }
+                    }
+                    .font(Typeface.display(16, .bold))
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.capsule)
+                    .controlSize(.large)
+                    .padding(.top, 6)
                 }
             }
             .padding(.horizontal, 22).padding(.vertical, 26)

@@ -67,6 +67,8 @@ dev:
 #   CGO_ENABLED=0 go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20240806205939-81131f6468ab
 #   CGO_ENABLED=0 go install golang.org/x/mobile/cmd/gobind@v0.0.0-20240806205939-81131f6468ab
 # The bind sets CGO_ENABLED back to 1: gomobile links the framework through cgo.
+# gomobile and gobind live in Go's bin directory, which is often not on PATH.
+ios-engine: export PATH := $(shell go env GOPATH)/bin:$(PATH)
 ios-engine:
 	cd mobile && CGO_ENABLED=0 go test ./... && CGO_ENABLED=1 gomobile bind -target=ios,iossimulator -iosversion=26.0 \
 		-o ../ios/Frameworks/Chesscore.xcframework ./chesscore

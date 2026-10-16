@@ -7,14 +7,15 @@ import (
 
 // Bot difficulty levels.
 const (
-	LevelEasy   = "easy"
-	LevelMedium = "medium"
-	LevelHard   = "hard"
+	LevelBeginner = "beginner"
+	LevelEasy     = "easy"
+	LevelMedium   = "medium"
+	LevelHard     = "hard"
 )
 
 // ValidLevel reports whether level is one of the Level constants.
 func ValidLevel(level string) bool {
-	return level == LevelEasy || level == LevelMedium || level == LevelHard
+	return level == LevelBeginner || level == LevelEasy || level == LevelMedium || level == LevelHard
 }
 
 // BotMove picks a move for the side to move at the given level, in UCI. It
@@ -22,13 +23,17 @@ func ValidLevel(level string) bool {
 //
 // Every level uses the real search. Easy and medium score each root move with a
 // shallow search and then choose at random among the moves close to the best,
-// so they make human-looking inaccuracies rather than blunders at random. Hard
-// plays the search's best move within a time budget.
+// so they make human-looking inaccuracies rather than blunders at random.
+// Beginner does the same with a window wide enough to drop a minor piece or
+// miss one left hanging, while still taking anything bigger, like a free
+// queen. Hard plays the search's best move within a time budget.
 func BotMove(g *Game, level string, table *TranspositionTable) (string, bool) {
 	if result, _ := g.Outcome(); result != ResultNone {
 		return "", false
 	}
 	switch level {
+	case LevelBeginner:
+		return pickNear(g, 1, 350), true
 	case LevelEasy:
 		return pickNear(g, 1, 150), true
 	case LevelMedium:

@@ -85,6 +85,15 @@ struct GameRecord: Identifiable, Equatable, Codable {
     let outcome: String // "won", "lost", "draw"
     let accuracy: Int?
     let moves: Int
+    /// The opponent's level; nil for pass and play and for records saved before levels.
+    var level: Int?
+    var great: Int?
+
+    /// The name to show. Records saved before the rename say Pebble, Flint or Obsidian.
+    var opponentName: String {
+        if let level, let o = Opponent(rawValue: level) { return o.name }
+        return ["Pebble": "Easy", "Flint": "Medium", "Obsidian": "Hard"][opponent] ?? opponent
+    }
 }
 
 /// A game in progress, saved after every move so it survives quitting.
@@ -130,14 +139,23 @@ struct Finish: Equatable {
     let accuracy: Int?
     let great: Int
     let blunders: Int
+    /// The opponent this win opened up, if it was the one that did.
+    var unlocked: Opponent?
 }
 
 enum Opponent: Int, CaseIterable, Identifiable {
-    case pebble, flint, obsidian
+    case easy, medium, hard
     var id: Int { rawValue }
-    var name: String { ["Pebble", "Flint", "Obsidian"][rawValue] }
-    var subtitle: String { ["Learning", "Club player", "No mercy"][rawValue] }
-    var engineLevel: String { ["easy", "medium", "hard"][rawValue] }
+    var name: String { ["Easy", "Medium", "Hard"][rawValue] }
+    var subtitle: String { ["Just learning", "Knows the basics", "Plays to win"][rawValue] }
+    /// Easy is a true beginner; each level above it is the engine's next step up.
+    var engineLevel: String { ["beginner", "easy", "medium"][rawValue] }
+    var startLabel: String { ["Start an easy game", "Start a medium game", "Start a hard game"][rawValue] }
+
+    /// Wins against the level below that open this one.
+    static let winsToUnlock = 3
+    var previous: Opponent? { Opponent(rawValue: rawValue - 1) }
+    var isUnlocked: Bool { previous.map { Stats.wins(against: $0) >= Self.winsToUnlock } ?? true }
 }
 
 enum Mode { case engine, passAndPlay }
@@ -148,7 +166,7 @@ enum Mode { case engine, passAndPlay }
 @Observable
 final class GameModel {
     private(set) var mode: Mode = .engine
-    private(set) var opponent: Opponent = .flint
+    private(set) var opponent: Opponent = .easy
 
     private(set) var board: [Character] = []
     private(set) var pieces: [PieceItem] = []
@@ -275,7 +293,7 @@ final class GameModel {
     @discardableResult
     func resume() -> Bool {
         guard let saved = SavedGame.load() else { return false }
-        start(saved.passAndPlay ? .passAndPlay : .engine, opponent: Opponent(rawValue: saved.opponent) ?? .flint,
+        start(saved.passAndPlay ? .passAndPlay : .engine, opponent: Opponent(rawValue: saved.opponent) ?? .easy,
               keepingSave: true)
         for uci in saved.moves {
             guard game.play(uci) else { break }
@@ -339,14 +357,46 @@ final class GameModel {
     }
 
     private func showPosition(afterPly ply: Int) {
-        guard let g = ChesscoreNewGame() else { return }
+        guard let p = position(afterPly: ply) else { return }
+        reviewBoard = p.board
+        reviewMove = p.move
+    }
+
+    /// The board after a half-move, and that move.
+    private func position(afterPly ply: Int) -> (board: [Character], move: BoardMove?)? {
+        guard let g = ChesscoreNewGame() else { return nil }
         var before: [Character] = Array(g.board())
         for (i, uci) in moves.prefix(ply + 1).enumerated() {
             if i == ply { before = Array(g.board()) }
             _ = g.play(uci)
         }
-        reviewBoard = Array(g.board())
-        reviewMove = moves.indices.contains(ply) ? BoardMove(uci: moves[ply], board: before) : nil
+        return (Array(g.board()), moves.indices.contains(ply) ? BoardMove(uci: moves[ply], board: before) : nil)
+    }
+
+    // MARK: - Sharing
+
+    /// The great move the coach card is showing, live or in review.
+    var shareableEntry: TrailEntry? {
+        let entry = reviewing.flatMap { id in trail.first { $0.id == id } } ?? trail.last
+        guard let entry, entry.card.kind == .great else { return nil }
+        if reviewing == nil && coach?.id != entry.card.id { return nil }
+        return entry
+    }
+
+    func moment(for entry: TrailEntry) -> ShareMoment {
+        let p = position(afterPly: entry.ply)
+        let number = entry.ply / 2 + 1
+        let label = entry.ply % 2 == 0 ? "\(number). \(entry.san)" : "\(number)… \(entry.san)"
+        return ShareMoment(board: p?.board ?? board, move: p?.move, title: "\(label)!!",
+                           detail: entry.card.text, footer: "Found with Cozy Chess")
+    }
+
+    /// A win against the engine, ready to share.
+    var winMoment: ShareMoment? {
+        guard mode == .engine, let finish, finish.outcome == .won else { return nil }
+        let accuracy = finish.accuracy.map { " · \($0)% accuracy" } ?? ""
+        return ShareMoment(board: board, move: lastMove, title: "I beat \(opponent.name)",
+                           detail: finish.text + accuracy, footer: "Played on Cozy Chess")
     }
 
     // MARK: - Touch
@@ -390,7 +440,7 @@ final class GameModel {
         rays = r
         beforeInspect = coach
         let piece = board[square]
-        let whose = mode == .engine ? (piece.isUppercase ? "Your" : "\(opponent.name)'s") : (piece.isUppercase ? "White's" : "Black's")
+        let whose = mode == .engine ? (piece.isUppercase ? "Your" : "Your opponent's") : (piece.isUppercase ? "White's" : "Black's")
         func count(_ n: Int, _ word: String) -> String { n == 0 ? "no \(word)s" : n == 1 ? "1 \(word)" : "\(n) \(word)s" }
         let text: String = switch (guards.count, attackers.count) {
         case (_, 0): "Nothing attacks it" + (guards.isEmpty ? "." : ", and it's guarded by \(count(guards.count, "piece")).")
@@ -501,15 +551,16 @@ final class GameModel {
         rays = nil
         loose = []
         if let k = board.firstIndex(of: "K") { toppled = ids[k] }
-        let f = Finish(outcome: .lost, title: "You resigned", text: "\(opponent.name) takes this one. The next is yours.",
+        let f = Finish(outcome: .lost, title: "You resigned", text: "Your opponent takes this one. The next is yours.",
                        accuracy: accuracy, great: great, blunders: blunders)
         let count = (moves.count + 1) / 2
         Task {
             try? await Task.sleep(for: .seconds(0.9))
             finish = f
             emit(.lose)
-            Stats.record(accuracy: f.accuracy)
-            Stats.addRecord(GameRecord(date: .now, opponent: opponent.name, outcome: "lost", accuracy: f.accuracy, moves: count))
+            Stats.record(accuracy: f.accuracy, great: f.great)
+            Stats.addRecord(GameRecord(date: .now, opponent: opponent.name, outcome: "lost", accuracy: f.accuracy, moves: count,
+                                       level: opponent.rawValue, great: f.great))
             SavedGame.clear()
         }
     }
@@ -584,7 +635,7 @@ final class GameModel {
             thinking = false
             let san = apply(choice)
             busy = false
-            let title = "\(opponent.name) \(line)"
+            let title = "Your opponent \(line)"
             if endIfOver() {
                 say(.opponent, san, title + ".", "That's the game.")
                 return
@@ -654,14 +705,22 @@ final class GameModel {
                        ChesscoreStatusInsufficient: "Neither side has enough left to mate."][status] ?? "The game is drawn."
             f = Finish(outcome: .draw, title: "A draw", text: why, accuracy: accuracy, great: great, blunders: blunders)
         }
+        var final = f
+        if mode == .engine, f.outcome == .won {
+            let next = Opponent(rawValue: opponent.rawValue + 1)
+            let wasLocked = next.map { !$0.isUnlocked } ?? false
+            Stats.addWin(against: opponent)
+            if let next, wasLocked, next.isUnlocked { final.unlocked = next }
+        }
         Task {
             try? await Task.sleep(for: .seconds(1.1))
-            finish = f
-            emit(f.outcome == .won ? .win : .lose)
-            Stats.record(accuracy: f.accuracy)
+            finish = final
+            emit(final.outcome == .won ? .win : .lose)
+            Stats.record(accuracy: final.accuracy, great: mode == .engine ? final.great : 0)
             Stats.addRecord(GameRecord(date: .now, opponent: mode == .engine ? opponent.name : "Pass & play",
-                                       outcome: ["won", "lost", "draw"][[.won, .lost, .draw].firstIndex(of: f.outcome)!],
-                                       accuracy: f.accuracy, moves: moves))
+                                       outcome: ["won", "lost", "draw"][[.won, .lost, .draw].firstIndex(of: final.outcome)!],
+                                       accuracy: final.accuracy, moves: moves,
+                                       level: mode == .engine ? opponent.rawValue : nil, great: final.great))
             SavedGame.clear()
         }
         return true
@@ -776,12 +835,20 @@ enum Stats {
         defaults.data(forKey: "recent").flatMap { try? JSONDecoder().decode([GameRecord].self, from: $0) } ?? []
     }
 
+    /// Keeps the last 20 games: the home screen lists 5 and charts 10.
     static func addRecord(_ r: GameRecord) {
-        let list = Array(([r] + recent).prefix(5))
+        let list = Array(([r] + recent).prefix(20))
         defaults.set(try? JSONEncoder().encode(list), forKey: "recent")
     }
 
-    static func record(accuracy: Int?) {
+    static func wins(against o: Opponent) -> Int { defaults.integer(forKey: "wins.\(o.rawValue)") }
+    static func addWin(against o: Opponent) { defaults.set(wins(against: o) + 1, forKey: "wins.\(o.rawValue)") }
+
+    /// Great moves found across every game against the engine.
+    static var greatMoves: Int { defaults.integer(forKey: "greatMoves") }
+
+    static func record(accuracy: Int?, great: Int = 0) {
+        defaults.set(greatMoves + great, forKey: "greatMoves")
         let cal = Calendar.current
         let today = cal.startOfDay(for: .now)
         let last = defaults.object(forKey: "lastDay") as? Date

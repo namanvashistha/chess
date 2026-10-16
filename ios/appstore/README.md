@@ -18,7 +18,10 @@ Everything needed to publish: the steps, the listing text and the screenshots.
 For each new upload, raise `CURRENT_PROJECT_VERSION` (the build number) in the project.
 For each new App Store version, raise `MARKETING_VERSION` as well.
 
-## Screenshots (6.9", 1320 × 2868)
+## Screenshots
+
+`screenshots/` is 6.9" (1320 × 2868); `screenshots-6.3/` is the same set at 1206 × 2622 for the
+"iPhone with Dynamic Island (medium display)" slot.
 
 1. `1-home.jpg`: home, with the game in progress
 2. `2-coach.jpg`: "Great move" from the coach while the opponent thinks
@@ -49,7 +52,7 @@ Learn chess the cozy way. A coach explains every move in plain words, lines of l
 
 Cozy Chess is chess without the pressure.
 
-Play at your own pace against three opponents named after stones — gentle Pebble, steady Flint and sharp Obsidian — or pass the phone to a friend. After every move a calm coach tells you, in plain words, whether it was great, good or a slip, and why.
+Start against Easy, a true beginner you can beat from your very first game. Win three to open Medium, then Hard — or pass the phone to a friend. After every move a calm coach tells you, in plain words, whether it was great, good or a slip, and why.
 
 SEE THE GAME
 • Lines of light show where a piece can go
@@ -59,6 +62,8 @@ SEE THE GAME
 
 LEARN WITHOUT PRESSURE
 • A move-by-move coach that explains, never scolds
+• Watch your accuracy climb game by game
+• Share your great moves and wins as a picture
 • "Show me" hints when you are stuck
 • Undo any move and try again
 • Step back through your game to see where it turned
