@@ -45,12 +45,12 @@ struct GlassPiece: View {
     private func contactShadow(_ s: CGFloat) -> some View {
         ZStack {
             Ellipse()
-                .fill(RadialGradient(colors: [lifted ? Palette.amber.opacity(0.18) : .black.opacity(0.14), .clear],
+                .fill(RadialGradient(colors: [lifted ? Palette.accent.opacity(0.18) : .black.opacity(0.14), .clear],
                                      center: .center, startRadius: 0, endRadius: s * 0.5))
                 .frame(width: s * 0.96, height: s * 0.22)
                 .offset(x: s * 0.06, y: s * 0.4)
             Ellipse()
-                .fill(RadialGradient(colors: [lifted ? Palette.amber.opacity(0.5) : .black.opacity(0.42), .clear],
+                .fill(RadialGradient(colors: [lifted ? Palette.accent.opacity(0.5) : .black.opacity(0.42), .clear],
                                      center: .center, startRadius: 0, endRadius: s * 0.36))
                 .frame(width: s * 0.72, height: s * 0.12)
                 .offset(x: s * 0.03, y: s * 0.37 + (lifted ? s * 0.05 : 0))

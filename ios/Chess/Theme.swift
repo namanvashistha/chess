@@ -10,12 +10,13 @@ enum Palette {
     static let squareDark = Color.dynamic(light: 0x8E9A90, dark: 0x717D73)
     static let coordinate = Color.dynamic(light: 0x6F7A70, dark: 0x4F5A52)
 
-    // light and accents
-    static let amber = Color(hex: 0xF0A83A)
-    static let amberTop = Color(hex: 0xFFC867)
-    static let amberEdge = Color(hex: 0xC47F1D)
-    static let amberInk = Color(hex: 0x2A1A02)
-    static let amberText = Color.dynamic(light: 0xA8640A, dark: 0xF3B44C)
+    // The accent is evergreen: a deeper cut of the slate square, so the whole
+    // app reads as one family of stone and moss. It marks what you can act on.
+    static let accent = Color.dynamic(light: 0x2E6150, dark: 0x7FB79F)
+    static let accentTop = Color.dynamic(light: 0x3D7562, dark: 0x93C6AF)
+    static let accentEdge = Color.dynamic(light: 0x1F4538, dark: 0x4E7D69)
+    static let onAccent = Color.dynamic(light: 0xF3F1EA, dark: 0x0F1A15)
+    static let accentText = Color.dynamic(light: 0x2E6150, dark: 0x8DC4AC)
     static let thinking = Color.dynamic(light: 0x4F7FC9, dark: 0x7DA6E6)
     static let danger = Color.dynamic(light: 0xC23B3B, dark: 0xFF8A8A)
 
@@ -78,20 +79,20 @@ struct AppBackground: View {
     }
 }
 
-/// The big amber button with a pressed-in edge.
-struct AmberButtonStyle: ButtonStyle {
+/// The primary button: evergreen with a pressed-in edge.
+struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         let pressed = configuration.isPressed
         configuration.label
             .font(Typeface.display(19))
-            .foregroundStyle(Palette.amberInk)
+            .foregroundStyle(Palette.onAccent)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 18)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(LinearGradient(colors: [Palette.amberTop, Palette.amber], startPoint: .top, endPoint: .bottom))
-                    .shadow(color: Palette.amberEdge, radius: 0, y: pressed ? 2 : 6)
-                    .shadow(color: Palette.amber.opacity(0.45), radius: 14, y: pressed ? 6 : 12)
+                    .fill(LinearGradient(colors: [Palette.accentTop, Palette.accent], startPoint: .top, endPoint: .bottom))
+                    .shadow(color: Palette.accentEdge, radius: 0, y: pressed ? 2 : 6)
+                    .shadow(color: Palette.accent.opacity(0.35), radius: 14, y: pressed ? 6 : 12)
             )
             .offset(y: pressed ? 4 : 0)
             .animation(.spring(response: 0.2, dampingFraction: 0.6), value: pressed)

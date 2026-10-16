@@ -63,27 +63,30 @@ private struct HomeScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(greeting)
-                        Text(saved == nil ? "Ready for a game?" : "Your move.").foregroundStyle(Palette.amberText)
-                    }
-                    .font(Typeface.display(30))
-                    .tracking(-0.5)
+                // One quiet bar, one headline, one supporting line.
+                HStack(spacing: 8) {
+                    BrandMark()
+                    Text("Cozy Chess").font(Typeface.display(16, .bold))
                     Spacer()
                     Button { settings = true } label: {
-                        Image(systemName: "gearshape").font(.system(size: 17, weight: .medium)).frame(width: 36, height: 36)
+                        Image(systemName: "gearshape").font(.system(size: 15, weight: .medium)).frame(width: 30, height: 30)
                     }
                     .buttonStyle(.glass)
                     .buttonBorderShape(.circle)
                     .accessibilityLabel("Settings")
                 }
-                .padding(.top, 8)
+                .padding(.top, 4)
 
-                HStack(spacing: 8) {
-                    Chip(text: Stats.streak > 0 ? "\(Stats.streak)-day streak" : "Start a streak", symbol: "flame.fill", tint: .orange)
-                    Chip(text: Stats.averageAccuracy.map { "\($0)% accuracy" } ?? "No games yet", symbol: "scope", tint: Palette.mist)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(greeting)
+                        .font(Typeface.display(34))
+                        .tracking(-0.6)
+                    Text(supportingLine)
+                        .font(.system(size: 15))
+                        .foregroundStyle(Palette.mist)
                 }
+                .padding(.top, 10)
+                .padding(.bottom, 4)
 
                 if let saved {
                     ContinueCard(saved: saved, action: resume)
@@ -104,7 +107,7 @@ private struct HomeScreen: View {
                 Button { start(.engine, opponent) } label: {
                     Label("Play \(opponent.name)", systemImage: "arrow.right").labelStyle(TrailingIcon())
                 }
-                .buttonStyle(AmberButtonStyle())
+                .buttonStyle(PrimaryButtonStyle())
 
                 Button { start(.passAndPlay, opponent) } label: {
                     Label("Pass & play on this phone", systemImage: "person.2").frame(maxWidth: .infinity, minHeight: 40)
@@ -122,6 +125,15 @@ private struct HomeScreen: View {
         .scrollBounceBehavior(.basedOnSize)
         .foregroundStyle(Palette.ink)
         .sheet(isPresented: $settings) { SettingsSheet().presentationDetents([.height(260)]) }
+    }
+
+    /// The tagline for a new player; their numbers once they have some.
+    private var supportingLine: String {
+        var parts: [String] = []
+        if Stats.streak > 1 { parts.append("\(Stats.streak)-day streak") }
+        if let a = Stats.averageAccuracy { parts.append("\(a)% accuracy") }
+        if saved != nil && parts.isEmpty { return "Your game is where you left it." }
+        return parts.isEmpty ? "See the game, one calm move at a time." : parts.joined(separator: "  ·  ")
     }
 
     private var greeting: String {
@@ -148,16 +160,19 @@ private struct TrailingIcon: LabelStyle {
     }
 }
 
-private struct Chip: View {
-    let text: String
-    let symbol: String
-    let tint: Color
-
+/// The app's mark: the glass knight on a corner of the stone board.
+private struct BrandMark: View {
     var body: some View {
-        Label { Text(text) } icon: { Image(systemName: symbol).foregroundStyle(tint) }
-            .font(.system(size: 13, weight: .semibold))
-            .padding(.horizontal, 11).padding(.vertical, 7)
-            .glassEffect(.regular, in: .capsule)
+        ZStack {
+            VStack(spacing: 0) {
+                HStack(spacing: 0) { Palette.squareLight; Palette.squareDark }
+                HStack(spacing: 0) { Palette.squareDark; Palette.squareLight }
+            }
+            GlassPiece(code: "N").padding(3)
+        }
+        .frame(width: 26, height: 26)
+        .clipShape(.rect(cornerRadius: 7, style: .continuous))
+        .accessibilityHidden(true)
     }
 }
 
@@ -174,7 +189,7 @@ private struct ContinueCard: View {
                     .clipShape(.rect(cornerRadius: 10))
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Continue").font(.system(size: 12, weight: .bold)).tracking(1).textCase(.uppercase)
-                        .foregroundStyle(Palette.amberText)
+                        .foregroundStyle(Palette.accentText)
                     Text(saved.passAndPlay ? "Pass & play" : "vs \(Opponent(rawValue: saved.opponent)?.name ?? "Flint")")
                         .font(Typeface.display(21))
                     Text("Move \(saved.moves.count / 2 + 1)" + (saved.trail.isEmpty ? "" : " · \(saved.trail.count) rated"))
@@ -231,10 +246,10 @@ private struct OpponentButton: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .glassEffect(selected ? .regular.tint(Palette.amber.opacity(0.25)).interactive() : .regular.interactive(),
+        .glassEffect(selected ? .regular.tint(Palette.accent.opacity(0.25)).interactive() : .regular.interactive(),
                      in: .rect(cornerRadius: 16))
         .overlay {
-            RoundedRectangle(cornerRadius: 16).strokeBorder(Palette.amber, lineWidth: selected ? 1.5 : 0)
+            RoundedRectangle(cornerRadius: 16).strokeBorder(Palette.accent, lineWidth: selected ? 1.5 : 0)
         }
         .animation(.easeOut(duration: 0.15), value: selected)
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -247,7 +262,10 @@ struct OpponentAvatar: View {
     let size: CGFloat
 
     var body: some View {
-        let tint: Color = [Palette.great, Palette.amber, Color.dynamic(light: 0x3A3F4A, dark: 0xA9B2C3)][opponent.rawValue]
+        // real stone colours: a pale river pebble, a tan flint, black obsidian
+        let tint: Color = [Color.dynamic(light: 0x8FA39A, dark: 0xA9BDB3),
+                           Color.dynamic(light: 0xA2855C, dark: 0xC9AE85),
+                           Color.dynamic(light: 0x3A3F4A, dark: 0xA9B2C3)][opponent.rawValue]
         let symbol = ["circle.fill", "diamond.fill", "star.fill"][opponent.rawValue]
         Image(systemName: symbol)
             .font(.system(size: size * 0.5))
@@ -308,7 +326,7 @@ private struct SettingsSheet: View {
                 .font(.system(size: 13)).foregroundStyle(Palette.mist)
         }
         .font(.system(size: 16, weight: .medium))
-        .tint(Palette.amber)
+        .tint(Palette.accent)
         .padding(24)
         .frame(maxHeight: .infinity, alignment: .top)
     }
@@ -438,7 +456,7 @@ private struct ThinkingDots: View {
     var body: some View {
         HStack(spacing: 3) {
             ForEach(0..<3) { i in
-                Circle().fill(Palette.amberText).frame(width: 4, height: 4)
+                Circle().fill(Palette.accentText).frame(width: 4, height: 4)
                     .phaseAnimator([0.2, 1]) { v, p in v.opacity(p) } animation: { _ in
                         .easeInOut(duration: 0.5).delay(Double(i) * 0.15)
                     }
@@ -513,7 +531,7 @@ private struct CoachView: View {
         } else {
             Text(card.badge)
                 .font(Typeface.display(20))
-                .foregroundStyle(card.kind == .coach ? Palette.amberInk : Palette.ink)
+                .foregroundStyle(card.kind == .coach ? Palette.onAccent : Palette.ink)
                 .frame(width: 46, height: 46)
                 .background(badgeFill(card.kind), in: .rect(cornerRadius: 14))
         }
@@ -526,7 +544,7 @@ private struct CoachView: View {
         case .inaccuracy: AnyShapeStyle(Palette.inaccuracyFill)
         case .mistake, .warning: AnyShapeStyle(Palette.mistakeFill)
         case .blunder: AnyShapeStyle(Palette.blunderFill)
-        case .coach: AnyShapeStyle(LinearGradient(colors: [Palette.amberTop, Palette.amber], startPoint: .top, endPoint: .bottom))
+        case .coach: AnyShapeStyle(LinearGradient(colors: [Palette.accentTop, Palette.accent], startPoint: .top, endPoint: .bottom))
         }
     }
 
@@ -563,7 +581,7 @@ private struct MoveTrail: View {
                                     .contentShape(.capsule)
                                 }
                                 .buttonStyle(.plain)
-                                .glassEffect(model.reviewing == e.id ? .regular.tint(Palette.amber.opacity(0.3)) : .regular,
+                                .glassEffect(model.reviewing == e.id ? .regular.tint(Palette.accent.opacity(0.3)) : .regular,
                                              in: .capsule)
                                 .id(e.id)
                                 .accessibilityLabel("\(e.san), \(e.card.title)")
@@ -644,7 +662,8 @@ private struct Dock: View {
                 }
                 .buttonStyle(.glassProminent)
                 .buttonBorderShape(.capsule)
-                .tint(Color(hex: 0x2F9E5C))
+                .tint(Palette.accent)
+                .foregroundStyle(Palette.onAccent)
                 .disabled(!model.playerToMove || (model.hintsLeft == 0 && !model.hintIsFree))
             }
             .font(Typeface.display(14, .bold))
@@ -676,7 +695,7 @@ private struct FinishCard: View {
                     Stat(value: "\(finish.blunders)", label: "Blunders")
                 }
                 .padding(.bottom, 12)
-                Button("Play again", action: again).buttonStyle(AmberButtonStyle())
+                Button("Play again", action: again).buttonStyle(PrimaryButtonStyle())
                 Button("Home", action: home)
                     .font(Typeface.display(15, .bold))
                     .buttonStyle(.plain)

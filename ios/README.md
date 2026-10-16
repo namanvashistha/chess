@@ -1,6 +1,8 @@
-# Chess for iPhone
+# Cozy Chess
 
-A native SwiftUI app. The Go engine in `app/engine` runs on the phone, so the app needs no server.
+*See the game, one calm move at a time.*
+
+The iPhone app: chess that teaches you as you play, with no pressure. A native SwiftUI app. The Go engine in `app/engine` runs on the phone, so the app needs no server.
 
 ## Layout
 

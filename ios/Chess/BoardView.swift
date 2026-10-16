@@ -133,7 +133,8 @@ private struct ScoreLight: View {
     let share: Double // White's share; White is at the bottom
 
     var body: some View {
-        RadialGradient(colors: [Palette.amber.opacity(0.75), Palette.amber.opacity(0.18), .clear],
+        // daylight, not a colour: the board is simply brighter on the side that is ahead
+        RadialGradient(colors: [Color.white.opacity(0.6), Color.white.opacity(0.14), .clear],
                        center: UnitPoint(x: 0.5, y: 0.15 + share * 0.7), startRadius: 0, endRadius: 260)
             .blendMode(.softLight)
             .allowsHitTesting(false)
@@ -150,7 +151,7 @@ private struct RaysLayer: View {
         ZStack {
             if let rays {
                 let color: Color = switch rays.kind {
-                case .options, .chosen: Palette.amber
+                case .options, .chosen: Palette.accent
                 case .thinking: Palette.thinking
                 case .hint: Palette.great
                 }
