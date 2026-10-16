@@ -31,6 +31,22 @@ struct RootView: View {
             }
         }
         .sensoryFeedback(trigger: model.feedback) { _, new in Sound.hapticsOn ? new?.kind.haptic : nil }
+        .task {
+            GameCenter.shared.model = model
+            GameCenter.shared.showGame = { withAnimation(.smooth(duration: 0.4)) { playing = true } }
+            GameCenter.shared.authenticate()
+            SharePlay.shared.model = model
+            SharePlay.shared.showGame = { withAnimation(.smooth(duration: 0.4)) { playing = true } }
+            SharePlay.shared.listen()
+        }
+        #if DEBUG
+        .task {
+            if ProcessInfo.processInfo.arguments.contains("-friendTest") {
+                DebugLink.shared.start(model)
+                playing = true
+            }
+        }
+        #endif
     }
 }
 
@@ -121,14 +137,24 @@ private struct HomeScreen: View {
                 .buttonStyle(PrimaryButtonStyle())
 
                 // Playing a friend is a quiet second way in, not a second big button.
-                Button { Haptics.tap(); start(.passAndPlay, opponent) } label: {
-                    Label("Or play a friend on this phone", systemImage: "person.2")
+                Menu {
+                    if SharePlay.shared.available {
+                        Button("Play on this FaceTime call", systemImage: "shareplay") { SharePlay.shared.start() }
+                    }
+                    Button("Invite with Game Center", systemImage: "person.crop.circle.badge.plus") {
+                        GameCenter.shared.invite()
+                    }
+                    Button("Play on this phone", systemImage: "iphone") { start(.passAndPlay, opponent) }
+                } label: {
+                    Label("Or play a friend", systemImage: "person.2")
                         .frame(maxWidth: .infinity)
                 }
                 .font(.system(size: 14.5, weight: .semibold))
                 .foregroundStyle(Palette.accentText)
-                .buttonStyle(.plain)
                 .padding(.top, 2)
+
+                FriendGames()
+                    .padding(.top, 14)
 
                 RecentGames(records: recent)
                     .padding(.top, 14)
@@ -301,6 +327,21 @@ private struct OpponentButton: View {
     }
 }
 
+/// A friend: their initial on a soft glass circle.
+struct FriendAvatar: View {
+    let name: String
+    let size: CGFloat
+
+    var body: some View {
+        Text(String(name.first ?? "?").uppercased())
+            .font(Typeface.display(size * 0.42))
+            .foregroundStyle(Palette.accentText)
+            .frame(width: size, height: size)
+            .glassEffect(.regular.tint(Palette.accent.opacity(0.15)), in: .circle)
+            .accessibilityHidden(true)
+    }
+}
+
 /// Each opponent is a stone: a glass pebble, a cut flint, an obsidian star.
 struct OpponentAvatar: View {
     let opponent: Opponent
@@ -318,6 +359,48 @@ struct OpponentAvatar: View {
             .frame(width: size, height: size)
             .glassEffect(.regular.tint(tint.opacity(0.18)), in: .circle)
             .accessibilityHidden(true)
+    }
+}
+
+/// Games with friends that are still going, from Game Center.
+private struct FriendGames: View {
+    private var center: GameCenter { GameCenter.shared }
+
+    var body: some View {
+        if !center.matches.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                SectionLabel(text: "With friends")
+                VStack(spacing: 0) {
+                    ForEach(Array(center.matches.enumerated()), id: \.element.matchID) { k, m in
+                        Button { Haptics.tap(); center.open(m) } label: {
+                            HStack(spacing: 12) {
+                                FriendAvatar(name: GameCenter.friendName(in: m), size: 30)
+                                    .frame(width: 32)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(GameCenter.friendName(in: m)).font(.system(size: 15, weight: .semibold))
+                                    Text("Move \(GameCenter.moves(in: m).count / 2 + 1)")
+                                        .font(.system(size: 12.5)).foregroundStyle(Palette.mist)
+                                }
+                                Spacer()
+                                let mine = GameCenter.isMyTurn(m)
+                                Text(mine ? "Your move" : "Their move")
+                                    .font(.system(size: 12.5, weight: .semibold))
+                                    .foregroundStyle(mine ? Palette.great : Palette.mist)
+                                    .padding(.horizontal, 8).padding(.vertical, 3)
+                                    .background(mine ? Palette.greatFill : Palette.statFill, in: .capsule)
+                            }
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 12)
+                            .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        if k < center.matches.count - 1 { Divider().padding(.leading, 56) }
+                    }
+                }
+                .glassEffect(.regular, in: .rect(cornerRadius: 18))
+            }
+            .task { await center.reload() }
+        }
     }
 }
 
@@ -453,7 +536,7 @@ struct StaticBoard: View {
 
 // MARK: - Game
 
-private struct GameScreen: View {
+struct GameScreen: View {
     let model: GameModel
     let back: () -> Void
     /// How far the screen has been pulled from the left edge, on the way home.
@@ -466,7 +549,7 @@ private struct GameScreen: View {
                 CapturedRow(pieces: model.captured(by: "b"), lead: model.materialLead(for: "b"))
                 BoardView(model: model)
                 CapturedRow(pieces: model.captured(by: "w"), lead: model.materialLead(for: "w"))
-                CoachView(card: model.coach, opponent: model.opponent)
+                CoachView(card: model.coach, opponent: model.opponent, friend: model.mode == .friend ? model.friendName : nil)
                     .padding(.top, 4)
                     .contentShape(.rect)
                     // Swipe right for the move before, left for the move after.
@@ -493,7 +576,7 @@ private struct GameScreen: View {
 
             if let finish = model.finish {
                 FinishCard(finish: finish, share: model.finishMoment,
-                           again: { model.start(model.mode, opponent: model.opponent) },
+                           again: { model.mode == .friend ? model.rematch() : model.start(model.mode, opponent: model.opponent) },
                            tryNext: finish.unlocked.map { next in {
                                UserDefaults.standard.set(next.rawValue, forKey: "opponent")
                                model.start(.engine, opponent: next)
@@ -540,9 +623,12 @@ private struct TopBar: View {
 
             if model.mode == .engine {
                 OpponentAvatar(opponent: model.opponent, size: 36)
+            } else if model.mode == .friend {
+                FriendAvatar(name: model.friendName, size: 36)
             }
             VStack(alignment: .leading, spacing: 1) {
-                Text(model.mode == .engine ? model.opponent.name : "Pass & play").font(Typeface.display(17, .bold))
+                Text(model.mode == .engine ? model.opponent.name : model.mode == .friend ? model.friendName : "Pass & play")
+                    .font(Typeface.display(17, .bold))
                 HStack(spacing: 6) {
                     if model.playerToMove { Circle().fill(Palette.great).frame(width: 6, height: 6) }
                     Text(stateText).font(.system(size: 12.5)).foregroundStyle(Palette.mist)
@@ -559,6 +645,7 @@ private struct TopBar: View {
         if model.isOver { return "Game over" }
         if model.thinking { return "Thinking" }
         if model.mode == .passAndPlay { return model.turn == "w" ? "White to move" : "Black to move" }
+        if model.mode == .friend { return model.turn == model.myColor ? "Your move" : "Their move" }
         return model.turn == "w" ? "Your move" : ""
     }
 }
@@ -601,6 +688,7 @@ private struct CapturedRow: View {
 private struct CoachView: View {
     let card: CoachCard?
     let opponent: Opponent
+    var friend: String?
 
     var body: some View {
         ZStack {
@@ -632,7 +720,7 @@ private struct CoachView: View {
     private func badge(_ card: CoachCard) -> some View {
         if card.kind == .opponent || card.kind == .warning {
             ZStack(alignment: .bottomTrailing) {
-                OpponentAvatar(opponent: opponent, size: 46)
+                if let friend { FriendAvatar(name: friend, size: 46) } else { OpponentAvatar(opponent: opponent, size: 46) }
                 Text(card.badge)
                     .font(.system(size: 11, weight: .bold)).monospacedDigit()
                     .lineLimit(1).minimumScaleFactor(0.6)
@@ -698,6 +786,7 @@ private struct Dock: View {
     var body: some View {
         GlassEffectContainer(spacing: 8) {
             HStack(spacing: 8) {
+                if model.mode != .friend {
                 Button {
                     Haptics.tap()
                     undos += 1
@@ -711,9 +800,12 @@ private struct Dock: View {
                     .buttonBorderShape(.capsule)
                     .disabled(model.busy || model.trail.isEmpty)
                     .accessibilityLabel("Undo")
+                }
                 Menu {
-                    Button("New game", systemImage: "plus") { confirm = .newGame }
-                    if model.mode == .engine && !model.isOver {
+                    if model.mode != .friend {
+                        Button("New game", systemImage: "plus") { confirm = .newGame }
+                    }
+                    if model.mode != .passAndPlay && !model.isOver {
                         Button("Resign", systemImage: "flag", role: .destructive) { confirm = .resign }
                     }
                 } label: {
@@ -732,6 +824,14 @@ private struct Dock: View {
                 } message: { c in
                     Text(c.message)
                 }
+                if model.mode == .friend {
+                    // Against a friend there are no hints: just whose turn it is.
+                    Text(model.isOver ? "Game over" : model.turn == model.myColor ? "Your move" : "Waiting for \(model.friendInSentence)")
+                        .foregroundStyle(Palette.ink)
+                        .frame(maxWidth: .infinity, minHeight: Self.height, maxHeight: Self.height)
+                        .padding(.vertical, 7)
+                        .glassEffect(.regular, in: .capsule)
+                } else {
                 Button {
                     Haptics.tap()
                     hints += 1
@@ -755,6 +855,7 @@ private struct Dock: View {
                 .tint(Palette.accent)
                 .foregroundStyle(Palette.onAccent)
                 .disabled(!model.playerToMove || (model.hintsLeft == 0 && !model.hintIsFree))
+                }
             }
             .font(Typeface.display(14, .bold))
             .lineLimit(1)

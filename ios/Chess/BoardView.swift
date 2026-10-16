@@ -25,23 +25,25 @@ struct BoardView: View {
     var body: some View {
         GeometryReader { geo in
             let size = geo.size.width
+            let flip = model.flipped
             ZStack {
                 SquaresLayer(model: model, size: size)
                 Grain().blendMode(.multiply).opacity(0.35).allowsHitTesting(false)
-                ScoreLight(share: model.whiteShare)
+                // The light sits on the side that's ahead, from the player's view.
+                ScoreLight(share: flip ? 1 - model.whiteShare : model.whiteShare)
                 if !still {
-                    RaysLayer(rays: model.rays, size: size)
+                    RaysLayer(rays: model.rays, size: size, flipped: flip)
                 }
                 PiecesLayer(model: model, size: size, drag: touch?.dragging == true ? touch : nil)
                 if !still { MarkLayer(model: model, size: size) }
                 if !still, let s = model.sparkle {
                     Sparkle(size: size / 8)
-                        .position(center(s.square, size))
+                        .position(center(s.square, size, flipped: flip))
                         .id(s.id)
                 }
                 ForEach(model.bursts) { b in
                     ShardBurst(dark: b.dark, size: size / 8)
-                        .position(center(b.square, size))
+                        .position(center(b.square, size, flipped: flip))
                 }
             }
             .frame(width: size, height: size)
@@ -64,7 +66,7 @@ extension BoardView {
         let q = size / 8
         let col = Int(floor(p.x / q)), row = Int(floor(p.y / q))
         guard (0..<8).contains(col), (0..<8).contains(row) else { return nil }
-        return row * 8 + col
+        return model.flipped ? 63 - (row * 8 + col) : row * 8 + col
     }
 
     private func touchGesture(_ size: CGFloat) -> some Gesture {
@@ -106,8 +108,9 @@ extension BoardView {
                     // The verdict badge sits on the top-right corner of its square.
                     let q = size / 8
                     if let m = model.shownMark, m.square == t.start,
-                       v.location.x - CGFloat(Squares.file(m.square)) * q > q * 0.55,
-                       v.location.y - CGFloat(Squares.row(m.square)) * q < q * 0.45 {
+                       case let c = center(m.square, size, flipped: model.flipped),
+                       v.location.x - (c.x - q / 2) > q * 0.55,
+                       v.location.y - (c.y - q / 2) < q * 0.45 {
                         model.revealMark()
                     } else {
                         model.tap(t.start)
@@ -117,10 +120,11 @@ extension BoardView {
     }
 }
 
-/// Square centre in board coordinates.
-func center(_ sq: Square, _ size: CGFloat) -> CGPoint {
+/// Square centre in board coordinates. Flipped, Black sits at the bottom.
+func center(_ sq: Square, _ size: CGFloat, flipped: Bool = false) -> CGPoint {
     let q = size / 8
-    return CGPoint(x: (CGFloat(Squares.file(sq)) + 0.5) * q, y: (CGFloat(Squares.row(sq)) + 0.5) * q)
+    let s = flipped ? 63 - sq : sq
+    return CGPoint(x: (CGFloat(Squares.file(s)) + 0.5) * q, y: (CGFloat(Squares.row(s)) + 0.5) * q)
 }
 
 private struct SquaresLayer: View {
@@ -135,7 +139,7 @@ private struct SquaresLayer: View {
             ForEach(0..<8, id: \.self) { row in
                 HStack(spacing: 0) {
                     ForEach(0..<8, id: \.self) { col in
-                        let sq = row * 8 + col
+                        let sq = model.flipped ? 63 - (row * 8 + col) : row * 8 + col
                         let dark = (row + col) % 2 == 1
                         ZStack {
                             Rectangle().fill(dark ? Palette.squareDark : Palette.squareLight)
@@ -177,12 +181,12 @@ private struct SquaresLayer: View {
         // The board's rounded corners would clip the labels on a8 and h1, so
         // those two sit further in.
         if col == 0 {
-            Text("\(8 - row)").font(font).foregroundStyle(Palette.coordinate.opacity(0.85))
+            Text("\(model.flipped ? row + 1 : 8 - row)").font(font).foregroundStyle(Palette.coordinate.opacity(0.85))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .padding(q * (row == 0 ? 0.12 : 0.035))
         }
         if row == 7 {
-            Text(String(Character(UnicodeScalar(UInt8(97 + col))))).font(font).foregroundStyle(Palette.coordinate.opacity(0.85))
+            Text(String(Character(UnicodeScalar(UInt8(model.flipped ? 104 - col : 97 + col))))).font(font).foregroundStyle(Palette.coordinate.opacity(0.85))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                 .padding(q * (col == 7 ? 0.12 : 0.035))
         }
@@ -227,6 +231,7 @@ private struct ScoreLight: View {
 private struct RaysLayer: View {
     let rays: Rays?
     let size: CGFloat
+    var flipped = false
 
     var body: some View {
         ZStack {
@@ -237,7 +242,7 @@ private struct RaysLayer: View {
                 case .hint: Palette.great
                 }
                 ForEach(Array(rays.moves.enumerated()), id: \.element) { k, m in
-                    Ray(move: m, knight: rays.knight.contains(m), size: size,
+                    Ray(move: m, knight: rays.knight.contains(m), size: size, flipped: flipped,
                         color: rays.danger.contains(m) ? Palette.danger : color,
                         width: size / 8 * (rays.kind == .thinking ? 0.05 : 0.075),
                         opacity: rays.kind == .thinking ? 0.7 : 1, delay: rays.kind == .thinking ? 0 : Double(k) * 0.02)
@@ -255,6 +260,7 @@ private struct Ray: View {
     let move: BoardMove
     let knight: Bool
     let size: CGFloat
+    var flipped = false
     let color: Color
     let width: CGFloat
     let opacity: Double
@@ -262,7 +268,7 @@ private struct Ray: View {
     @State private var drawn = false
 
     var body: some View {
-        let a = center(move.from, size), b = center(move.to, size)
+        let a = center(move.from, size, flipped: flipped), b = center(move.to, size, flipped: flipped)
         let q = size / 8
         ZStack {
             Path { p in
@@ -316,8 +322,10 @@ private struct PiecesLayer: View {
                     .animation(.spring(response: 0.26, dampingFraction: 0.6), value: lifted)
                     .animation(.spring(response: 0.9, dampingFraction: 0.55), value: toppled)
                     // Held a little above the finger so the finger doesn't hide it.
-                    .position(dragged ? CGPoint(x: drag!.point.x, y: drag!.point.y - q * 0.25) : center(piece.square, size))
-                    .zIndex(dragged ? 30 : piece.id == model.movingPiece ? 20 : Double(Squares.row(piece.square)))
+                    .position(dragged ? CGPoint(x: drag!.point.x, y: drag!.point.y - q * 0.25)
+                                      : center(piece.square, size, flipped: model.flipped))
+                    .zIndex(dragged ? 30 : piece.id == model.movingPiece ? 20
+                            : Double(model.flipped ? 7 - Squares.row(piece.square) : Squares.row(piece.square)))
                     .transition(.opacity.animation(.easeOut(duration: 0.12)))
             }
         }
@@ -337,7 +345,7 @@ private struct MarkLayer: View {
         let q = size / 8
         ZStack {
             if let m = model.shownMark, let symbol = m.entry.card.kind.symbol {
-                let c = center(m.square, size)
+                let c = center(m.square, size, flipped: model.flipped)
                 Image(systemName: symbol)
                     .font(.system(size: q * 0.19, weight: .bold))
                     .foregroundStyle(.white)

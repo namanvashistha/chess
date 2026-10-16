@@ -224,7 +224,20 @@ enum Opponent: Int, CaseIterable, Identifiable {
     var isUnlocked: Bool { previous.map { Stats.wins(against: $0) >= Self.winsToUnlock } ?? true }
 }
 
-enum Mode { case engine, passAndPlay }
+enum Mode { case engine, passAndPlay, friend }
+
+/// How a game against a friend on another phone travels: Game Center, Messages
+/// or SharePlay. The model tells it about this player's moves; it calls
+/// `receive` with the whole game when the friend's arrive.
+@MainActor
+protocol MatchLink: AnyObject {
+    /// This player moved (or the game ended on their move); `moves` is the whole game.
+    func didMove(_ model: GameModel)
+    /// This player resigned.
+    func didResign(_ model: GameModel)
+    /// This player asked for another game with the same friend.
+    func rematch(_ model: GameModel)
+}
 
 /// The game screen's state. The Go engine owns the rules and the coaching; this
 /// keeps what the view needs on top and runs the engine off the main thread.
@@ -232,6 +245,18 @@ enum Mode { case engine, passAndPlay }
 @Observable
 final class GameModel {
     private(set) var mode: Mode = .engine
+    /// The colour this player has: always White against the engine; either in a
+    /// friend game. Pass and play has no single player.
+    private(set) var myColor = "w"
+    /// The friend's name, in a friend game.
+    private(set) var friendName = ""
+    /// How the friend game travels between phones.
+    @ObservationIgnored weak var link: MatchLink?
+    /// A friend game where this player is Black: the board turns so their pieces
+    /// sit at the bottom.
+    var flipped: Bool { mode == .friend && myColor == "b" }
+    /// The friend resigned.
+    @ObservationIgnored private var friendResigned = false
     private(set) var opponent: Opponent = .easy
 
     private(set) var board: [Character] = []
@@ -316,13 +341,13 @@ final class GameModel {
     }
 
     var isOver: Bool { !status.isEmpty }
-    var playerToMove: Bool { !busy && !isOver && (mode == .passAndPlay || turn == "w") }
+    var playerToMove: Bool { !busy && !isOver && (mode == .passAndPlay || turn == myColor) }
     /// Accuracy against the engine, on Lichess's curve: each move is scored by
     /// how much it lowers the chance of winning, so a slip costs some points
     /// rather than zeroing the move. Meaningless when two people share the
     /// board, so pass and play has none.
     var accuracy: Int? {
-        guard mode == .engine, losses.count >= Self.accuracyAfter else { return nil }
+        guard mode != .passAndPlay, losses.count >= Self.accuracyAfter else { return nil }
         func win(_ cp: Double) -> Double { 50 + 50 * (2 / (1 + exp(-0.00368208 * cp)) - 1) }
         let scores = losses.map { loss -> Double in
             let drop = 50 - win(-Double(loss))
@@ -372,19 +397,92 @@ final class GameModel {
         evals = []
         trail = []
         moves = []
-        hintsLeft = mode == .engine ? opponent.hints : 3
+        // Hints are the engine's help: fair against the engine, not against a friend.
+        hintsLeft = mode == .engine ? opponent.hints : mode == .friend ? 0 : 3
+        if mode != .friend { myColor = "w"; friendName = ""; link = nil }
+        friendResigned = false
         comebacks = 0
         reviewing = nil
         hintShown = nil
         nudge = nil
         mark = nil
         hintRevealed = false
-        if !keepingSave { SavedGame.clear() }
+        // A friend game lives with its link; it never replaces the saved game.
+        if !keepingSave && mode != .friend { SavedGame.clear() }
         refresh()
         moveSerial += 1
         say(.coach, "✦", "Your move", mode == .engine
             ? "You play White. Tap a piece to see where it can go."
             : "White starts. Pass the phone after each move.")
+    }
+
+    /// Opens a game against a friend: this player's colour, the friend's name and
+    /// the game so far. Called again whenever the link has newer moves than a
+    /// plain `receive` can apply.
+    func startFriend(name: String, color: String, moves remote: [String], link: MatchLink) {
+        myColor = color
+        friendName = name
+        self.link = link
+        start(.friend, opponent: .easy, keepingSave: true)
+        myColor = color
+        friendName = name
+        self.link = link
+        for uci in remote {
+            guard game.play(uci) else { break }
+            moves.append(uci)
+        }
+        ids = Array(repeating: nil, count: 64)
+        refresh()
+        if let last = moves.last { lastMove = BoardMove(uci: last, board: board) }
+        moveSerial += 1
+        if !endIfOver() { greetFriendTurn() }
+    }
+
+    /// The friend's moves, as the whole game so far. New moves glide in one by
+    /// one; anything that doesn't follow on from this board starts it afresh.
+    func receive(moves remote: [String], resigned: Bool = false) {
+        guard mode == .friend, let link else { return }
+        guard remote.count >= moves.count, Array(remote.prefix(moves.count)) == moves else {
+            startFriend(name: friendName, color: myColor, moves: remote, link: link)
+            return
+        }
+        let fresh = Array(remote.dropFirst(moves.count))
+        for uci in fresh {
+            let taken = BoardMove(uci: uci, board: board).flatMap { $0.capture ? board[$0.to] : nil }
+            _ = apply(uci)
+            if !isOver, uci == fresh.last, turn == myColor {
+                let tip = watchFor(lastMove, taken: taken)
+                say(tip.urgent ? .warning : .opponent, game.lastSAN(), tip.title, tip.text)
+            }
+        }
+        if resigned, !isOver {
+            friendResigned = true
+            status = "resigned"
+        }
+        _ = endIfOver()
+    }
+
+    /// The friend's name became known (they accepted the invitation).
+    func renameFriend(_ name: String) {
+        guard mode == .friend, name != friendName else { return }
+        friendName = name
+    }
+
+    /// Another game with the same friend, through the same link.
+    func rematch() {
+        guard mode == .friend else { return }
+        link?.rematch(self)
+    }
+
+    /// The friend's name mid-sentence: "your friend" when there's no name.
+    var friendInSentence: String { friendName == "Your friend" ? "your friend" : friendName }
+
+    private func greetFriendTurn() {
+        if turn == myColor {
+            say(.coach, "✦", "Your move", "You play \(myColor == "w" ? "White" : "Black") against \(friendInSentence).")
+        } else {
+            say(.opponent, "…", "\(friendName)'s move", "You'll get a notification when they've played.")
+        }
     }
 
     /// Picks up the saved game, if there is one.
@@ -429,8 +527,10 @@ final class GameModel {
                 guard g.play(m) else { break }
                 out.append(i < have.count && have[i] != nil ? have[i] : g.eval(2))
             }
+            let measured = out
             await MainActor.run {
                 guard game === self.game else { return }
+                let out = measured
                 var merged = out
                 for i in self.evals.indices {
                     if i < merged.count { if let v = self.evals[i] { merged[i] = v } } else { merged.append(self.evals[i]) }
@@ -445,6 +545,7 @@ final class GameModel {
     }
 
     private func save() {
+        guard mode != .friend else { return }
         guard !isOver else { SavedGame.clear(); return }
         SavedGame(passAndPlay: mode == .passAndPlay, opponent: opponent.rawValue, moves: moves, trail: trail,
                   losses: losses, great: great, blunders: blunders, hintsLeft: hintsLeft, evals: evals, comebacks: comebacks,
@@ -534,7 +635,7 @@ final class GameModel {
     /// The finish card leads with it, so every game ends on something good.
     private func bestMove() -> BestMove? {
         let rank: [CoachCard.Kind: Int] = [.great: 4, .good: 3, .inaccuracy: 2, .mistake: 1, .blunder: 0]
-        let mine = mode == .engine ? trail.filter { $0.ply % 2 == 0 } : trail
+        let mine = trail
         guard let e = mine.max(by: { (rank[$0.card.kind] ?? 0, $0.ply) < (rank[$1.card.kind] ?? 0, $1.ply) }),
               (rank[e.card.kind] ?? 0) >= 3,
               let after = position(afterPly: e.ply), let move = after.move,
@@ -567,15 +668,16 @@ final class GameModel {
     /// the game's best move, so every game has something to show.
     var finishMoment: ShareMoment? {
         guard let finish else { return nil }
-        if mode == .engine, finish.outcome == .won {
+        if mode != .passAndPlay, finish.outcome == .won {
             let accuracy = finish.accuracy.map { " · \($0)% accuracy" } ?? ""
-            return ShareMoment(board: board, move: lastMove, title: "I beat the \(opponent.name)",
+            let who = mode == .friend ? friendName : "the \(opponent.name)"
+            return ShareMoment(board: board, move: lastMove, title: "I beat \(who)",
                                detail: finish.text + accuracy, footer: "Played on Cozy Chess")
         }
         // Not a win: share warmly, about what went well, never the loss.
-        let against = mode == .engine ? " against the \(opponent.name)" : ""
+        let against = mode == .engine ? " against the \(opponent.name)" : mode == .friend ? " against \(friendName)" : ""
         guard let best = finish.best else {
-            let title = mode == .engine ? "I played the \(opponent.name)" : finish.title
+            let title = mode == .engine ? "I played the \(opponent.name)" : mode == .friend ? "I played \(friendName)" : finish.title
             return ShareMoment(board: board, move: lastMove, title: title,
                                detail: "Every game teaches me something.", footer: "Learning with Cozy Chess")
         }
@@ -603,7 +705,7 @@ final class GameModel {
     /// line. Checks first, then what the move attacks, then anything left loose,
     /// then a chance to win something, then a tip for this stage of the game.
     private func watchFor(_ m: BoardMove?, taken: Character?) -> (title: String, text: String, urgent: Bool) {
-        let me = "w", them = "b"
+        let me = mode == .passAndPlay ? turn : myColor, them = me == "w" ? "b" : "w"
         func name(_ sq: Square) -> String { "\(Self.pieceName(board[sq])) on \(Squares.name(sq))" }
         func squares(_ s: String) -> [Square] { s.split(separator: " ").compactMap { Squares.parse($0) } }
         func isMine(_ sq: Square) -> Bool { board[sq] != "." && (board[sq].isUppercase ? "w" : "b") == me }
@@ -643,12 +745,15 @@ final class GameModel {
     /// A tip that fits the position, or one of the app's gestures, each shown once.
     private func tip() -> String {
         let castling = game.fen().split(separator: " ").dropFirst(2).first.map(String.init) ?? ""
-        let home: [(Square, Character)] = [(57, "N"), (62, "N"), (58, "B"), (61, "B")] // b1 g1 c1 f1
+        let white = (mode == .passAndPlay ? turn : myColor) == "w"
+        let home: [(Square, Character)] = white ? [(57, "N"), (62, "N"), (58, "B"), (61, "B")]  // b1 g1 c1 f1
+                                                : [(1, "n"), (6, "n"), (2, "b"), (5, "b")]      // b8 g8 c8 f8
         let undeveloped = home.filter { board[$0.0] == $0.1 }.count
         if moves.count < 16 && undeveloped >= 2 {
             return "Bring a knight or bishop toward the centre."
         }
-        if moves.count < 30 && board[60] == "K" && castling.contains(where: { $0 == "K" || $0 == "Q" }) {
+        if moves.count < 30 && board[white ? 60 : 4] == (white ? "K" : "k")
+            && castling.contains(where: { white ? ($0 == "K" || $0 == "Q") : ($0 == "k" || $0 == "q") }) {
             return "Castling tucks your king away and brings a rook into play."
         }
         let gestures = [("tip.hold", "Hold any piece to see what guards it and what attacks it."),
@@ -702,7 +807,12 @@ final class GameModel {
         rays = r
         beforeInspect = coach
         let piece = board[square]
-        let whose = mode == .engine ? (piece.isUppercase ? "Your" : "Your opponent's") : (piece.isUppercase ? "White's" : "Black's")
+        let mineColor = (piece.isUppercase ? "w" : "b") == myColor
+        let whose = switch mode {
+        case .engine: mineColor ? "Your" : "Your opponent's"
+        case .friend: mineColor ? "Your" : "\(friendName)'s"
+        case .passAndPlay: piece.isUppercase ? "White's" : "Black's"
+        }
         func count(_ n: Int, _ word: String) -> String { n == 0 ? "no \(word)s" : n == 1 ? "1 \(word)" : "\(n) \(word)s" }
         let text: String = switch (guards.count, attackers.count) {
         case (_, 0): "Nothing attacks it" + (guards.isEmpty ? "." : ", and it's guarded by \(count(guards.count, "piece")).")
@@ -786,6 +896,7 @@ final class GameModel {
         mark = nil
         nudge = nil
         hintRevealed = false
+        guard mode != .friend else { return } // a sent move can't be taken back
         var steps = mode == .engine ? 2 : 1
         if mode == .engine && turn == "b" { steps = 1 } // the engine has not replied yet
         guard !busy, status != "resigned", moves.count >= steps else { return }
@@ -819,12 +930,13 @@ final class GameModel {
 
     /// Ends the game as a loss.
     func resign() {
-        guard mode == .engine, !isOver, !busy else { return }
+        guard mode != .passAndPlay, !isOver, !busy else { return }
         status = "resigned"
         selected = nil
         rays = nil
         loose = []
-        if let k = board.firstIndex(of: "K") { toppled = ids[k] }
+        if let k = board.firstIndex(of: myColor == "w" ? "K" : "k") { toppled = ids[k] }
+        if mode == .friend { link?.didResign(self) }
         let f = Finish(outcome: .lost, title: "Good game", text: "Every game teaches something. The next one is yours.",
                        accuracy: accuracy, great: great, blunders: blunders)
         let count = (moves.count + 1) / 2
@@ -835,10 +947,13 @@ final class GameModel {
             shown.best = bestMove()
             finish = shown
             emit(.lose)
-            Stats.record(accuracy: f.accuracy, great: f.great)
-            Stats.addRecord(GameRecord(date: .now, opponent: opponent.name, outcome: "lost", accuracy: f.accuracy, moves: count,
-                                       level: opponent.rawValue, great: f.great))
-            SavedGame.clear()
+            if mode == .engine {
+                Stats.record(accuracy: f.accuracy, great: f.great)
+                SavedGame.clear()
+            }
+            Stats.addRecord(GameRecord(date: .now, opponent: mode == .friend ? friendName : opponent.name, outcome: "lost",
+                                       accuracy: f.accuracy, moves: count,
+                                       level: mode == .engine ? opponent.rawValue : nil, great: f.great))
         }
     }
 
@@ -851,6 +966,8 @@ final class GameModel {
         let ply = moves.count
         let san = apply(uci)
         busy = true
+        // A friend game sends the move at once; the verdict is only for this phone.
+        if mode == .friend { link?.didMove(self) }
 
         // Judge the move against the position before it, off the main thread.
         let game = self.game
@@ -957,7 +1074,7 @@ final class GameModel {
         history.append((ids, lastMove))
         // A new move by the player replaces the old mark; the opponent's reply
         // keeps it, unless it took that piece.
-        if mode == .passAndPlay || turn == "w" { mark = nil }
+        if mode == .passAndPlay || turn == myColor { mark = nil }
         nudge = nil
         hintRevealed = false
         let captured = moveIDs(from: from, to: to, before: before)
@@ -987,7 +1104,15 @@ final class GameModel {
         if mate, let k = checkSquare { toppled = ids[k] }
         let moves = (self.moves.count + 1) / 2
         let f: Finish
-        if mate {
+        if friendResigned {
+            f = Finish(outcome: .won, title: "You beat \(friendName)!", text: "\(friendName) resigned after \(moves) moves.",
+                       accuracy: accuracy, great: great, blunders: blunders)
+        } else if mate, mode == .friend {
+            let iWon = turn != myColor
+            f = Finish(outcome: iWon ? .won : .lost, title: iWon ? "You beat \(friendName)!" : "Good fight",
+                       text: iWon ? "Checkmate in \(moves) moves." : "Checkmate after \(moves) moves. Next time is yours.",
+                       accuracy: accuracy, great: great, blunders: blunders)
+        } else if mate {
             let whiteWon = turn == "b"
             if mode == .passAndPlay {
                 f = Finish(outcome: .won, title: "\(whiteWon ? "White" : "Black") wins",
@@ -1027,12 +1152,12 @@ final class GameModel {
             try? await Task.sleep(for: .seconds(1.1))
             finish = final
             emit(final.outcome == .won ? .win : .lose)
-            Stats.record(accuracy: final.accuracy, great: mode == .engine ? final.great : 0)
-            Stats.addRecord(GameRecord(date: .now, opponent: mode == .engine ? opponent.name : "Pass & play",
+            if mode == .engine { Stats.record(accuracy: final.accuracy, great: final.great) }
+            Stats.addRecord(GameRecord(date: .now, opponent: mode == .engine ? opponent.name : mode == .friend ? friendName : "Pass & play",
                                        outcome: ["won", "lost", "draw"][[.won, .lost, .draw].firstIndex(of: final.outcome)!],
                                        accuracy: final.accuracy, moves: moves,
                                        level: mode == .engine ? opponent.rawValue : nil, great: final.great))
-            SavedGame.clear()
+            if self.mode != .friend { SavedGame.clear() }
         }
         return true
     }
@@ -1066,7 +1191,7 @@ final class GameModel {
         status = game.status()
         inCheck = game.inCheck()
         legal = game.legalMoves().split(separator: " ").map(String.init)
-        let mine = mode == .engine ? "w" : turn
+        let mine = mode == .passAndPlay ? turn : myColor
         loose = isOver ? [] : Set(game.loose(mine).split(separator: " ").compactMap { Squares.parse($0) })
         var items: [PieceItem] = []
         for sq in 0..<64 {

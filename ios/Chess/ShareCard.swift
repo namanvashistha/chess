@@ -19,6 +19,14 @@ struct ShareMoment: Transferable, Equatable, Sendable {
         .suggestedFileName("Cozy Chess.png")
     }
 
+    /// Just the board, square, for a Messages bubble.
+    @MainActor
+    func boardPNG() -> Data? {
+        let renderer = ImageRenderer(content: ShareCardView(moment: self, boardOnly: true))
+        renderer.scale = 3
+        return renderer.uiImage?.pngData()
+    }
+
     @MainActor
     func png() -> Data? {
         let renderer = ImageRenderer(content: ShareCardView(moment: self))
@@ -30,8 +38,19 @@ struct ShareMoment: Transferable, Equatable, Sendable {
 /// The picture itself: always in the light palette, so every share looks the same.
 private struct ShareCardView: View {
     let moment: ShareMoment
+    var boardOnly = false
 
     var body: some View {
+        if boardOnly {
+            board
+                .frame(width: 320, height: 320)
+                .environment(\.colorScheme, .light)
+        } else {
+            card
+        }
+    }
+
+    private var card: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(moment.title).font(Typeface.display(30)).tracking(-0.5)
