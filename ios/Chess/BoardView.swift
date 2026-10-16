@@ -29,10 +29,7 @@ struct BoardView: View {
             .frame(width: size, height: size)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(model.playerToMove && !still ? Palette.amber : Color.black.opacity(0.12),
-                                  lineWidth: model.playerToMove && !still ? 2 : 1)
-                    .animation(.easeOut(duration: 0.25), value: model.playerToMove)
+                RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.black.opacity(0.12), lineWidth: 1)
             }
             .shadow(color: .black.opacity(0.28), radius: 18, y: 14)
             .contentShape(Rectangle())
@@ -73,13 +70,14 @@ private struct SquaresLayer: View {
                         ZStack {
                             Rectangle().fill(dark ? Palette.squareDark : Palette.squareLight)
                             if let last, last.from == sq || last.to == sq {
-                                Rectangle().fill(Palette.amber.opacity(0.3))
+                                // neutral: amber is kept for what the player can act on
+                                Rectangle().fill(Color.white.opacity(0.34))
                             }
                             if sq == check {
                                 RadialGradient(colors: [Palette.danger.opacity(0.75), .clear], center: .center,
                                                startRadius: 0, endRadius: q * 0.6)
                             }
-                            if model.loose.contains(sq) {
+                            if model.loose.contains(sq) && model.rays == nil {
                                 Circle().strokeBorder(Palette.danger.opacity(0.7), lineWidth: 2).padding(q * 0.06)
                             }
                             coordinates(row: row, col: col, q: q)
@@ -94,16 +92,18 @@ private struct SquaresLayer: View {
 
     @ViewBuilder
     private func coordinates(row: Int, col: Int, q: CGFloat) -> some View {
-        let font = Font.system(size: q * 0.19, weight: .bold, design: .rounded)
+        let font = Font.system(size: q * 0.15, weight: .bold, design: .rounded)
+        // The board's rounded corners would clip the labels on a8 and h1, so
+        // those two sit further in.
         if col == 0 {
-            Text("\(8 - row)").font(font).foregroundStyle(Palette.coordinate)
+            Text("\(8 - row)").font(font).foregroundStyle(Palette.coordinate.opacity(0.85))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(q * 0.06)
+                .padding(q * (row == 0 ? 0.12 : 0.035))
         }
         if row == 7 {
-            Text(String(Character(UnicodeScalar(UInt8(97 + col))))).font(font).foregroundStyle(Palette.coordinate)
+            Text(String(Character(UnicodeScalar(UInt8(97 + col))))).font(font).foregroundStyle(Palette.coordinate.opacity(0.85))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                .padding(q * 0.06)
+                .padding(q * (col == 7 ? 0.12 : 0.035))
         }
     }
 }

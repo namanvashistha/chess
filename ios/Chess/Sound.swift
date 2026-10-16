@@ -36,8 +36,12 @@ final class Sound {
         ]
     }
 
+    /// Settings: sound and haptics, both on unless turned off.
+    static var soundOn: Bool { UserDefaults.standard.object(forKey: "sound") as? Bool ?? true }
+    static var hapticsOn: Bool { UserDefaults.standard.object(forKey: "haptics") as? Bool ?? true }
+
     func play(_ kind: Feedback.Kind) {
-        guard let buffer = buffers[kind] else { return }
+        guard Self.soundOn, let buffer = buffers[kind] else { return }
         if !engine.isRunning { try? engine.start() }
         guard engine.isRunning else { return }
         let p = players[next]

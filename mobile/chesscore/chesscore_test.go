@@ -22,11 +22,11 @@ func TestStartPosition(t *testing.T) {
 func TestPlayAndUndo(t *testing.T) {
 	g := NewGame()
 	for _, m := range []string{"e2e4", "e7e5", "g1f3"} {
-		if _, err := g.Play(m); err != nil {
-			t.Fatalf("Play(%s): %v", m, err)
+		if !g.Play(m) {
+			t.Fatalf("Play(%s) refused", m)
 		}
 	}
-	if _, err := g.Play("e1e3"); err == nil {
+	if g.Play("e1e3") {
 		t.Error("Play(e1e3) succeeded, want an illegal-move error")
 	}
 	if g.Moves() != "e2e4 e7e5 g1f3" || g.Turn() != "b" {
@@ -40,8 +40,8 @@ func TestPlayAndUndo(t *testing.T) {
 func TestFoolsMate(t *testing.T) {
 	g := NewGame()
 	for _, m := range []string{"f2f3", "e7e5", "g2g4", "d8h4"} {
-		if _, err := g.Play(m); err != nil {
-			t.Fatalf("Play(%s): %v", m, err)
+		if !g.Play(m) {
+			t.Fatalf("Play(%s) refused", m)
 		}
 	}
 	if !g.InCheck() || g.Status() != StatusCheckmate {
@@ -55,8 +55,8 @@ func TestFoolsMate(t *testing.T) {
 func TestSearchFindsMateForBlack(t *testing.T) {
 	g := NewGame()
 	for _, m := range []string{"f2f3", "e7e5", "g2g4"} {
-		if _, err := g.Play(m); err != nil {
-			t.Fatal(err)
+		if !g.Play(m) {
+			t.Fatalf("Play(%s) refused", m)
 		}
 	}
 	r := g.Search(3, 0)

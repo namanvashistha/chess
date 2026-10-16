@@ -75,14 +75,16 @@ func (g *Game) Assess(uci string) (Assessment, error) {
 	if best.HasBest {
 		a.Best = MoveToUCI(best.Best)
 	}
+	// Bands are in centipawns given away. Hanging a minor piece (about 300)
+	// is a blunder: that is how a player would describe it.
 	switch {
 	case loss <= 15 || a.Best == uci:
 		a.Kind = KindGreat
-	case loss <= 60:
+	case loss <= 50:
 		a.Kind = KindGood
-	case loss <= 140:
+	case loss <= 110:
 		a.Kind = KindInaccuracy
-	case loss <= 320:
+	case loss <= 230:
 		a.Kind = KindMistake
 	default:
 		a.Kind = KindBlunder
@@ -134,6 +136,37 @@ func (g *Game) reason(kind, uci, best string) string {
 		return sanFor(gs, best, g.legal, false, false) + " was stronger here."
 	}
 	return "There was a better move."
+}
+
+// Describe says in a few words what a move does, as a commentator would of
+// the opponent's move: "takes your bishop on a6", "castles", "gives check".
+func (g *Game) Describe(uci string) string {
+	if !g.IsLegal(uci) {
+		return ""
+	}
+	gs := g.Position()
+	from, to := PositionToIndex(uci[0:2]), PositionToIndex(uci[2:4])
+	piece := pieceAt(gs, from) | 0x20
+	move, _ := ParseUCIMove(gs, uci)
+	child := ApplyMove(gs, move)
+	var s string
+	switch {
+	case pieceAt(gs, to) != 0:
+		s = "takes your " + pieceNames[pieceAt(gs, to)|0x20] + " on " + uci[2:4]
+	case piece == 'k' && abs(to%8-from%8) == 2:
+		s = "castles"
+	case len(uci) == 5:
+		s = "promotes a pawn"
+	default:
+		s = "moves the " + pieceNames[piece] + " to " + uci[2:4]
+	}
+	if InCheck(child) {
+		if len(GenerateLegalMoveList(child)) == 0 {
+			return s + ". Checkmate"
+		}
+		return s + ", with check"
+	}
+	return s
 }
 
 // Explain says in a few words why uci is a good idea, for "show me".

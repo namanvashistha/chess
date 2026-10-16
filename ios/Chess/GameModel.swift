@@ -58,13 +58,51 @@ struct Rays: Equatable {
 }
 
 /// What the coach is saying.
-struct CoachCard: Equatable {
-    enum Kind: String { case great, good, inaccuracy, mistake, blunder, coach, warning }
+struct CoachCard: Equatable, Codable {
+    enum Kind: String, Codable { case great, good, inaccuracy, mistake, blunder, coach, warning, opponent }
     let id: Int
     let kind: Kind
     let badge: String
     let title: String
     let text: String
+}
+
+/// One of the player's moves with the coach's verdict, for the move trail.
+struct TrailEntry: Identifiable, Equatable, Codable {
+    let id: Int
+    let ply: Int
+    let san: String
+    let card: CoachCard
+}
+
+/// A finished game, for the home screen's list.
+struct GameRecord: Identifiable, Equatable, Codable {
+    var id: Date { date }
+    let date: Date
+    let opponent: String
+    let outcome: String // "won", "lost", "draw"
+    let accuracy: Int?
+    let moves: Int
+}
+
+/// A game in progress, saved after every move so it survives quitting.
+struct SavedGame: Codable {
+    let passAndPlay: Bool
+    let opponent: Int
+    let moves: [String]
+    let trail: [TrailEntry]
+    let losses: [Int]
+    let great: Int
+    let blunders: Int
+    let hintsLeft: Int
+    let fen: String
+
+    private static let key = "savedGame"
+    static func load() -> SavedGame? {
+        UserDefaults.standard.data(forKey: key).flatMap { try? JSONDecoder().decode(SavedGame.self, from: $0) }
+    }
+    func store() { UserDefaults.standard.set(try? JSONEncoder().encode(self), forKey: Self.key) }
+    static func clear() { UserDefaults.standard.removeObject(forKey: key) }
 }
 
 /// A capture's glass shards.
@@ -132,6 +170,10 @@ final class GameModel {
     private(set) var busy = false
     private(set) var thinking = false
     private(set) var losses: [Int] = []
+    private(set) var trail: [TrailEntry] = []
+    private(set) var hintsLeft = 3
+    /// The trail entry the coach card is showing, if the player tapped one.
+    private(set) var reviewing: Int?
 
     @ObservationIgnored private var game: ChesscoreGame
     @ObservationIgnored private var legal: [String] = []
@@ -141,6 +183,11 @@ final class GameModel {
     @ObservationIgnored private var serial = 0
     @ObservationIgnored private var great = 0
     @ObservationIgnored private var blunders = 0
+    @ObservationIgnored private var moves: [String] = []
+    /// The hint already paid for in this position, shown again for free.
+    @ObservationIgnored private var hintShown: (ply: Int, uci: String, text: String)?
+    /// Accuracy is shown once there is enough to say something.
+    static let accuracyAfter = 3
 
     init() {
         game = ChesscoreNewGame()!
@@ -150,7 +197,7 @@ final class GameModel {
     var isOver: Bool { !status.isEmpty }
     var playerToMove: Bool { !busy && !isOver && (mode == .passAndPlay || turn == "w") }
     var accuracy: Int? {
-        guard !losses.isEmpty else { return nil }
+        guard losses.count >= Self.accuracyAfter else { return nil }
         let total = losses.map { max(0, 100 - Double($0) / 3.2) }.reduce(0, +)
         return Int((total / Double(losses.count)).rounded())
     }
@@ -172,6 +219,10 @@ final class GameModel {
     // MARK: - Starting
 
     func start(_ mode: Mode, opponent: Opponent) {
+        start(mode, opponent: opponent, keepingSave: false)
+    }
+
+    private func start(_ mode: Mode, opponent: Opponent, keepingSave: Bool) {
         self.mode = mode
         self.opponent = opponent
         game = ChesscoreNewGame()!
@@ -189,11 +240,60 @@ final class GameModel {
         busy = false
         thinking = false
         whiteShare = 0.5
+        trail = []
+        moves = []
+        hintsLeft = 3
+        reviewing = nil
+        hintShown = nil
+        if !keepingSave { SavedGame.clear() }
         refresh()
         moveSerial += 1
         say(.coach, "✦", "Your move", mode == .engine
             ? "You play White. Tap a piece to see where it can go."
             : "White starts. Pass the phone after each move.")
+    }
+
+    /// Picks up the saved game, if there is one.
+    @discardableResult
+    func resume() -> Bool {
+        guard let saved = SavedGame.load() else { return false }
+        start(saved.passAndPlay ? .passAndPlay : .engine, opponent: Opponent(rawValue: saved.opponent) ?? .flint,
+              keepingSave: true)
+        for uci in saved.moves {
+            guard game.play(uci) else { break }
+            moves.append(uci)
+        }
+        trail = saved.trail
+        losses = saved.losses
+        great = saved.great
+        blunders = saved.blunders
+        hintsLeft = saved.hintsLeft
+        ids = Array(repeating: nil, count: 64)
+        refresh()
+        if let last = moves.last { lastMove = BoardMove(uci: last, board: board) }
+        moveSerial += 1
+        say(.coach, "✦", "Welcome back", "Your game is where you left it.")
+        save()
+        if mode == .engine, turn == "b", !isOver { engineTurn() }
+        return true
+    }
+
+    private func save() {
+        guard !isOver else { SavedGame.clear(); return }
+        SavedGame(passAndPlay: mode == .passAndPlay, opponent: opponent.rawValue, moves: moves, trail: trail,
+                  losses: losses, great: great, blunders: blunders, hintsLeft: hintsLeft, fen: game.fen()).store()
+    }
+
+    /// Shows a past move's verdict again; tapping it twice returns to the latest.
+    func review(_ entry: TrailEntry) {
+        if reviewing == entry.id {
+            reviewing = nil
+            coach = trail.last?.card ?? coach
+        } else {
+            reviewing = entry.id
+            coach = CoachCard(id: bump(), kind: entry.card.kind, badge: entry.card.badge,
+                              title: "\((entry.ply / 2) + 1). \(entry.san) · \(entry.card.title)", text: entry.card.text)
+        }
     }
 
     // MARK: - Taps
@@ -216,12 +316,23 @@ final class GameModel {
         }
     }
 
+    /// True when "Show me" would repeat a hint already used in this position.
+    var hintIsFree: Bool { hintShown?.ply == moves.count }
+
     func hint() {
         guard playerToMove else { return }
         selected = nil
+        if let shown = hintShown, shown.ply == moves.count, let m = BoardMove(uci: shown.uci, board: board) {
+            rays = makeRays(.hint, [m])
+            say(.great, "✦", "Try this", shown.text)
+            return
+        }
+        guard hintsLeft > 0 else { return }
+        hintsLeft -= 1
+        save()
         rays = nil
         busy = true
-        let game = self.game
+        let game = self.game, ply = moves.count
         Task.detached(priority: .userInitiated) {
             let best = game.search(3, moveTimeMs: 0)?.bestMove ?? ""
             let san = best.isEmpty ? "" : game.san(best)
@@ -229,23 +340,35 @@ final class GameModel {
             await MainActor.run {
                 self.busy = false
                 guard !best.isEmpty, game === self.game, let m = BoardMove(uci: best, board: self.board) else { return }
+                let text = "\(san): \(why)"
+                self.hintShown = (ply, best, text)
                 self.rays = self.makeRays(.hint, [m])
-                self.say(.great, "✦", "Try this", "\(san): \(why)")
+                self.say(.great, "✦", "Try this", text)
                 self.emit(.good)
             }
         }
     }
 
     func undo() {
-        let steps = mode == .engine ? 2 : 1
-        guard !busy, history.count >= steps else { return }
+        var steps = mode == .engine ? 2 : 1
+        if mode == .engine && turn == "b" { steps = 1 } // the engine has not replied yet
+        guard !busy, status != "resigned", moves.count >= steps else { return }
         for _ in 0..<steps {
             game.undo()
-            let snap = history.removeLast()
-            ids = snap.ids
-            lastMove = snap.last
+            moves.removeLast()
+            if let snap = history.popLast() {
+                ids = snap.ids
+                lastMove = snap.last
+            } else {
+                // resumed game: no identities to restore, so pieces fade back in place
+                ids = Array(repeating: nil, count: 64)
+                lastMove = nil
+            }
         }
         if !losses.isEmpty { losses.removeLast() }
+        if !trail.isEmpty { trail.removeLast() }
+        hintShown = nil
+        reviewing = nil
         selected = nil
         rays = nil
         toppled = nil
@@ -254,6 +377,28 @@ final class GameModel {
         refresh()
         moveSerial += 1
         say(.coach, "↶", "Rewound", "Your move again. Take another look.")
+        save()
+    }
+
+    /// Ends the game as a loss.
+    func resign() {
+        guard mode == .engine, !isOver, !busy else { return }
+        status = "resigned"
+        selected = nil
+        rays = nil
+        loose = []
+        if let k = board.firstIndex(of: "K") { toppled = ids[k] }
+        let f = Finish(outcome: .lost, title: "You resigned", text: "\(opponent.name) takes this one. The next is yours.",
+                       accuracy: accuracy, great: great, blunders: blunders)
+        let count = (moves.count + 1) / 2
+        Task {
+            try? await Task.sleep(for: .seconds(0.9))
+            finish = f
+            emit(.lose)
+            Stats.record(accuracy: f.accuracy)
+            Stats.addRecord(GameRecord(date: .now, opponent: opponent.name, outcome: "lost", accuracy: f.accuracy, moves: count))
+            SavedGame.clear()
+        }
     }
 
     // MARK: - Moves
@@ -262,17 +407,18 @@ final class GameModel {
         var uci = Squares.name(from) + Squares.name(to)
         if !legal.contains(uci), legal.contains(uci + "q") { uci += "q" }
         let fenBefore = game.fen()
-        apply(uci)
+        let ply = moves.count
+        let san = apply(uci)
         busy = true
 
         // Judge the move against the position before it, off the main thread.
         let game = self.game
         Task.detached(priority: .userInitiated) {
-            let verdict = try? ChesscoreNewGameFromFEN(fenBefore, nil)?.assess(uci)
+            let verdict = ChesscoreNewGameFromFEN(fenBefore)?.assess(uci)
             let eval = game.eval(2)
             await MainActor.run {
                 guard game === self.game else { return }
-                if let verdict { self.judged(verdict) }
+                if let verdict { self.judged(verdict, ply: ply, san: san) }
                 self.setEval(eval)
                 self.busy = false
                 if self.endIfOver() { return }
@@ -281,14 +427,17 @@ final class GameModel {
         }
     }
 
-    private func judged(_ v: ChesscoreAssessment) {
+    private func judged(_ v: ChesscoreAssessment, ply: Int, san: String) {
         losses.append(v.loss)
         let kind = CoachCard.Kind(rawValue: v.kind) ?? .good
         if kind == .great { great += 1 }
         if kind == .blunder { blunders += 1 }
         let badge = ["great": "!!", "good": "✓", "inaccuracy": "?!", "mistake": "?", "blunder": "??"][v.kind] ?? "✓"
         say(kind, badge, v.title, v.text)
+        if let card = coach { trail.append(TrailEntry(id: bump(), ply: ply, san: san, card: card)) }
+        reviewing = nil
         emit(kind == .great ? .great : kind == .good ? .good : .bad)
+        save()
     }
 
     /// The engine shows the moves it is weighing, one by one, then commits.
@@ -299,11 +448,12 @@ final class GameModel {
         Task.detached(priority: .userInitiated) {
             let candidates = game.candidates(4).split(separator: " ").map(String.init)
             let choice = game.botMove(level)
-            await MainActor.run { self.showThinking(candidates, choice, game) }
+            let line = choice.isEmpty ? "" : game.describe(choice)
+            await MainActor.run { self.showThinking(candidates, choice, line, game) }
         }
     }
 
-    private func showThinking(_ candidates: [String], _ choice: String, _ game: ChesscoreGame) {
+    private func showThinking(_ candidates: [String], _ choice: String, _ line: String, _ game: ChesscoreGame) {
         guard game === self.game, !choice.isEmpty else { busy = false; thinking = false; return }
         var shown = candidates
         if !shown.contains(choice) {
@@ -319,26 +469,33 @@ final class GameModel {
             guard game === self.game else { return }
             rays = nil
             thinking = false
-            apply(choice)
+            let san = apply(choice)
             busy = false
-            if endIfOver() { return }
+            let title = "\(opponent.name) \(line)"
+            if endIfOver() {
+                say(.opponent, san, title + ".", "That's the game.")
+                return
+            }
             let eval = await Task.detached { game.eval(2) }.value
             setEval(eval)
             if inCheck {
-                say(.warning, "+", "Check!", "Your king is attacked. Move it, block, or capture.")
+                say(.warning, san, title + ".", "Your king is in check. Move it, block, or capture.")
             } else if let sq = loose.sorted().first {
-                say(.inaccuracy, "!", "Heads up",
-                    "Your \(Self.pieceName(board[sq])) on \(Squares.name(sq)) is under attack and undefended.")
+                say(.opponent, san, title + ".",
+                    "Watch your \(Self.pieceName(board[sq])) on \(Squares.name(sq)): it's attacked and undefended.")
+            } else {
+                say(.opponent, san, title + ".", "Your move.")
             }
         }
     }
 
-    private func apply(_ uci: String) {
-        guard let from = Squares.parse(uci.prefix(2)), let to = Squares.parse(uci.dropFirst(2).prefix(2)) else { return }
+    @discardableResult
+    private func apply(_ uci: String) -> String {
+        guard let from = Squares.parse(uci.prefix(2)), let to = Squares.parse(uci.dropFirst(2).prefix(2)) else { return "" }
         let before = board
-        var err: NSError?
-        _ = game.play(uci, error: &err)
-        if err != nil { return }
+        guard game.play(uci) else { return "" }
+        let san = game.lastSAN()
+        moves.append(uci)
 
         history.append((ids, lastMove))
         let captured = moveIDs(from: from, to: to, before: before)
@@ -357,6 +514,8 @@ final class GameModel {
             emit(.move)
         }
         if inCheck { emit(.check) }
+        save()
+        return san
     }
 
     private func endIfOver() -> Bool {
@@ -364,7 +523,7 @@ final class GameModel {
         busy = false
         let mate = status == ChesscoreStatusCheckmate
         if mate, let k = checkSquare { toppled = ids[k] }
-        let moves = (history.count + 1) / 2
+        let moves = (self.moves.count + 1) / 2
         let f: Finish
         if mate {
             let whiteWon = turn == "b"
@@ -387,6 +546,10 @@ final class GameModel {
             finish = f
             emit(f.outcome == .won ? .win : .lose)
             Stats.record(accuracy: f.accuracy)
+            Stats.addRecord(GameRecord(date: .now, opponent: mode == .engine ? opponent.name : "Pass & play",
+                                       outcome: ["won", "lost", "draw"][[.won, .lost, .draw].firstIndex(of: f.outcome)!],
+                                       accuracy: f.accuracy, moves: moves))
+            SavedGame.clear()
         }
         return true
     }
@@ -494,6 +657,15 @@ enum Stats {
     static var streak: Int { defaults.integer(forKey: "streak") }
     static var averageAccuracy: Int? {
         defaults.integer(forKey: "games") == 0 ? nil : Int(defaults.double(forKey: "accuracy").rounded())
+    }
+
+    static var recent: [GameRecord] {
+        defaults.data(forKey: "recent").flatMap { try? JSONDecoder().decode([GameRecord].self, from: $0) } ?? []
+    }
+
+    static func addRecord(_ r: GameRecord) {
+        let list = Array(([r] + recent).prefix(5))
+        defaults.set(try? JSONEncoder().encode(list), forKey: "recent")
     }
 
     static func record(accuracy: Int?) {

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<defs>
+  <linearGradient id="fill" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#f4f5f6"/><stop offset="1" stop-color="#bcc3cc"/>
+  </linearGradient>
+  <linearGradient id="lit" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset=".55" stop-color="#fff" stop-opacity=".2"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+  </linearGradient>
+  <linearGradient id="shade" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#29303a" stop-opacity="0"/><stop offset=".55" stop-color="#29303a" stop-opacity=".22"/><stop offset="1" stop-color="#29303a" stop-opacity=".7"/>
+  </linearGradient>
+  <radialGradient id="spec" cx=".34" cy=".22" r=".22"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  <radialGradient id="contact" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#1c201a" stop-opacity=".5"/><stop offset=".6" stop-color="#1c201a" stop-opacity=".18"/><stop offset="1" stop-color="#1c201a" stop-opacity="0"/></radialGradient>
+  <radialGradient id="glow" cx=".36" cy=".26" r=".9"><stop offset="0" stop-color="#fff6e0" stop-opacity=".55"/><stop offset=".6" stop-color="#fff6e0" stop-opacity="0"/></radialGradient>
+  <clipPath id="piece"><path d="M22 86.5C22 84 23.5 82.5 26 82.5H74C76.5 82.5 78 84 78 86.5V87.5C78 89.5 76.5 90.5 74.5 90.5H25.5C23.5 90.5 22 89.5 22 87.5ZM31 82.5C32 73 37 66 41 61C34 60 27 59 23 56C18 53 17.5 47.5 20.5 43.5L37 25C40.5 20 45 15 49.5 10.5C52 14 54 18 55.5 22C68 26 76 37 75.5 52C75 64 72.5 73 71.5 82.5Z"/></clipPath>
+</defs>
+<rect width="1024" height="1024" fill="#d9d4c8"/>
+<rect x="512" y="0" width="512" height="512" fill="#8e9a90"/>
+<rect x="0" y="512" width="512" height="512" fill="#8e9a90"/>
+<rect width="1024" height="1024" fill="url(#glow)"/>
+<g transform="translate(112 96) scale(8)">
+  <ellipse cx="51" cy="89" rx="40" ry="6" fill="url(#contact)"/>
+  <ellipse cx="50" cy="88" rx="29" ry="3.6" fill="url(#contact)"/>
+  <path d="M22 86.5C22 84 23.5 82.5 26 82.5H74C76.5 82.5 78 84 78 86.5V87.5C78 89.5 76.5 90.5 74.5 90.5H25.5C23.5 90.5 22 89.5 22 87.5ZM31 82.5C32 73 37 66 41 61C34 60 27 59 23 56C18 53 17.5 47.5 20.5 43.5L37 25C40.5 20 45 15 49.5 10.5C52 14 54 18 55.5 22C68 26 76 37 75.5 52C75 64 72.5 73 71.5 82.5Z" fill="url(#fill)"/>
+  <g clip-path="url(#piece)">
+    <rect x="0" y="0" width="100" height="100" fill="url(#spec)"/>
+    <path d="M22 86.5C22 84 23.5 82.5 26 82.5H74C76.5 82.5 78 84 78 86.5V87.5C78 89.5 76.5 90.5 74.5 90.5H25.5C23.5 90.5 22 89.5 22 87.5ZM31 82.5C32 73 37 66 41 61C34 60 27 59 23 56C18 53 17.5 47.5 20.5 43.5L37 25C40.5 20 45 15 49.5 10.5C52 14 54 18 55.5 22C68 26 76 37 75.5 52C75 64 72.5 73 71.5 82.5Z" fill="none" stroke="url(#shade)" stroke-width="3.4"/>
+    <path d="M22 86.5C22 84 23.5 82.5 26 82.5H74C76.5 82.5 78 84 78 86.5V87.5C78 89.5 76.5 90.5 74.5 90.5H25.5C23.5 90.5 22 89.5 22 87.5ZM31 82.5C32 73 37 66 41 61C34 60 27 59 23 56C18 53 17.5 47.5 20.5 43.5L37 25C40.5 20 45 15 49.5 10.5C52 14 54 18 55.5 22C68 26 76 37 75.5 52C75 64 72.5 73 71.5 82.5Z" fill="none" stroke="url(#lit)" stroke-width="3.4"/>
+  </g>
+  <circle cx="40" cy="33" r="2.6" fill="#4a525c"/>
+</g>
+</svg>

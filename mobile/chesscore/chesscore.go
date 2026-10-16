@@ -27,8 +27,9 @@ const (
 
 // Game is one game in progress.
 type Game struct {
-	mu    sync.Mutex
-	g     *engine.Game
+	mu      sync.Mutex
+	g       *engine.Game
+	lastSAN string
 	table *engine.TranspositionTable
 	stop  chan struct{} // closed by StopSearch; replaced by each Search
 }
@@ -38,13 +39,19 @@ func NewGame() *Game {
 	return wrap(engine.NewGame())
 }
 
-// NewGameFromFEN returns a game starting at the given FEN position.
-func NewGameFromFEN(fen string) (*Game, error) {
+// NewGameFromFEN returns a game starting at the given FEN position, or nil if
+// the FEN does not parse.
+//
+// Nothing exported here returns a value together with an error: with Go 1.22,
+// a cgo export that returns a pointer-bearing value plus an error can abort the
+// process with "bulkBarrierPreWrite: unaligned arguments" when the garbage
+// collector is running. Single results only.
+func NewGameFromFEN(fen string) *Game {
 	g, err := engine.NewGameFromFEN(fen)
 	if err != nil {
-		return nil, err
+		return nil
 	}
-	return wrap(g), nil
+	return wrap(g)
 }
 
 func wrap(g *engine.Game) *Game {
@@ -88,12 +95,24 @@ func (g *Game) LegalMoves() string {
 	return strings.Join(g.g.Legal(), " ")
 }
 
-// Play makes a move given in UCI and returns it in SAN. It returns an error if
-// the move is not legal in the current position.
-func (g *Game) Play(uci string) (string, error) {
+// Play makes a move given in UCI. It returns false, and changes nothing, if
+// the move is not legal. LastSAN then gives the move in SAN.
+func (g *Game) Play(uci string) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	return g.g.Play(uci)
+	san, err := g.g.Play(uci)
+	if err != nil {
+		return false
+	}
+	g.lastSAN = san
+	return true
+}
+
+// LastSAN returns the move most recently made with Play, in SAN.
+func (g *Game) LastSAN() string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.lastSAN
 }
 
 // Undo takes back the last move. It returns false when there is nothing to undo.
@@ -218,16 +237,16 @@ type Assessment struct {
 	Best  string // UCI
 }
 
-// Assess judges a legal move before it is played. It blocks for a moment, so
-// call it off the main thread.
-func (g *Game) Assess(uci string) (*Assessment, error) {
+// Assess judges a legal move before it is played, or returns nil if the move
+// is not legal. It blocks for a moment, so call it off the main thread.
+func (g *Game) Assess(uci string) *Assessment {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	a, err := g.g.Assess(uci)
 	if err != nil {
-		return nil, err
+		return nil
 	}
-	return &Assessment{Kind: a.Kind, Title: a.Title, Text: a.Text, Loss: a.Loss, Best: a.Best}, nil
+	return &Assessment{Kind: a.Kind, Title: a.Title, Text: a.Text, Loss: a.Loss, Best: a.Best}
 }
 
 // Explain says in a few words why a move is good, for "show me".
@@ -271,4 +290,11 @@ func (g *Game) Loose(color string) string {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	return strings.Join(g.g.Loose(color), " ")
+}
+
+// Describe says what a legal move does, for narrating the opponent's move.
+func (g *Game) Describe(uci string) string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.g.Describe(uci)
 }

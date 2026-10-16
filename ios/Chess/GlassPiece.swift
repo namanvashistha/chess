@@ -62,7 +62,7 @@ struct GlassPiece: View {
         isWhite
             ? LinearGradient(stops: [.init(color: .white.opacity(0.9), location: 0),
                                      .init(color: Color(white: 0.965, opacity: 0.84), location: 0.45),
-                                     .init(color: Color(red: 0.81, green: 0.83, blue: 0.855, opacity: 0.9), location: 1)],
+                                     .init(color: Color(red: 0.74, green: 0.765, blue: 0.80, opacity: 0.94), location: 1)],
                              startPoint: .topLeading, endPoint: .bottomTrailing)
             : LinearGradient(stops: [.init(color: Color(red: 0.31, green: 0.34, blue: 0.38, opacity: 0.86), location: 0),
                                      .init(color: Color(red: 0.13, green: 0.15, blue: 0.18, opacity: 0.92), location: 0.5),
@@ -86,8 +86,8 @@ struct GlassPiece: View {
     private var shadeEdge: LinearGradient {
         let c = Color(red: 0.16, green: 0.19, blue: 0.21)
         return LinearGradient(stops: [.init(color: c.opacity(0), location: 0),
-                                      .init(color: c.opacity(0.18), location: 0.5),
-                                      .init(color: c.opacity(0.55), location: 1)],
+                                      .init(color: c.opacity(0.24), location: 0.5),
+                                      .init(color: c.opacity(0.72), location: 1)],
                               startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 }

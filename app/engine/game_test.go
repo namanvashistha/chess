@@ -140,6 +140,13 @@ func TestCoach(t *testing.T) {
 	if c.Kind != KindBlunder || c.Text != "Your queen on d4 can now be taken." {
 		t.Errorf("Qd4 = %+v", c)
 	}
+	if d := g3.Describe("e5d4"); d != "" {
+		t.Errorf("Describe of an illegal move = %q", d)
+	}
+	g4, _ := NewGameFromFEN("4k3/8/8/4p3/3Q4/8/8/4K3 b - - 0 1")
+	if d := g4.Describe("e5d4"); d != "takes your queen on d4" {
+		t.Errorf("Describe(exd4) = %q", d)
+	}
 	if loose := g3.Loose("w"); len(loose) != 0 {
 		t.Errorf("Loose before the blunder = %v", loose)
 	}
