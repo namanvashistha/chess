@@ -5,7 +5,7 @@ A native SwiftUI app. The Go engine in `app/engine` runs on the phone, so the ap
 ## Layout
 
 - `Chess.xcodeproj`: the Xcode project. Files in `Chess/` are picked up automatically, so new Swift files need no project edits.
-- `Chess/`: SwiftUI sources and the asset catalog. The piece images are copied from `app/static/images`.
+- `Chess/`: SwiftUI sources. The pieces are drawn in code (`PieceShape.swift`) and rendered in Liquid Glass, so there are no piece images.
 - `Frameworks/Chesscore.xcframework`: the engine, built from `mobile/chesscore`. It is not committed.
 
 ## Build
@@ -18,6 +18,6 @@ A native SwiftUI app. The Go engine in `app/engine` runs on the phone, so the ap
 
    The Makefile shows how to install the pinned `gomobile`.
 
-2. Open `Chess.xcodeproj` in Xcode and run the `Chess` scheme. Xcode needs the iOS platform that matches its SDK, which you install from Xcode > Settings > Components.
+2. Open `Chess.xcodeproj` in Xcode and run the `Chess` scheme. The app needs iOS 26 (Liquid Glass), and Xcode needs the matching iOS platform from Xcode > Settings > Components.
 
 Run `make ios-engine` again after any change to the engine.

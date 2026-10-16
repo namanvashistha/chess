@@ -208,3 +208,67 @@ func (g *Game) StopSearch() {
 		g.stop = nil
 	}
 }
+
+// Assessment is the coach's verdict on a move; see engine.Assessment.
+type Assessment struct {
+	Kind  string // "great", "good", "inaccuracy", "mistake" or "blunder"
+	Title string
+	Text  string
+	Loss  int
+	Best  string // UCI
+}
+
+// Assess judges a legal move before it is played. It blocks for a moment, so
+// call it off the main thread.
+func (g *Game) Assess(uci string) (*Assessment, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	a, err := g.g.Assess(uci)
+	if err != nil {
+		return nil, err
+	}
+	return &Assessment{Kind: a.Kind, Title: a.Title, Text: a.Text, Loss: a.Loss, Best: a.Best}, nil
+}
+
+// Explain says in a few words why a move is good, for "show me".
+func (g *Game) Explain(uci string) string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.g.Explain(uci)
+}
+
+// SAN returns a legal move in standard algebraic notation without playing it.
+func (g *Game) SAN(uci string) string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if !g.g.IsLegal(uci) {
+		return ""
+	}
+	san, _ := g.g.Play(uci)
+	g.g.Undo()
+	return san
+}
+
+// Candidates returns up to n moves the side to move would consider, best
+// first, space-separated UCI.
+func (g *Game) Candidates(n int) string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return strings.Join(g.g.Candidates(n), " ")
+}
+
+// Eval returns the score in centipawns from White's point of view; mates are
+// ±10000.
+func (g *Game) Eval(depth int) int {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.g.Eval(depth)
+}
+
+// Loose returns the squares of color's undefended, attacked pieces,
+// space-separated.
+func (g *Game) Loose(color string) string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return strings.Join(g.g.Loose(color), " ")
+}

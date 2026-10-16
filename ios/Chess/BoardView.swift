@@ -1,46 +1,48 @@
 import SwiftUI
 
-/// The board in the Quiet Motion look: flat tournament squares, pieces that
-/// glide on a spring, a lifted selected piece, and a board that leans with the
-/// phone while a soft light moves across it.
+/// The Stone board: limestone and slate squares with a faint grain, glass
+/// pieces that glide and settle, lines of light for moves, a warm light on the
+/// side that is ahead, and glass shards when something is taken.
 ///
-/// The tilt changes every frame, so only this wrapper reads it. The squares
-/// and pieces layers below read the game model alone and are not rebuilt as
-/// the phone moves.
+/// Nothing on it moves unless something happened.
 struct BoardView: View {
     let model: GameModel
-    let tilt: Tilt
-
-    /// Degrees of lean at full tilt.
-    private let maxLean = 7.0
+    /// Draws a still board (the home screen's hero) with no interaction.
+    var still = false
 
     var body: some View {
         GeometryReader { geo in
             let size = geo.size.width
-            let light = CGPoint(x: 0.5 - tilt.x * 0.42, y: 0.3 - tilt.y * 0.38)
             ZStack {
                 SquaresLayer(model: model, size: size)
-                    .visualEffect { content, proxy in
-                        content.colorEffect(ShaderLibrary.sheen(
-                            .float2(proxy.size), .float2(light), .float(1)))
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                HighlightsLayer(model: model, size: size)
+                Grain().blendMode(.multiply).opacity(0.35).allowsHitTesting(false)
+                ScoreLight(share: model.whiteShare)
+                if !still {
+                    RaysLayer(rays: model.rays, size: size)
+                }
                 PiecesLayer(model: model, size: size)
-                    .shadow(color: .black.opacity(0.28), radius: 1.4,
-                            x: 1 - tilt.x * 2.4, y: 2 - tilt.y * 2.2)
+                ForEach(model.bursts) { b in
+                    ShardBurst(dark: b.dark, size: size / 8)
+                        .position(center(b.square, size))
+                }
             }
             .frame(width: size, height: size)
-            .rotation3DEffect(.degrees(-tilt.y * maxLean), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
-            .rotation3DEffect(.degrees(tilt.x * maxLean), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
-            .shadow(color: .black.opacity(0.22), radius: 18, x: tilt.x * -6, y: 14 - tilt.y * 6)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(model.playerToMove && !still ? Palette.amber : Color.black.opacity(0.12),
+                                  lineWidth: model.playerToMove && !still ? 2 : 1)
+                    .animation(.easeOut(duration: 0.25), value: model.playerToMove)
+            }
+            .shadow(color: .black.opacity(0.28), radius: 18, y: 14)
             .contentShape(Rectangle())
             .gesture(SpatialTapGesture().onEnded { tap in
+                guard !still else { return }
                 let q = size / 8
                 let col = Int(tap.location.x / q), row = Int(tap.location.y / q)
                 guard (0..<8).contains(col), (0..<8).contains(row) else { return }
                 model.tap(row * 8 + col)
-            })
+            }, including: still ? .none : .all)
         }
         .aspectRatio(1, contentMode: .fit)
         .accessibilityElement(children: .ignore)
@@ -49,12 +51,11 @@ struct BoardView: View {
 }
 
 /// Square centre in board coordinates.
-private func center(_ sq: Square, _ size: CGFloat) -> CGPoint {
+func center(_ sq: Square, _ size: CGFloat) -> CGPoint {
     let q = size / 8
     return CGPoint(x: (CGFloat(Squares.file(sq)) + 0.5) * q, y: (CGFloat(Squares.row(sq)) + 0.5) * q)
 }
 
-/// Squares, last-move tint and coordinates.
 private struct SquaresLayer: View {
     let model: GameModel
     let size: CGFloat
@@ -62,6 +63,7 @@ private struct SquaresLayer: View {
     var body: some View {
         let q = size / 8
         let last = model.lastMove
+        let check = model.checkSquare
         VStack(spacing: 0) {
             ForEach(0..<8, id: \.self) { row in
                 HStack(spacing: 0) {
@@ -71,9 +73,16 @@ private struct SquaresLayer: View {
                         ZStack {
                             Rectangle().fill(dark ? Palette.squareDark : Palette.squareLight)
                             if let last, last.from == sq || last.to == sq {
-                                Rectangle().fill(Palette.lastMove.opacity(0.42))
+                                Rectangle().fill(Palette.amber.opacity(0.3))
                             }
-                            coordinates(row: row, col: col, dark: dark, q: q)
+                            if sq == check {
+                                RadialGradient(colors: [Palette.danger.opacity(0.75), .clear], center: .center,
+                                               startRadius: 0, endRadius: q * 0.6)
+                            }
+                            if model.loose.contains(sq) {
+                                Circle().strokeBorder(Palette.danger.opacity(0.7), lineWidth: 2).padding(q * 0.06)
+                            }
+                            coordinates(row: row, col: col, q: q)
                         }
                         .frame(width: q, height: q)
                     }
@@ -84,104 +93,123 @@ private struct SquaresLayer: View {
     }
 
     @ViewBuilder
-    private func coordinates(row: Int, col: Int, dark: Bool, q: CGFloat) -> some View {
-        let color = dark ? Palette.squareLight : Palette.squareDark
-        let font = Font.system(size: q * 0.2, weight: .bold, design: .rounded)
+    private func coordinates(row: Int, col: Int, q: CGFloat) -> some View {
+        let font = Font.system(size: q * 0.19, weight: .bold, design: .rounded)
         if col == 0 {
-            Text("\(8 - row)").font(font).foregroundStyle(color)
+            Text("\(8 - row)").font(font).foregroundStyle(Palette.coordinate)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(q * 0.05)
+                .padding(q * 0.06)
         }
         if row == 7 {
-            Text(String(Character(UnicodeScalar(UInt8(97 + col))))).font(font).foregroundStyle(color)
+            Text(String(Character(UnicodeScalar(UInt8(97 + col))))).font(font).foregroundStyle(Palette.coordinate)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                 .padding(q * 0.06)
         }
     }
 }
 
-/// The selected square's glow, legal-move markers, check and capture rings.
-private struct HighlightsLayer: View {
-    let model: GameModel
+/// A fine stone grain, the same every time.
+private struct Grain: View {
+    var body: some View {
+        Canvas { ctx, size in
+            var seed: UInt64 = 0x9E3779B97F4A7C15
+            func rand() -> CGFloat {
+                seed = seed &* 6364136223846793005 &+ 1442695040888963407
+                return CGFloat(seed >> 33) / CGFloat(1 << 31)
+            }
+            let count = Int(size.width * size.height / 40)
+            for _ in 0..<count {
+                let r = 0.4 + rand() * 0.7
+                let rect = CGRect(x: rand() * size.width, y: rand() * size.height, width: r * 2, height: r * 2)
+                ctx.fill(Path(ellipseIn: rect), with: .color(.black.opacity(0.04 + rand() * 0.05)))
+            }
+        }
+        .drawingGroup()
+    }
+}
+
+/// The score as light: a warm wash that settles on the side that is ahead.
+private struct ScoreLight: View {
+    let share: Double // White's share; White is at the bottom
+
+    var body: some View {
+        RadialGradient(colors: [Palette.amber.opacity(0.75), Palette.amber.opacity(0.18), .clear],
+                       center: UnitPoint(x: 0.5, y: 0.15 + share * 0.7), startRadius: 0, endRadius: 260)
+            .blendMode(.softLight)
+            .allowsHitTesting(false)
+            .animation(.easeInOut(duration: 1.2), value: share)
+    }
+}
+
+/// Lines of light from a piece to where it can go. A knight's line bends.
+private struct RaysLayer: View {
+    let rays: Rays?
     let size: CGFloat
 
     var body: some View {
-        let q = size / 8
-        let targets = model.targets
         ZStack {
-            if let check = model.checkSquare {
-                RadialGradient(colors: [Palette.danger, Palette.danger.opacity(0.55), Palette.danger.opacity(0)],
-                               center: .center, startRadius: 0, endRadius: q * 0.62)
-                    .frame(width: q, height: q)
-                    .phaseAnimator([0.75, 1.0]) { v, phase in v.opacity(phase) } animation: { _ in .easeInOut(duration: 0.55) }
-                    .position(center(check, size))
-                    .transition(.opacity)
-            }
-            if let sel = model.selected {
-                SelectedGlow(q: q)
-                    .position(center(sel, size))
-                    .transition(.opacity.animation(.easeOut(duration: 0.15)))
-                    .id(sel)
-            }
-            ForEach(Array(targets.enumerated()), id: \.element) { k, sq in
-                TargetMarker(q: q, occupied: model.board[sq] != ".")
-                    .position(center(sq, size))
-                    .transition(.scale(scale: 0.1).combined(with: .opacity)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.55).delay(Double(k) * 0.016)))
-            }
-            ForEach(model.bursts) { b in
-                BurstRing(q: q).position(center(b.square, size))
+            if let rays {
+                let color: Color = switch rays.kind {
+                case .options, .chosen: Palette.amber
+                case .thinking: Palette.thinking
+                case .hint: Palette.great
+                }
+                ForEach(Array(rays.moves.enumerated()), id: \.element) { k, m in
+                    Ray(move: m, knight: rays.knight.contains(m), size: size, color: color,
+                        width: size / 8 * (rays.kind == .thinking ? 0.05 : 0.075),
+                        opacity: rays.kind == .thinking ? 0.7 : 1, delay: rays.kind == .thinking ? 0 : Double(k) * 0.02)
+                }
+                .id(kindKey(rays.kind))
             }
         }
-        .frame(width: size, height: size)
         .allowsHitTesting(false)
-        .animation(.easeOut(duration: 0.15), value: model.selected)
     }
+
+    private func kindKey(_ k: Rays.Kind) -> String { "\(k)" }
 }
 
-private struct SelectedGlow: View {
-    let q: CGFloat
+private struct Ray: View {
+    let move: BoardMove
+    let knight: Bool
+    let size: CGFloat
+    let color: Color
+    let width: CGFloat
+    let opacity: Double
+    let delay: Double
+    @State private var drawn = false
 
     var body: some View {
-        Rectangle()
-            .fill(Palette.accent.opacity(0.5))
-            .overlay(Rectangle().strokeBorder(.white.opacity(0.55), lineWidth: 2))
-            .frame(width: q, height: q)
-            .shadow(color: Palette.accent.opacity(0.8), radius: q * 0.28)
-            .phaseAnimator([0.75, 1.0]) { v, phase in v.opacity(phase) } animation: { _ in .easeInOut(duration: 0.9) }
-    }
-}
-
-private struct TargetMarker: View {
-    let q: CGFloat
-    let occupied: Bool
-
-    var body: some View {
-        if occupied {
-            Circle().strokeBorder(.black.opacity(0.28), lineWidth: q * 0.08)
-                .frame(width: q * 0.9, height: q * 0.9)
-        } else {
-            Circle().fill(.black.opacity(0.28))
-                .frame(width: q * 0.28, height: q * 0.28)
+        let a = center(move.from, size), b = center(move.to, size)
+        let q = size / 8
+        ZStack {
+            Path { p in
+                p.move(to: a)
+                if knight {
+                    let horizontal = abs(b.x - a.x) > abs(b.y - a.y)
+                    p.addLine(to: horizontal ? CGPoint(x: b.x, y: a.y) : CGPoint(x: a.x, y: b.y))
+                }
+                p.addLine(to: b)
+            }
+            .trim(from: 0, to: drawn ? 1 : 0)
+            .stroke(color, style: StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round))
+            Group {
+                if move.capture {
+                    Circle().stroke(color, lineWidth: width * 0.8).frame(width: q * 0.76, height: q * 0.76)
+                } else {
+                    Circle().fill(color).frame(width: q * 0.2, height: q * 0.2)
+                }
+            }
+            .scaleEffect(drawn ? 1 : 0.01)
+            .position(b)
+        }
+        .opacity(opacity)
+        .shadow(color: color.opacity(0.35), radius: 1.5, y: 1)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.32).delay(delay)) { drawn = true }
         }
     }
 }
 
-private struct BurstRing: View {
-    let q: CGFloat
-    @State private var done = false
-
-    var body: some View {
-        Circle()
-            .strokeBorder(.white.opacity(0.95), lineWidth: 2)
-            .frame(width: q * 0.8, height: q * 0.8)
-            .scaleEffect(done ? 1.5 : 0.3)
-            .opacity(done ? 0 : 1)
-            .onAppear { withAnimation(.easeOut(duration: 0.5)) { done = true } }
-    }
-}
-
-/// The pieces, each keyed by identity so a move animates as a glide.
 private struct PiecesLayer: View {
     let model: GameModel
     let size: CGFloat
@@ -191,21 +219,64 @@ private struct PiecesLayer: View {
         ZStack {
             ForEach(model.pieces) { piece in
                 let lifted = piece.square == model.selected
-                Image(piece.imageName)
-                    .resizable()
-                    .interpolation(.high)
+                let toppled = piece.id == model.toppled
+                GlassPiece(code: piece.code, lifted: lifted)
                     .frame(width: q, height: q)
-                    .scaleEffect(lifted ? 1.14 : 1)
-                    .offset(y: lifted ? -q * 0.06 : 0)
-                    .shadow(color: .black.opacity(lifted ? 0.22 : 0), radius: 3, x: 1.5, y: q * 0.08)
+                    .scaleEffect(lifted ? 1.1 : 1, anchor: .bottom)
+                    .offset(y: lifted ? -q * 0.09 : 0)
+                    .rotationEffect(.degrees(toppled ? 82 : 0), anchor: UnitPoint(x: 0.5, y: 0.88))
+                    .offset(x: toppled ? q * 0.15 : 0)
                     .animation(.spring(response: 0.26, dampingFraction: 0.6), value: lifted)
+                    .animation(.spring(response: 0.9, dampingFraction: 0.55), value: toppled)
                     .position(center(piece.square, size))
-                    .zIndex(piece.id == model.movingPiece ? 1 : 0)
-                    .transition(.scale(scale: 0.5).combined(with: .opacity))
+                    .zIndex(piece.id == model.movingPiece ? 20 : Double(Squares.row(piece.square)))
+                    .transition(.opacity.animation(.easeOut(duration: 0.12)))
             }
         }
         .frame(width: size, height: size)
         .allowsHitTesting(false)
-        .animation(.spring(response: 0.34, dampingFraction: 0.72), value: model.moveSerial)
+        .animation(.spring(response: 0.42, dampingFraction: 0.72), value: model.moveSerial)
+    }
+}
+
+/// A taken piece breaking into glass.
+private struct ShardBurst: View {
+    let dark: Bool
+    let size: CGFloat
+    @State private var flown = false
+    private let shards: [(dx: CGFloat, dy: CGFloat, rot: Double, delay: Double)] = (0..<14).map { _ in
+        let a = Double.random(in: 0..<(2 * .pi)), d = CGFloat.random(in: 0.6...1.6)
+        return (CGFloat(cos(a)) * d, CGFloat(sin(a)) * d - 0.3, Double.random(in: -270...270), Double.random(in: 0...0.05))
+    }
+
+    var body: some View {
+        ZStack {
+            ForEach(shards.indices, id: \.self) { i in
+                let s = shards[i]
+                Shard()
+                    .fill(LinearGradient(colors: dark ? [Color(white: 0.5), Color(white: 0.1)] : [.white, Color(white: 0.8)],
+                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: size * 0.26, height: size * 0.26)
+                    .shadow(color: .black.opacity(0.3), radius: 1, y: 1)
+                    .rotationEffect(.degrees(flown ? s.rot : 0))
+                    .offset(x: flown ? s.dx * size : 0, y: flown ? s.dy * size : 0)
+                    .scaleEffect(flown ? 0.4 : 1)
+                    .opacity(flown ? 0 : 1)
+                    .animation(.timingCurve(0.15, 0.7, 0.4, 1, duration: 0.75).delay(s.delay), value: flown)
+            }
+        }
+        .allowsHitTesting(false)
+        .onAppear { flown = true }
+    }
+}
+
+private struct Shard: Shape {
+    func path(in r: CGRect) -> Path {
+        Path { p in
+            p.move(to: CGPoint(x: r.midX, y: r.minY))
+            p.addLine(to: CGPoint(x: r.maxX, y: r.minY + r.height * 0.7))
+            p.addLine(to: CGPoint(x: r.minX + r.width * 0.2, y: r.maxY))
+            p.closeSubpath()
+        }
     }
 }

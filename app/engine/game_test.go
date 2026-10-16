@@ -118,3 +118,35 @@ func TestBotTakesMateInOne(t *testing.T) {
 		}
 	}
 }
+
+func TestCoach(t *testing.T) {
+	g := NewGame()
+	a, err := g.Assess("e2e4")
+	if err != nil || (a.Kind != KindGreat && a.Kind != KindGood) {
+		t.Errorf("1. e4 assessed as %+v, %v", a, err)
+	}
+	playAll(t, g, "e2e4", "e7e5")
+	a, _ = g.Assess("d1h5")
+	if a.Loss < 0 || a.Title == "" || a.Text == "" {
+		t.Errorf("Qh5 assessment = %+v", a)
+	}
+	g2, _ := NewGameFromFEN("4k3/8/8/3p4/8/8/8/3QK3 w - - 0 1")
+	b, _ := g2.Assess("d1d5")
+	if b.Kind != KindGreat || b.Text != "You win the pawn. Clean." {
+		t.Errorf("Qxd5 = %+v", b)
+	}
+	g3, _ := NewGameFromFEN("4k3/8/8/4p3/8/8/8/3QK3 w - - 0 1")
+	c, _ := g3.Assess("d1d4") // the queen walks into the pawn's capture
+	if c.Kind != KindBlunder || c.Text != "Your queen on d4 can now be taken." {
+		t.Errorf("Qd4 = %+v", c)
+	}
+	if loose := g3.Loose("w"); len(loose) != 0 {
+		t.Errorf("Loose before the blunder = %v", loose)
+	}
+	if got := g.Candidates(3); len(got) != 3 || !g.IsLegal(got[0]) {
+		t.Errorf("Candidates = %v", got)
+	}
+	if e := NewGame().Eval(2); e < -60 || e > 80 {
+		t.Errorf("start eval = %d", e)
+	}
+}
