@@ -94,6 +94,13 @@ final class GameCenter: NSObject {
         return p.moves
     }
 
+    /// The board part of the FEN after these moves, for a small preview.
+    static func boardFEN(_ moves: [String]) -> String {
+        guard let g = ChesscoreNewGame() else { return "" }
+        for m in moves { _ = g.play(m) }
+        return String(g.fen().split(separator: " ").first ?? "")
+    }
+
     static func isMyTurn(_ match: GKTurnBasedMatch) -> Bool {
         match.currentParticipant?.player?.gamePlayerID == GKLocalPlayer.local.gamePlayerID
     }

@@ -66,118 +66,265 @@ private extension Feedback.Kind {
 
 // MARK: - Home
 
+/// Home is a seat at the table. The board is the hero: your game as you left
+/// it, or the pieces set up and waiting. Your opponent sits across it; swipe
+/// the board to change who. One button sits below: Continue, or Begin.
 private struct HomeScreen: View {
     let start: (Mode, Opponent) -> Void
     let resume: () -> Void
     @AppStorage("opponent") private var opponentRaw = Opponent.easy.rawValue
     @State private var settings = false
+    @State private var history = false
+    @State private var seat: Opponent = .easy
+    @State private var swipe: CGFloat = 0
     private let saved = SavedGame.load()
     private let recent = Stats.recent
 
-    /// The chosen opponent, falling back to Easy if the choice isn't open yet.
-    private var opponent: Opponent {
-        let o = Opponent(rawValue: opponentRaw) ?? .easy
-        return o.isUnlocked ? o : .easy
+    private static let setup = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+
+    /// The saved game against the engine, if it's with whoever is in the seat.
+    private var savedHere: SavedGame? {
+        guard let saved, !saved.passAndPlay, saved.opponent == seat.rawValue else { return nil }
+        return saved
     }
-    @State private var nudged: Opponent?
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // One quiet bar, one headline, one supporting line.
-                HStack(spacing: 8) {
-                    BrandMark()
-                    Text("Cozy Chess").font(Typeface.display(16, .bold))
-                    Spacer()
-                    Button { Haptics.tap(); settings = true } label: {
-                        Image(systemName: "gearshape").font(.system(size: 15, weight: .medium)).frame(width: 30, height: 30)
+            VStack(spacing: 0) {
+                bar
+                Text(greeting)
+                    .font(Typeface.display(26)).tracking(-0.4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 18)
+                table
+                    .padding(.top, 20)
+                cta
+                    .padding(.top, 22)
+                friendLink
+                    .padding(.top, 14)
+                if let saved, saved.passAndPlay {
+                    Button { Haptics.tap(); resume() } label: {
+                        Label("Continue your game on this phone", systemImage: "iphone")
                     }
-                    .buttonStyle(.glass)
-                    .buttonBorderShape(.circle)
-                    .accessibilityLabel("Settings")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Palette.mist)
+                    .buttonStyle(.plain)
+                    .padding(.top, 10)
                 }
-                .padding(.top, 4)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(greeting)
-                        .font(Typeface.display(34))
-                        .tracking(-0.6)
-                    Text(supportingLine)
-                        .font(.system(size: 15))
-                        .foregroundStyle(Palette.mist)
-                }
-                .padding(.top, 10)
-                .padding(.bottom, 4)
-
-                if let saved {
-                    ContinueCard(saved: saved, action: resume)
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    SectionLabel(text: saved == nil ? "Choose your opponent" : "Or start a new game")
-                    HStack(spacing: 8) {
-                        ForEach(Opponent.allCases) { o in
-                            OpponentButton(opponent: o, selected: o == opponent, nudged: nudged == o) {
-                                if o.isUnlocked {
-                                    opponentRaw = o.rawValue
-                                    Sound.shared.play(.select)
-                                } else {
-                                    Haptics.tap(.rigid, intensity: 0.5)
-                                    nudged = o
-                                    Task { try? await Task.sleep(for: .seconds(0.5)); nudged = nil }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Button { start(.engine, opponent) } label: {
-                    Label(opponent.startLabel, systemImage: "arrow.right").labelStyle(TrailingIcon())
-                }
-                .buttonStyle(PrimaryButtonStyle())
-
-                // Playing a friend is a quiet second way in, not a second big button.
-                Menu {
-                    if SharePlay.shared.available {
-                        Button("Play on this FaceTime call", systemImage: "shareplay") { SharePlay.shared.start() }
-                    }
-                    Button("Invite with Game Center", systemImage: "person.crop.circle.badge.plus") {
-                        GameCenter.shared.invite()
-                    }
-                    Button("Play on this phone", systemImage: "iphone") { start(.passAndPlay, opponent) }
-                } label: {
-                    Label("Or play a friend", systemImage: "person.2")
-                        .frame(maxWidth: .infinity)
-                }
-                .font(.system(size: 14.5, weight: .semibold))
-                .foregroundStyle(Palette.accentText)
-                .padding(.top, 2)
-
                 FriendGames()
-                    .padding(.top, 14)
-
-                RecentGames(records: recent)
-                    .padding(.top, 14)
+                    .padding(.top, 22)
+                historyLine
+                    .padding(.top, 22)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
         }
         .scrollBounceBehavior(.basedOnSize)
         .foregroundStyle(Palette.ink)
+        .onAppear {
+            if let saved, !saved.passAndPlay, let o = Opponent(rawValue: saved.opponent) { seat = o }
+            else { seat = Opponent(rawValue: opponentRaw).flatMap { $0.isUnlocked ? $0 : nil } ?? .easy }
+        }
         .sheet(isPresented: $settings) { SettingsSheet().presentationDetents([.height(260)]) }
+        .sheet(isPresented: $history) {
+            ScrollView { RecentGames(records: recent, limit: 20).padding(20) }
+                .presentationDetents([.medium, .large])
+                .presentationBackground(.regularMaterial)
+        }
     }
 
-    /// The tagline, or a nudge back to the game in progress. Numbers stay in
-    /// Recent games: the header welcomes, it doesn't keep score.
-    private var supportingLine: String {
-        saved == nil ? "See the game, one calm move at a time." : "Your game is where you left it."
+    // MARK: Bar
+
+    private var bar: some View {
+        HStack(spacing: 8) {
+            BrandMark()
+            Text("Cozy Chess").font(Typeface.display(16, .bold))
+            Spacer()
+            Button { Haptics.tap(); settings = true } label: {
+                Image(systemName: "gearshape").font(.system(size: 15, weight: .medium)).frame(width: 30, height: 30)
+            }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+            .accessibilityLabel("Settings")
+        }
+        .padding(.top, 4)
+    }
+
+    // MARK: The table
+
+    private var table: some View {
+        VStack(spacing: 12) {
+            // Across the table: who you'd be playing.
+            HStack(spacing: 12) {
+                OpponentAvatar(opponent: seat, size: 42)
+                    .opacity(seat.isUnlocked ? 1 : 0.5)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(seat.name).font(Typeface.display(19))
+                    Text(seatLine).font(.system(size: 13)).foregroundStyle(Palette.mist)
+                }
+                Spacer()
+                HStack(spacing: 5) {
+                    ForEach(Opponent.allCases) { o in
+                        Capsule().fill(o == seat ? Palette.accent : Palette.mist.opacity(0.3))
+                            .frame(width: o == seat ? 14 : 6, height: 6)
+                    }
+                }
+                .accessibilityHidden(true)
+            }
+            .id(seat)
+            .transition(.opacity)
+
+            ZStack {
+                StaticBoard(fen: String((savedHere?.fen ?? Self.setup).split(separator: " ").first ?? ""))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .shadow(color: .black.opacity(0.22), radius: 16, y: 12)
+                    .saturation(seat.isUnlocked ? 1 : 0.2)
+                    .opacity(seat.isUnlocked ? 1 : 0.55)
+                if !seat.isUnlocked, let prev = seat.previous {
+                    VStack(spacing: 6) {
+                        Image(systemName: "lock.fill").font(.system(size: 22, weight: .semibold))
+                        Text("Beat the \(prev.name) \(Opponent.winsToUnlock) times")
+                            .font(Typeface.display(16))
+                        Text("\(winsLeft) to go").font(.system(size: 13)).foregroundStyle(Palette.mist)
+                    }
+                    .padding(.horizontal, 20).padding(.vertical, 16)
+                    .glassEffect(.regular, in: .rect(cornerRadius: 20))
+                }
+            }
+            .offset(x: swipe)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 12)
+                .onChanged { v in swipe = v.translation.width * 0.35 }
+                .onEnded { v in
+                    let all = Opponent.allCases
+                    let i = all.firstIndex(of: seat) ?? 0
+                    let next = v.translation.width < -50 ? min(i + 1, all.count - 1)
+                             : v.translation.width > 50 ? max(i - 1, 0) : i
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        swipe = 0
+                        if next != i { seat = all[next] }
+                    }
+                    if next != i {
+                        Sound.shared.play(.select)
+                        if all[next].isUnlocked { opponentRaw = all[next].rawValue }
+                    }
+                })
+            .onTapGesture { if seat.isUnlocked { go() } }
+            .accessibilityElement()
+            .accessibilityLabel("Board, playing the \(seat.name)")
+            .accessibilityAdjustableAction { dir in
+                let all = Opponent.allCases
+                let i = all.firstIndex(of: seat) ?? 0
+                seat = all[dir == .increment ? min(i + 1, all.count - 1) : max(i - 1, 0)]
+            }
+
+            // Your side of the table.
+            HStack(spacing: 6) {
+                Circle().fill(Palette.squareLight).frame(width: 8, height: 8)
+                    .overlay(Circle().strokeBorder(Palette.mist.opacity(0.5), lineWidth: 0.5))
+                Text("You, playing White").font(.system(size: 13)).foregroundStyle(Palette.mist)
+                Spacer()
+                if savedHere == nil && seat.isUnlocked {
+                    Text("Swipe for another opponent").font(.system(size: 12)).foregroundStyle(Palette.mist.opacity(0.8))
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: seat)
+    }
+
+    private var seatLine: String {
+        if !seat.isUnlocked { return "\(seat.subtitle) · locked" }
+        if let s = savedHere { return "Your game · move \(s.moves.count / 2 + 1)" }
+        return seat.subtitle
+    }
+
+    private var winsLeft: Int {
+        guard let prev = seat.previous else { return 0 }
+        return max(0, Opponent.winsToUnlock - Stats.wins(against: prev))
+    }
+
+    // MARK: The one button
+
+    @ViewBuilder
+    private var cta: some View {
+        if seat.isUnlocked {
+            VStack(spacing: 10) {
+                Button { go() } label: {
+                    Text(savedHere == nil ? "Begin" : "Continue")
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                if savedHere != nil {
+                    Button("Start a new game instead") { Haptics.tap(); start(.engine, seat) }
+                        .font(.system(size: 13.5, weight: .medium))
+                        .foregroundStyle(Palette.mist)
+                        .buttonStyle(.plain)
+                }
+            }
+        } else {
+            Text("Win \(winsLeft) more against the \(seat.previous?.name ?? "") to sit down here")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Palette.mist)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, minHeight: 56)
+        }
+    }
+
+    private func go() {
+        Haptics.tap()
+        if savedHere != nil { resume() } else { start(.engine, seat) }
+    }
+
+    // MARK: Friends and history
+
+    private var friendLink: some View {
+        Menu {
+            if SharePlay.shared.available {
+                Button("Play on this FaceTime call", systemImage: "shareplay") { SharePlay.shared.start() }
+            }
+            Button("Invite with Game Center", systemImage: "person.crop.circle.badge.plus") {
+                GameCenter.shared.invite()
+            }
+            Button("Play on this phone", systemImage: "iphone") { start(.passAndPlay, seat) }
+        } label: {
+            Label("Play a friend instead", systemImage: "person.2")
+                .frame(maxWidth: .infinity)
+        }
+        .font(.system(size: 14.5, weight: .semibold))
+        .foregroundStyle(Palette.accentText)
+    }
+
+    @ViewBuilder
+    private var historyLine: some View {
+        if !recent.isEmpty {
+            Button { Haptics.tap(); history = true } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "clock.arrow.circlepath").foregroundStyle(Palette.mist)
+                    Text("Your games").font(.system(size: 14.5, weight: .semibold))
+                    if let s = historySummary {
+                        Text(s).font(.system(size: 13.5)).foregroundStyle(Palette.mist)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(Palette.mist)
+                }
+                .padding(.horizontal, 14).padding(.vertical, 13)
+                .contentShape(.rect)
+            }
+            .buttonStyle(PressableStyle(scale: 0.98))
+            .glassEffect(.regular.interactive(), in: .capsule)
+        }
+    }
+
+    private var historySummary: String? {
+        let a = recent.filter { $0.opponent != "Pass & play" }.compactMap(\.accuracy).prefix(10)
+        guard a.count >= 2 else { return "\(recent.count) played" }
+        return "\(a.reduce(0, +) / a.count)% lately"
     }
 
     private var greeting: String {
         switch Calendar.current.component(.hour, from: .now) {
-        case 5..<12: "Good morning."
-        case 12..<17: "Good afternoon."
-        default: "Good evening."
+        case 5..<12: "Good morning"
+        case 12..<17: "Good afternoon"
+        default: "Good evening"
         }
     }
 }
@@ -362,43 +509,44 @@ struct OpponentAvatar: View {
     }
 }
 
-/// Games with friends that are still going, from Game Center.
+/// Games with friends that are still going, from Game Center: a strip of small
+/// boards, each as it stands, with whose move it is.
 private struct FriendGames: View {
     private var center: GameCenter { GameCenter.shared }
 
     var body: some View {
         if !center.matches.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 SectionLabel(text: "With friends")
-                VStack(spacing: 0) {
-                    ForEach(Array(center.matches.enumerated()), id: \.element.matchID) { k, m in
-                        Button { Haptics.tap(); center.open(m) } label: {
-                            HStack(spacing: 12) {
-                                FriendAvatar(name: GameCenter.friendName(in: m), size: 30)
-                                    .frame(width: 32)
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(GameCenter.friendName(in: m)).font(.system(size: 15, weight: .semibold))
-                                    Text("Move \(GameCenter.moves(in: m).count / 2 + 1)")
-                                        .font(.system(size: 12.5)).foregroundStyle(Palette.mist)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(center.matches, id: \.matchID) { m in
+                            let mine = GameCenter.isMyTurn(m)
+                            Button { Haptics.tap(); center.open(m) } label: {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    StaticBoard(fen: GameCenter.boardFEN(GameCenter.moves(in: m)))
+                                        .frame(width: 104, height: 104)
+                                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                    Text(GameCenter.friendName(in: m)).font(.system(size: 14, weight: .semibold))
+                                        .lineLimit(1)
+                                    HStack(spacing: 5) {
+                                        Circle().fill(mine ? Palette.great : Palette.mist.opacity(0.5)).frame(width: 6, height: 6)
+                                        Text(mine ? "Your move" : "Their move").font(.system(size: 12))
+                                            .foregroundStyle(mine ? Palette.great : Palette.mist)
+                                    }
                                 }
-                                Spacer()
-                                let mine = GameCenter.isMyTurn(m)
-                                Text(mine ? "Your move" : "Their move")
-                                    .font(.system(size: 12.5, weight: .semibold))
-                                    .foregroundStyle(mine ? Palette.great : Palette.mist)
-                                    .padding(.horizontal, 8).padding(.vertical, 3)
-                                    .background(mine ? Palette.greatFill : Palette.statFill, in: .capsule)
+                                .padding(10)
+                                .contentShape(.rect)
                             }
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 12)
-                            .contentShape(.rect)
+                            .buttonStyle(PressableStyle())
+                            .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 18))
                         }
-                        .buttonStyle(.plain)
-                        if k < center.matches.count - 1 { Divider().padding(.leading, 56) }
                     }
+                    .padding(.vertical, 4)
                 }
-                .glassEffect(.regular, in: .rect(cornerRadius: 18))
+                .scrollClipDisabled()
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .task { await center.reload() }
         }
     }
@@ -407,8 +555,9 @@ private struct FriendGames: View {
 private struct RecentGames: View {
     let records: [GameRecord]
 
-    /// The last three games: enough to remember, not a ledger.
-    private var shown: [GameRecord] { Array(records.prefix(3)) }
+    var limit = 3
+    /// The last few games: enough to remember, not a ledger.
+    private var shown: [GameRecord] { Array(records.prefix(limit)) }
 
     /// One quiet line in place of a chart: how it's going lately.
     private var summary: String? {
