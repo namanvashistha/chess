@@ -935,6 +935,8 @@ private struct Dock: View {
         var message: String { self == .newGame ? "This game will be lost." : "It counts as a loss in your recent games." }
     }
 
+    private var canHint: Bool { model.playerToMove && (model.hintsLeft > 0 || model.hintIsFree) }
+
     private var confirming: Binding<Bool> {
         Binding(get: { confirm != nil }, set: { if !$0 { confirm = nil } })
     }
@@ -1001,16 +1003,18 @@ private struct Dock: View {
                                 .contentTransition(.numericText())
                                 .animation(.snappy, value: model.hintsLeft)
                                 .padding(.horizontal, 6).padding(.vertical, 1)
-                                .background(.white.opacity(0.25), in: .capsule)
+                                .background(canHint ? Color.white.opacity(0.25) : Palette.mist.opacity(0.15), in: .capsule)
                         }
                     }
                     .frame(maxWidth: .infinity, minHeight: Self.height, maxHeight: Self.height)
+                    // Disabled, the green fades to white: switch to quiet glass with
+                    // grey text so the label stays readable in light mode.
+                    .foregroundStyle(canHint ? Palette.onAccent : Palette.mist)
                 }
-                .buttonStyle(.glassProminent)
+                .buttonStyle(canHint ? AnyPrimitiveButtonStyle(.glassProminent) : AnyPrimitiveButtonStyle(.glass))
                 .buttonBorderShape(.capsule)
-                .tint(Palette.accent)
-                .foregroundStyle(Palette.onAccent)
-                .disabled(!model.playerToMove || (model.hintsLeft == 0 && !model.hintIsFree))
+                .tint(canHint ? Palette.accent : nil)
+                .disabled(!canHint)
                 }
             }
             .font(Typeface.display(14, .bold))
@@ -1232,4 +1236,12 @@ private struct BestMoveReplay: View {
             Haptics.tap(.soft, intensity: 0.6)
         }
     }
+}
+
+/// Picks a primitive button style at runtime, so a button can switch between
+/// prominent and plain glass.
+struct AnyPrimitiveButtonStyle: PrimitiveButtonStyle {
+    private let make: (Configuration) -> AnyView
+    init<S: PrimitiveButtonStyle>(_ style: S) { make = { AnyView(style.makeBody(configuration: $0)) } }
+    func makeBody(configuration: Configuration) -> some View { make(configuration) }
 }

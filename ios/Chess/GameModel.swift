@@ -119,8 +119,8 @@ struct GameRecord: Identifiable, Equatable, Codable {
     /// The name to show. Records saved before the rename say Pebble, Flint or Obsidian.
     var opponentName: String {
         if let level, let o = Opponent(rawValue: level) { return o.name }
-        return ["Pebble": "Club Player", "Flint": "Master", "Obsidian": "Grandmaster",
-                "Easy": "Club Player", "Medium": "Master", "Hard": "Grandmaster"][opponent] ?? opponent
+        return ["Pebble": "Rookie", "Flint": "Master", "Obsidian": "Grandmaster", "Club Player": "Rookie",
+                "Easy": "Rookie", "Medium": "Master", "Hard": "Grandmaster"][opponent] ?? opponent
     }
 }
 
@@ -205,7 +205,7 @@ enum Opponent: Int, CaseIterable, Identifiable {
     case easy, medium, hard
     var id: Int { rawValue }
     /// Chess titles, so each win reads as a step up.
-    var name: String { ["Club Player", "Master", "Grandmaster"][rawValue] }
+    var name: String { ["Rookie", "Master", "Grandmaster"][rawValue] }
     var subtitle: String { ["Beginner", "Intermediate", "Expert"][rawValue] }
     /// Easy is a true beginner; each level above it is the engine's next step up.
     var engineLevel: String { ["beginner", "easy", "medium"][rawValue] }
