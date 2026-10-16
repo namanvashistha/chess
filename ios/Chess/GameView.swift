@@ -327,7 +327,10 @@ struct OpponentAvatar: View {
 private struct ProgressCard: View {
     let records: [GameRecord]
 
-    private var games: [Int] { Array(records.compactMap(\.accuracy).prefix(10).reversed()) }
+    /// Games against the engine only: a shared phone isn't one player's progress.
+    private var games: [Int] {
+        Array(records.filter { $0.opponent != "Pass & play" }.compactMap(\.accuracy).prefix(10).reversed())
+    }
 
     private var improving: Bool {
         let g = games
@@ -535,7 +538,7 @@ private struct GameScreen: View {
             .foregroundStyle(Palette.ink)
 
             if let finish = model.finish {
-                FinishCard(finish: finish, share: model.winMoment,
+                FinishCard(finish: finish, share: model.finishMoment,
                            again: { model.start(model.mode, opponent: model.opponent) },
                            tryNext: finish.unlocked.map { next in {
                                UserDefaults.standard.set(next.rawValue, forKey: "opponent")
@@ -1024,7 +1027,8 @@ private struct FinishCard: View {
                         VStack(spacing: 2) {
                             HStack(spacing: 5) {
                                 if let symbol = best.kind.symbol { Image(systemName: symbol).font(.system(size: 11, weight: .bold)) }
-                                Text("Your best move · move \(best.moveNumber)")
+                                Text(best.side.map { "Best move · \($0), move \(best.moveNumber)" }
+                                     ?? "Your best move · move \(best.moveNumber)")
                             }
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(verdictColor(best.kind))
@@ -1055,37 +1059,36 @@ private struct FinishCard: View {
                     }
                 }
 
-                // The way on, laid out like the game's dock: home beside the one
-                // clear next step.
-                HStack(alignment: .top, spacing: 10) {
-                    Button { Haptics.tap(); home() } label: {
-                        Image(systemName: "house.fill")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(Palette.ink)
-                            .frame(width: 58, height: 58)
-                            .contentShape(.rect)
-                    }
-                    .buttonStyle(PressableStyle(scale: 0.94))
-                    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 20))
-                    .accessibilityLabel("Home")
+                // The way on: one clear next step, then Home and Share as one
+                // quiet pill below it.
+                VStack(spacing: 16) {
                     if let next = finish.unlocked, let tryNext {
                         Button("Play the \(next.name)") { tryNext() }.buttonStyle(PrimaryButtonStyle())
                     } else {
                         Button("Play again", action: again).buttonStyle(PrimaryButtonStyle())
                     }
+                    HStack(spacing: 0) {
+                        Button { Haptics.tap(); home() } label: {
+                            Label("Home", systemImage: "house")
+                                .frame(maxWidth: .infinity, minHeight: 46)
+                                .contentShape(.rect)
+                        }
+                        if let share {
+                            Rectangle().fill(Palette.mist.opacity(0.3)).frame(width: 0.5, height: 22)
+                            ShareMomentButton(moment: share, label: "Share")
+                                .frame(maxWidth: .infinity, minHeight: 46)
+                                .contentShape(.rect)
+                        }
+                    }
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Palette.ink)
+                    .buttonStyle(.plain)
+                    .glassEffect(.regular.interactive(), in: .capsule)
                 }
                 .padding(.top, 4)
             }
             .padding(.horizontal, 24).padding(.top, 28).padding(.bottom, 26)
             .glassEffect(.regular, in: .rect(cornerRadius: 32))
-            .overlay(alignment: .topTrailing) {
-                if let share {
-                    ShareMomentButton(moment: share)
-                        .buttonStyle(.glass)
-                        .buttonBorderShape(.circle)
-                        .padding(14)
-                }
-            }
             .overlay(alignment: .top) {
                 if finish.outcome == .won { Celebration().offset(y: 40) }
             }
@@ -1096,6 +1099,9 @@ private struct FinishCard: View {
 
     /// "94% accuracy · 2 great · 3 good", leaving out what's zero or unknown.
     private var numbers: String {
+        if let s = finish.sides {
+            return s.white + s.black == 0 ? "A game for two" : "White \(s.white) great · Black \(s.black) great"
+        }
         var parts: [String] = []
         if let a = finish.accuracy { parts.append("\(a)% accuracy") }
         if finish.great > 0 { parts.append("\(finish.great) great") }

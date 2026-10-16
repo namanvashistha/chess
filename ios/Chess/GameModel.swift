@@ -149,6 +149,8 @@ struct SavedGame: Codable {
 
 /// A move worth replaying: the boards either side of it and what the coach said.
 struct BestMove {
+    /// Whose move it was, in pass and play; nil against the engine.
+    var side: String?
     let before: [Character]
     let after: [Character]
     let move: BoardMove
@@ -184,6 +186,8 @@ struct Finish: Equatable {
     var goodMoves = 0
     /// The player's best move of the game, replayed at the top of the card.
     var best: BestMove?
+    /// Pass and play: great moves for each side, in place of accuracy.
+    var sides: (white: Int, black: Int)?
     /// The opponent this win opened up, if it was the one that did.
     var unlocked: Opponent?
     /// The first win ever against this opponent.
@@ -309,10 +313,18 @@ final class GameModel {
 
     var isOver: Bool { !status.isEmpty }
     var playerToMove: Bool { !busy && !isOver && (mode == .passAndPlay || turn == "w") }
+    /// Accuracy against the engine, on Lichess's curve: each move is scored by
+    /// how much it lowers the chance of winning, so a slip costs some points
+    /// rather than zeroing the move. Meaningless when two people share the
+    /// board, so pass and play has none.
     var accuracy: Int? {
-        guard losses.count >= Self.accuracyAfter else { return nil }
-        let total = losses.map { max(0, 100 - Double($0) / 3.2) }.reduce(0, +)
-        return Int((total / Double(losses.count)).rounded())
+        guard mode == .engine, losses.count >= Self.accuracyAfter else { return nil }
+        func win(_ cp: Double) -> Double { 50 + 50 * (2 / (1 + exp(-0.00368208 * cp)) - 1) }
+        let scores = losses.map { loss -> Double in
+            let drop = 50 - win(-Double(loss))
+            return max(0, min(100, 103.1668 * exp(-0.04354 * drop) - 3.1669))
+        }
+        return Int((scores.reduce(0, +) / Double(scores.count)).rounded())
     }
 
     /// Squares the selected piece can move to.
@@ -523,7 +535,8 @@ final class GameModel {
               (rank[e.card.kind] ?? 0) >= 3,
               let after = position(afterPly: e.ply), let move = after.move,
               let before = position(afterPly: e.ply - 1) else { return nil }
-        return BestMove(before: before.board, after: after.board, move: move, moveNumber: e.ply / 2 + 1,
+        return BestMove(side: mode == .passAndPlay ? (e.ply % 2 == 0 ? "White" : "Black") : nil,
+                        before: before.board, after: after.board, move: move, moveNumber: e.ply / 2 + 1,
                         kind: e.card.kind, text: e.card.text)
     }
 
@@ -546,11 +559,25 @@ final class GameModel {
     }
 
     /// A win against the engine, ready to share.
-    var winMoment: ShareMoment? {
-        guard mode == .engine, let finish, finish.outcome == .won else { return nil }
-        let accuracy = finish.accuracy.map { " · \($0)% accuracy" } ?? ""
-        return ShareMoment(board: board, move: lastMove, title: "I beat \(opponent.name)",
-                           detail: finish.text + accuracy, footer: "Played on Cozy Chess")
+    /// What the game-over card shares: a win against the engine, or otherwise
+    /// the game's best move, so every game has something to show.
+    var finishMoment: ShareMoment? {
+        guard let finish else { return nil }
+        if mode == .engine, finish.outcome == .won {
+            let accuracy = finish.accuracy.map { " · \($0)% accuracy" } ?? ""
+            return ShareMoment(board: board, move: lastMove, title: "I beat the \(opponent.name)",
+                               detail: finish.text + accuracy, footer: "Played on Cozy Chess")
+        }
+        // Not a win: share warmly, about what went well, never the loss.
+        let against = mode == .engine ? " against the \(opponent.name)" : ""
+        guard let best = finish.best else {
+            let title = mode == .engine ? "I played the \(opponent.name)" : finish.title
+            return ShareMoment(board: board, move: lastMove, title: title,
+                               detail: "Every game teaches me something.", footer: "Learning with Cozy Chess")
+        }
+        let title = best.side.map { "\($0)'s best move" } ?? "A move I'm proud of"
+        return ShareMoment(board: best.after, move: best.move, title: title,
+                           detail: "Move \(best.moveNumber)\(against) · \(best.text)", footer: "Learning with Cozy Chess")
     }
 
     /// When the player is clearly behind and nearly out of hints, gives one
@@ -955,7 +982,7 @@ final class GameModel {
                            text: "Checkmate in \(moves) moves.", accuracy: accuracy, great: great, blunders: blunders)
             } else {
                 f = Finish(outcome: whiteWon ? .won : .lost, title: whiteWon ? "You won!" : "Good fight",
-                           text: "Checkmate in \(moves) moves.", accuracy: accuracy, great: great, blunders: blunders)
+                           text: whiteWon ? "Checkmate in \(moves) moves." : "Checkmate after \(moves) moves. Next time is yours.", accuracy: accuracy, great: great, blunders: blunders)
             }
         } else {
             let why = [ChesscoreStatusStalemate: "Stalemate: no legal moves, and no check.",
@@ -980,6 +1007,10 @@ final class GameModel {
             }
         }
         final.best = bestMove()
+        if mode == .passAndPlay {
+            final.sides = (trail.filter { $0.ply % 2 == 0 && $0.card.kind == .great }.count,
+                           trail.filter { $0.ply % 2 == 1 && $0.card.kind == .great }.count)
+        }
         Task {
             try? await Task.sleep(for: .seconds(1.1))
             finish = final
