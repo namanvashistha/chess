@@ -120,18 +120,18 @@ private struct HomeScreen: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
 
+                // Playing a friend is a quiet second way in, not a second big button.
                 Button { Haptics.tap(); start(.passAndPlay, opponent) } label: {
-                    Label("Pass & play on this phone", systemImage: "person.2").frame(maxWidth: .infinity, minHeight: 40)
+                    Label("Or play a friend on this phone", systemImage: "person.2")
+                        .frame(maxWidth: .infinity)
                 }
-                .font(Typeface.display(15, .bold))
-                .buttonStyle(.glass)
-                .controlSize(.large)
+                .font(.system(size: 14.5, weight: .semibold))
+                .foregroundStyle(Palette.accentText)
+                .buttonStyle(.plain)
+                .padding(.top, 2)
 
-                ProgressCard(records: recent)
-                    .padding(.top, 6)
-
-                RecentGames(records: Array(recent.prefix(5)))
-                    .padding(.top, 6)
+                RecentGames(records: recent)
+                    .padding(.top, 14)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
@@ -204,7 +204,7 @@ private struct ContinueCard: View {
                     Text(saved.passAndPlay ? "Pass & play" : "\(Opponent(rawValue: saved.opponent)?.name ?? "Easy") game")
                         .font(Typeface.display(21))
                         .lineLimit(1).minimumScaleFactor(0.8)
-                    Text("Move \(saved.moves.count / 2 + 1)" + (saved.trail.isEmpty ? "" : " · \(saved.trail.count) rated"))
+                    Text("Move \(saved.moves.count / 2 + 1)")
                         .font(.system(size: 13.5)).foregroundStyle(Palette.mist)
                     TrailDots(trail: Array(saved.trail.suffix(12)))
                         .padding(.top, 2)
@@ -321,83 +321,35 @@ struct OpponentAvatar: View {
     }
 }
 
-/// How the player is doing over their last ten games: accuracy as bars, oldest
-/// first, and the great moves they've found. It only says "improving" when
-/// that's true.
-private struct ProgressCard: View {
-    let records: [GameRecord]
-
-    /// Games against the engine only: a shared phone isn't one player's progress.
-    private var games: [Int] {
-        Array(records.filter { $0.opponent != "Pass & play" }.compactMap(\.accuracy).prefix(10).reversed())
-    }
-
-    private var improving: Bool {
-        let g = games
-        guard g.count >= 4 else { return false }
-        let half = g.count / 2
-        return Self.mean(g.suffix(half)) > Self.mean(g.prefix(half)) + 1
-    }
-
-    private static func mean(_ xs: ArraySlice<Int>) -> Double {
-        let total: Int = xs.reduce(0, +)
-        return Double(total) / Double(max(1, xs.count))
-    }
-
-    var body: some View {
-        let g = games
-        if g.count >= 2 {
-            VStack(alignment: .leading, spacing: 8) {
-                SectionLabel(text: "Your progress")
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text(improving ? "You're improving" : "Accuracy, last \(g.count) games")
-                            .font(Typeface.display(17))
-                        Spacer()
-                        Text("\(Int(Self.mean(g[...]).rounded()))% avg").font(.system(size: 13, weight: .semibold)).foregroundStyle(Palette.mist)
-                    }
-                    // Scaled to this player's own range, so a few points of change show.
-                    let lo = Double((g.min() ?? 0) - 8), hi = Double(max((g.max() ?? 100), (g.min() ?? 0) + 10))
-                    HStack(alignment: .bottom, spacing: 6) {
-                        ForEach(Array(g.enumerated()), id: \.offset) { k, a in
-                            VStack(spacing: 4) {
-                                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                    .fill(k == g.count - 1 ? Palette.accent : Palette.accent.opacity(0.35))
-                                    .frame(width: 14, height: 8 + CGFloat((Double(a) - lo) / (hi - lo)) * 52)
-                                Text("\(a)").font(.system(size: 10, weight: .semibold)).monospacedDigit()
-                                    .foregroundStyle(Palette.mist)
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                    }
-                    .frame(height: 82, alignment: .bottom)
-                    HStack(spacing: 6) {
-                        Image(systemName: "star.fill").font(.system(size: 11)).foregroundStyle(Palette.great)
-                        Text("\(Stats.greatMoves) great \(Stats.greatMoves == 1 ? "move" : "moves") found")
-                            .font(.system(size: 13.5)).foregroundStyle(Palette.mist)
-                    }
-                }
-                .padding(14)
-                .glassEffect(.regular, in: .rect(cornerRadius: 18))
-            }
-            .accessibilityElement(children: .combine)
-        }
-    }
-}
-
 private struct RecentGames: View {
     let records: [GameRecord]
 
+    /// The last three games: enough to remember, not a ledger.
+    private var shown: [GameRecord] { Array(records.prefix(3)) }
+
+    /// One quiet line in place of a chart: how it's going lately.
+    private var summary: String? {
+        let recent = records.filter { $0.opponent != "Pass & play" }.compactMap(\.accuracy).prefix(10)
+        guard recent.count >= 2 else { return nil }
+        let avg = recent.reduce(0, +) / recent.count
+        let great = Stats.greatMoves
+        return great > 0 ? "\(avg)% lately · \(great) great moves" : "\(avg)% lately"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SectionLabel(text: "Recent games")
+            HStack(alignment: .firstTextBaseline) {
+                SectionLabel(text: "Your games")
+                Spacer()
+                if let summary { Text(summary).font(.system(size: 12.5)).foregroundStyle(Palette.mist) }
+            }
             if records.isEmpty {
                 Text("Your finished games will show up here, with how accurately you played.")
                     .font(.system(size: 14)).foregroundStyle(Palette.mist)
                     .padding(.vertical, 6)
             } else {
                 VStack(spacing: 0) {
-                    ForEach(Array(records.enumerated()), id: \.element.id) { k, r in
+                    ForEach(Array(shown.enumerated()), id: \.element.id) { k, r in
                         HStack(spacing: 12) {
                             Group {
                                 if let o = r.level.flatMap(Opponent.init) ?? Opponent.allCases.first(where: { $0.name == r.opponentName }) {
@@ -423,11 +375,13 @@ private struct RecentGames: View {
                                     .font(.system(size: 12.5)).foregroundStyle(Palette.mist)
                             }
                             Spacer()
-                            Text(r.accuracy.map { "\($0)%" } ?? "–").font(Typeface.display(17)).monospacedDigit()
+                            if r.opponent != "Pass & play", let a = r.accuracy {
+                                Text("\(a)%").font(Typeface.display(17)).monospacedDigit()
+                            }
                         }
                         .padding(.vertical, 10)
                         .padding(.horizontal, 12)
-                        if k < records.count - 1 { Divider().padding(.leading, 56) }
+                        if k < shown.count - 1 { Divider().padding(.leading, 56) }
                     }
                 }
                 .glassEffect(.regular, in: .rect(cornerRadius: 18))
@@ -513,15 +467,6 @@ private struct GameScreen: View {
                 BoardView(model: model)
                 CapturedRow(pieces: model.captured(by: "w"), lead: model.materialLead(for: "w"))
                 CoachView(card: model.coach, opponent: model.opponent)
-                    .overlay(alignment: .topTrailing) {
-                        if let entry = model.shareableEntry {
-                            ShareMomentButton(moment: model.moment(for: entry))
-                                .buttonStyle(.glass)
-                                .buttonBorderShape(.circle)
-                                .padding(8)
-                                .transition(.scale.combined(with: .opacity))
-                        }
-                    }
                     .padding(.top, 4)
                     .contentShape(.rect)
                     // Swipe right for the move before, left for the move after.

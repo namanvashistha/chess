@@ -34,6 +34,11 @@ struct BoardView: View {
                 }
                 PiecesLayer(model: model, size: size, drag: touch?.dragging == true ? touch : nil)
                 if !still { MarkLayer(model: model, size: size) }
+                if !still, let s = model.sparkle {
+                    Sparkle(size: size / 8)
+                        .position(center(s.square, size))
+                        .id(s.id)
+                }
                 ForEach(model.bursts) { b in
                     ShardBurst(dark: b.dark, size: size / 8)
                         .position(center(b.square, size))
@@ -349,6 +354,35 @@ private struct MarkLayer: View {
         .allowsHitTesting(false)
         .animation(.spring(response: 0.35, dampingFraction: 0.55), value: model.shownMark?.entry.id)
         .accessibilityHidden(true)
+    }
+}
+
+/// A great move: a few sparkles burst from the piece and fade, once.
+private struct Sparkle: View {
+    let size: CGFloat
+    @State private var out = false
+    private let bits: [(angle: Double, dist: CGFloat, scale: CGFloat)] = (0..<7).map { i in
+        (Double(i) / 7 * 2 * .pi + Double.random(in: -0.25...0.25), CGFloat.random(in: 0.55...0.85), CGFloat.random(in: 0.7...1.1))
+    }
+
+    var body: some View {
+        ZStack {
+            Circle().strokeBorder(Palette.great.opacity(out ? 0 : 0.6), lineWidth: 2)
+                .frame(width: size * (out ? 1.5 : 0.5), height: size * (out ? 1.5 : 0.5))
+            ForEach(bits.indices, id: \.self) { i in
+                let b = bits[i]
+                Image(systemName: "sparkle")
+                    .font(.system(size: size * 0.22 * b.scale, weight: .bold))
+                    .foregroundStyle(i % 2 == 0 ? Palette.great : Palette.lastMove)
+                    .offset(x: out ? CGFloat(cos(b.angle)) * size * b.dist : 0,
+                            y: out ? CGFloat(sin(b.angle)) * size * b.dist : 0)
+                    .scaleEffect(out ? 1 : 0.2)
+                    .opacity(out ? 0 : 1)
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onAppear { withAnimation(.easeOut(duration: 0.8)) { out = true } }
     }
 }
 

@@ -290,6 +290,8 @@ final class GameModel {
     /// The verdict on the last move, pinned to the piece that made it until the
     /// next move: the trail entry and the square the piece stands on.
     private(set) var mark: (entry: TrailEntry, square: Square)?
+    /// A great move's sparkle: bumps once per great move, with where it landed.
+    private(set) var sparkle: (id: Int, square: Square)?
     @ObservationIgnored private var legal: [String] = []
     @ObservationIgnored private var ids: [Int?] = Array(repeating: nil, count: 64)
     @ObservationIgnored private var nextID = 0
@@ -884,7 +886,10 @@ final class GameModel {
             let kept = CoachCard(id: card.id, kind: card.kind, badge: card.badge, title: card.title, text: v.text)
             let entry = TrailEntry(id: bump(), ply: ply, san: san, card: kept)
             trail.append(entry)
-            if let to = lastMove?.to { mark = (entry, to) }
+            if let to = lastMove?.to {
+                mark = (entry, to)
+                if kind == .great { sparkle = (entry.id, to) }
+            }
         }
         reviewing = nil
         emit(kind == .great ? .great : kind == .good ? .good : .bad)
