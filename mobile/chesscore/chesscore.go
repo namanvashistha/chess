@@ -1,6 +1,7 @@
 // Package chesscore is the engine's API for the iOS app, shaped for gomobile:
 // it exposes only strings, ints and bools, so `gomobile bind` can generate a
-// plain Objective-C/Swift interface without wrapping dao or dto types.
+// plain Objective-C/Swift interface. The rules live in engine.Game; this adds
+// locking, because Swift calls in from more than one thread.
 //
 // Squares are algebraic ("e4") and moves are UCI ("e2e4", "e7e8q").
 package chesscore
@@ -10,59 +11,51 @@ import (
 	"sync"
 	"time"
 
-	"chess-engine/app/domain/dao"
 	"chess-engine/app/engine"
 )
 
-// Game status values returned by Game.Status.
+// Game status values returned by Game.Status: "" while the game is going,
+// otherwise the reason it ended.
 const (
-	StatusPlaying    = ""
-	StatusCheckmate  = "checkmate"
-	StatusStalemate  = "stalemate"
-	StatusRepetition = engine.DrawByRepetition
-	StatusFiftyMove  = engine.DrawByFiftyMove
+	StatusPlaying      = ""
+	StatusCheckmate    = engine.ReasonCheckmate
+	StatusStalemate    = engine.ReasonStalemate
+	StatusRepetition   = engine.ReasonRepetition
+	StatusFiftyMove    = engine.ReasonFiftyMove
+	StatusInsufficient = engine.ReasonInsufficient
 )
 
-// Game is one game in progress: the current position plus enough history to
-// undo moves and to detect repetition.
+// Game is one game in progress.
 type Game struct {
-	mu     sync.Mutex
-	states []dao.GameState // states[0] is the start; the last is the current position
-	moves  []string        // UCI moves; len(moves) == len(states)-1
-	keys   []uint64        // Zobrist key of each state, aligned with states
-	table  *engine.TranspositionTable
-	stop   chan struct{} // closed by StopSearch; replaced by each Search
+	mu    sync.Mutex
+	g     *engine.Game
+	table *engine.TranspositionTable
+	stop  chan struct{} // closed by StopSearch; replaced by each Search
 }
 
 // NewGame returns a game at the standard starting position.
 func NewGame() *Game {
-	return newGame(engine.StartState())
+	return wrap(engine.NewGame())
 }
 
 // NewGameFromFEN returns a game starting at the given FEN position.
 func NewGameFromFEN(fen string) (*Game, error) {
-	gs, err := engine.ParseFEN(fen)
+	g, err := engine.NewGameFromFEN(fen)
 	if err != nil {
 		return nil, err
 	}
-	return newGame(gs), nil
+	return wrap(g), nil
 }
 
-func newGame(gs dao.GameState) *Game {
-	return &Game{
-		states: []dao.GameState{gs},
-		keys:   []uint64{engine.PositionKey(gs)},
-		table:  engine.NewTranspositionTable(16),
-	}
+func wrap(g *engine.Game) *Game {
+	return &Game{g: g, table: engine.NewTranspositionTable(16)}
 }
-
-func (g *Game) current() dao.GameState { return g.states[len(g.states)-1] }
 
 // FEN returns the current position as FEN.
 func (g *Game) FEN() string {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	return engine.ToFEN(g.current())
+	return g.g.FEN()
 }
 
 // Board returns the current position as 64 characters, a8 to h1 in reading
@@ -70,33 +63,21 @@ func (g *Game) FEN() string {
 func (g *Game) Board() string {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	placement := strings.Fields(engine.ToFEN(g.current()))[0]
-	var sb strings.Builder
-	sb.Grow(64)
-	for _, r := range placement {
-		switch {
-		case r == '/':
-		case r >= '1' && r <= '8':
-			sb.WriteString(strings.Repeat(".", int(r-'0')))
-		default:
-			sb.WriteRune(r)
-		}
-	}
-	return sb.String()
+	return g.g.Board()
 }
 
 // Turn returns "w" or "b" for the side to move.
 func (g *Game) Turn() string {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	return g.current().Turn
+	return g.g.Turn()
 }
 
 // InCheck reports whether the side to move is in check.
 func (g *Game) InCheck() bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	return engine.InCheck(g.current())
+	return g.g.InCheck()
 }
 
 // LegalMoves returns the legal moves for the side to move as space-separated
@@ -104,104 +85,70 @@ func (g *Game) InCheck() bool {
 func (g *Game) LegalMoves() string {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	return strings.Join(legalUCI(g.current()), " ")
+	return strings.Join(g.g.Legal(), " ")
 }
 
-func legalUCI(gs dao.GameState) []string {
-	list := engine.GenerateLegalMoveList(gs)
-	out := make([]string, 0, len(list))
-	for _, m := range list {
-		out = append(out, bitSquare(m.Src)+bitSquare(m.Dst)+m.Promotion)
-	}
-	return out
-}
-
-func bitSquare(bit uint64) string {
-	i := 0
-	for bit > 1 {
-		bit >>= 1
-		i++
-	}
-	return string([]byte{byte('a' + i%8), byte('1' + i/8)})
-}
-
-// Play makes a move given in UCI. It returns an error if the move is not legal
-// in the current position.
-func (g *Game) Play(uci string) error {
+// Play makes a move given in UCI and returns it in SAN. It returns an error if
+// the move is not legal in the current position.
+func (g *Game) Play(uci string) (string, error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	gs := g.current()
-	uci = strings.ToLower(strings.TrimSpace(uci))
-	if !contains(legalUCI(gs), uci) {
-		return &MoveError{Move: uci}
-	}
-	move, err := engine.ParseUCIMove(gs, uci)
-	if err != nil {
-		return err
-	}
-	next := engine.ApplyMove(gs, move)
-	g.states = append(g.states, next)
-	g.moves = append(g.moves, uci)
-	g.keys = append(g.keys, engine.PositionKey(next))
-	return nil
+	return g.g.Play(uci)
 }
-
-func contains(list []string, s string) bool {
-	for _, x := range list {
-		if x == s {
-			return true
-		}
-	}
-	return false
-}
-
-// MoveError reports a move that is not legal in the current position.
-type MoveError struct {
-	Move string
-}
-
-func (e *MoveError) Error() string { return "illegal move " + e.Move }
 
 // Undo takes back the last move. It returns false when there is nothing to undo.
 func (g *Game) Undo() bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	if len(g.moves) == 0 {
-		return false
-	}
-	n := len(g.states) - 1
-	g.states = g.states[:n]
-	g.keys = g.keys[:n]
-	g.moves = g.moves[:n-1]
-	return true
+	return g.g.Undo()
 }
 
 // MoveCount returns the number of half-moves played.
 func (g *Game) MoveCount() int {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	return len(g.moves)
+	return g.g.Ply()
 }
 
 // Moves returns the moves played so far as space-separated UCI strings.
 func (g *Game) Moves() string {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	return strings.Join(g.moves, " ")
+	return strings.Join(g.g.Moves(), " ")
 }
 
-// Status reports whether the game is over: one of the Status constants.
+// SANs returns the moves played so far as space-separated SAN strings.
+func (g *Game) SANs() string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return strings.Join(g.g.SANs(), " ")
+}
+
+// Status reports why the game ended, or StatusPlaying while it goes on.
 func (g *Game) Status() string {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	gs := g.current()
-	if len(engine.GenerateLegalMoveList(gs)) == 0 {
-		if engine.InCheck(gs) {
-			return StatusCheckmate
-		}
-		return StatusStalemate
-	}
-	return engine.DrawStatus(gs, g.keys)
+	_, reason := g.g.Outcome()
+	return reason
+}
+
+// Result reports the result in PGN notation ("1-0", "0-1", "1/2-1/2"), or ""
+// while the game goes on.
+func (g *Game) Result() string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	result, _ := g.g.Outcome()
+	return result
+}
+
+// BotMove picks a move at a difficulty level ("easy", "medium" or "hard") and
+// returns it in UCI without playing it, or "" when the game is over. It blocks,
+// so call it off the main thread.
+func (g *Game) BotMove(level string) string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	uci, _ := engine.BotMove(g.g, level, g.table)
+	return uci
 }
 
 // SearchResult is the engine's answer for one position.
@@ -219,11 +166,11 @@ type SearchResult struct {
 // pass 0 to leave either limit off. It blocks, so call it off the main thread.
 func (g *Game) Search(maxDepth, moveTimeMs int) *SearchResult {
 	g.mu.Lock()
-	gs := g.current()
+	gs := g.g.Position()
 	opts := engine.SearchOptions{
 		MaxDepth: maxDepth,
 		MoveTime: time.Duration(moveTimeMs) * time.Millisecond,
-		History:  engine.SearchHistory(g.keys),
+		History:  g.g.History(),
 		Table:    g.table,
 	}
 	if maxDepth <= 0 && moveTimeMs <= 0 {

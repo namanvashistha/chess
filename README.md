@@ -1,51 +1,45 @@
 # chess
 
-This project is a *chess application*.
-It allows two players to play chess against each other in *real-time*.
-The core game logic uses a **Bitboard Chess Engine** for efficiency.
-User interactions happen through a web interface (frontend), which communicates with the backend via API calls and WebSockets.
-Game states and user data are stored in a **PostgreSQL database** and cached using **Redis**.
-
+Real-time chess: play a friend online, play the engine, or pass and play on one
+device. A Go server with a bitboard engine, a Svelte web app, and a native iOS
+app that runs the same engine on the phone.
 
 ```mermaid
-flowchart TD
-    A0["Chess Engine (Bitboard Implementation)"]
-    A1["API Routing & Controllers"]
-    A2["Data Persistence (Repositories)"]
-    A3["Real-time Communication (WebSocket Service)"]
-    A4["Service Layer"]
-    A5["Domain Objects (DAO/DTO)"]
-    A6["Dependency Injection & Configuration"]
-    A7["Frontend Interaction"]
-    A7 -- "Sends HTTP requests" --> A1
-    A7 -- "Connects via WebSocket" --> A3
-    A1 -- "Delegates request handling" --> A4
-    A1 -- "Handles WebSocket upgrades" --> A3
-    A4 -- "Uses for game logic (API)" --> A0
-    A4 -- "Uses for data storage (API)" --> A2
-    A3 -- "Uses for game logic (WS)" --> A0
-    A3 -- "Uses for data storage (WS)" --> A2
-    A2 -- "Maps data to/from DAOs" --> A5
-    A0 -- "Operates on GameState DAO" --> A5
-    A6 -- "Injects dependencies" --> A4
-    A6 -- "Provides DB/Cache config" --> A2
-    A4 -- "Uses DTOs/DAOs" --> A5
-    A3 -- "Uses DTOs for messages" --> A5
-    A6 -- "Injects dependencies" --> A1
-    A6 -- "Injects dependencies" --> A3
+flowchart LR
+    web["Web app (Svelte)"] -- "HTTP + WebSocket" --> server
+    ios["iOS app (SwiftUI)"] -- "gomobile" --> engine
+    subgraph server["Server (cmd/server)"]
+        http["app/server: API, sessions, static files"]
+        live["app/live: one goroutine per game in progress"]
+        http --> live
+    end
+    live --> engine["app/engine: rules, search, bot levels"]
+    live --> store["app/store: Postgres (users, games, moves)"]
+    http --> store
 ```
 
-## Chapters
+- **Games are their moves.** The database stores each game's seats, result and
+  move list; every position is derived by replaying moves. There is no stored
+  board to drift out of step.
+- **One goroutine owns each live game.** Moves for a game are applied in order
+  by its room, which writes them to Postgres and then sends them to everyone
+  watching. No locks, no cache.
+- **One engine everywhere.** `engine.Game` is the only place the rules live; the
+  server, the UCI binary and the iOS app all use it.
 
-1. [Frontend Interaction](docs/01_frontend_interaction.md)
-2. [Domain Objects (DAO/DTO)](docs/02_domain_objects__dao_dto_.md)
-3. [API Routing & Controllers](docs/03_api_routing___controllers.md)
-4. [Real-time Communication (WebSocket Service)](docs/04_real_time_communication__websocket_service_.md)
-5. [Service Layer](docs/05_service_layer.md)
-6. [Chess Engine (Bitboard Implementation)](docs/06_chess_engine__bitboard_implementation_.md)
-7. [Data Persistence (Repositories)](docs/07_data_persistence__repositories_.md)
-8. [Dependency Injection & Configuration](docs/08_dependency_injection___configuration.md)
+See [docs/architecture.md](docs/architecture.md) for the details and
+[docs/protocol.md](docs/protocol.md) for the API and WebSocket messages.
 
+## Running it
+
+```sh
+make test                      # Go tests, including end-to-end socket tests
+DATABASE_URL=postgres:///chess?host=/tmp make run
+cd web && npm run dev          # web app with hot reload, proxied to :9000
+make ios-engine                # build the engine framework for the iOS app
+```
+
+`docker compose up` runs the server and Postgres together.
 
 ## UCI engine
 
@@ -74,8 +68,7 @@ Supported commands: `uci`, `isready`, `ucinewgame`, `setoption`,
 `wtime`/`btime`/`winc`/`binc`/`movestogo`, `infinite`), `stop`, `quit`. Moves use
 UCI long algebraic notation with promotion suffixes (e.g. `e7e8q`, `e7e8n`).
 
-Note: `GameState` tracks no halfmove/fullmove counters, so the engine does not
-claim 50-move or threefold-repetition draws itself (FEN counters are parsed but
-ignored); GUIs adjudicate those.
+The search sees threefold repetition (from the `position ... moves` history)
+and the fifty-move rule, so it avoids throwing away a won position.
 
 ---

@@ -1,11 +1,10 @@
 package engine
 
 import (
-	"chess-engine/app/domain/dao"
 	"fmt"
 )
 
-func getPieceCode(bit uint64, isWhite bool, gameState dao.GameState) string {
+func getPieceCode(bit uint64, isWhite bool, gameState GameState) string {
 	// Check which bitboard the piece belongs to
 	pieceTypes := []string{"pawn", "rook", "knight", "bishop", "queen", "king"}
 	pieceCodes := []string{"p", "r", "n", "b", "q", "k"}
@@ -30,7 +29,7 @@ func getPieceCode(bit uint64, isWhite bool, gameState dao.GameState) string {
 	return ""
 }
 
-func ConvertGameStateToMap(gameState dao.GameState) map[string]string {
+func ConvertGameStateToMap(gameState GameState) map[string]string {
 	board := make(map[string]string)
 
 	files := []string{"a", "b", "c", "d", "e", "f", "g", "h"}
@@ -60,7 +59,7 @@ func ConvertGameStateToMap(gameState dao.GameState) map[string]string {
 // FilterMovesByTurn keeps only the moves of pieces belonging to the side whose
 // turn it is. Move generation produces entries for both colours (the check
 // detection needs them), but the client must only see the side-to-move's moves.
-func FilterMovesByTurn(allowedMoves map[uint64]uint64, gs dao.GameState) map[uint64]uint64 {
+func FilterMovesByTurn(allowedMoves map[uint64]uint64, gs GameState) map[uint64]uint64 {
 	sideMask := gs.WhiteBitboard
 	if gs.Turn == "b" {
 		sideMask = gs.BlackBitboard

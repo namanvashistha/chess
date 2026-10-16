@@ -276,6 +276,7 @@ private struct GameOverCard: View {
         case ChesscoreStatusCheckmate: return "Checkmate in \(moves) moves."
         case ChesscoreStatusStalemate: return "No legal moves and no check, so the game is drawn."
         case ChesscoreStatusRepetition: return "The same position came up three times."
+        case ChesscoreStatusInsufficient: return "Neither side has enough pieces left to mate."
         default: return "Fifty moves passed without a capture or a pawn move."
         }
     }

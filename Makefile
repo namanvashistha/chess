@@ -7,7 +7,7 @@ export CGO_ENABLED = 0
 
 # Build the HTTP/WebSocket game server.
 build:
-	go build -o bin/server .
+	go build -o bin/server ./cmd/server
 
 # Build the UCI engine binary (point a chess GUI / test harness at bin/uci).
 uci:
@@ -15,6 +15,8 @@ uci:
 
 # Run the test suite. `go vet` runs as part of `go test` (do not disable it:
 # it catches printf mismatches, lost struct tags and bad mutex copies).
+# Set TEST_DATABASE_URL to a throwaway database (its name must contain "test")
+# to run the store tests against Postgres as well. CI also runs them with -race.
 test:
 	go test ./...
 
@@ -23,7 +25,7 @@ vet:
 	go vet ./...
 
 run:
-	go run .
+	go run ./cmd/server
 
 # Engine-vs-engine match via fastchess (https://github.com/Disservin/fastchess).
 #

@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"chess-engine/app/domain/dao"
 	"math/bits"
 )
 
@@ -172,7 +171,7 @@ var fileMasks = func() [8]uint64 {
 }()
 
 // gamePhase is 24 with all pieces on the board and 0 in a bare-king endgame.
-func gamePhase(gs dao.GameState) int {
+func gamePhase(gs GameState) int {
 	phase := bits.OnesCount64(gs.KnightBitboard) +
 		bits.OnesCount64(gs.BishopBitboard) +
 		2*bits.OnesCount64(gs.RookBitboard) +
@@ -184,7 +183,7 @@ func gamePhase(gs dao.GameState) int {
 }
 
 // evaluate scores a position in centipawns from White's perspective.
-func evaluate(gs dao.GameState) int {
+func evaluate(gs GameState) int {
 	score := evalMaterial(gs)
 	score += pieceSquareScore(gs)
 	score += pawnStructureScore(gs)
@@ -202,7 +201,7 @@ func evaluate(gs dao.GameState) int {
 	return score
 }
 
-func pieceSquareScore(gs dao.GameState) int {
+func pieceSquareScore(gs GameState) int {
 	score := 0
 	for _, b := range [...]struct {
 		bb   uint64
@@ -240,7 +239,7 @@ func pieceSquareScore(gs dao.GameState) int {
 }
 
 // pawnStructureScore penalises doubled and isolated pawns.
-func pawnStructureScore(gs dao.GameState) int {
+func pawnStructureScore(gs GameState) int {
 	white := gs.PawnBitboard & gs.WhiteBitboard
 	black := gs.PawnBitboard & gs.BlackBitboard
 
@@ -276,7 +275,7 @@ func pawnStructureScore(gs dao.GameState) int {
 // on the seventh rank -- one move from a queen, and worth tying down a piece to
 // stop -- from a doubled pawn on its own back rank. In endgames that difference
 // is usually the whole game.
-func passedPawnScore(gs dao.GameState) int {
+func passedPawnScore(gs GameState) int {
 	whitePawns := gs.PawnBitboard & gs.WhiteBitboard
 	blackPawns := gs.PawnBitboard & gs.BlackBitboard
 
@@ -296,7 +295,7 @@ func passedPawnScore(gs dao.GameState) int {
 	return score
 }
 
-func bishopPairScore(gs dao.GameState) int {
+func bishopPairScore(gs GameState) int {
 	score := 0
 	if bits.OnesCount64(gs.BishopBitboard&gs.WhiteBitboard) >= 2 {
 		score += bishopPairBonus
@@ -308,7 +307,7 @@ func bishopPairScore(gs dao.GameState) int {
 }
 
 // rookFileScore rewards rooks on files with no pawns at all.
-func rookFileScore(gs dao.GameState) int {
+func rookFileScore(gs GameState) int {
 	score := 0
 	for f := 0; f < 8; f++ {
 		if gs.PawnBitboard&fileMasks[f] != 0 {

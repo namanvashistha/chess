@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"chess-engine/app/domain/dao"
 	"testing"
 )
 
@@ -9,7 +8,7 @@ import (
 // The bishop is absolutely pinned: every bishop move leaves the e-file and
 // exposes the white king, so it must have ZERO legal moves.
 func TestPinnedBishopHasNoLegalMoves(t *testing.T) {
-	gs := dao.GameState{
+	gs := GameState{
 		WhiteBitboard:  (1 << 4) | (1 << 12),
 		BlackBitboard:  (1 << 60) | (1 << 56),
 		KingBitboard:   (1 << 4) | (1 << 56),
@@ -37,7 +36,7 @@ func popcount(x uint64) int {
 // The pawn may push e3/e4 (stays on the file) but capturing d3 (exd3) would
 // leave the e-file and expose the king -> illegal. The capture must be excluded.
 func TestPinnedPawnCannotCaptureOffFile(t *testing.T) {
-	gs := dao.GameState{
+	gs := GameState{
 		WhiteBitboard:  (1 << 4) | (1 << 12),
 		BlackBitboard:  (1 << 60) | (1 << 19) | (1 << 56),
 		KingBitboard:   (1 << 4) | (1 << 56),
@@ -58,7 +57,7 @@ func TestPinnedPawnCannotCaptureOffFile(t *testing.T) {
 // The knight is pinned: ANY knight move uncovers Re8 -> Ke1 (discovered check),
 // so the knight must have ZERO legal moves.
 func TestKnightPinnedByDiscoveredCheck(t *testing.T) {
-	gs := dao.GameState{
+	gs := GameState{
 		WhiteBitboard:  (1 << 4) | (1 << 28),
 		BlackBitboard:  (1 << 60) | (1 << 56),
 		KingBitboard:   (1 << 4) | (1 << 56),

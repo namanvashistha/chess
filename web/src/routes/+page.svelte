@@ -2,16 +2,15 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { currentGame, user } from '$lib/stores.js';
-	import { listGames, createGame, createBotGame, createLocalGame, joinGame } from '$lib/api.js';
+	import { lobby, createGame, joinGame } from '$lib/api.js';
 	import { formatUserName } from '$lib/format.js';
 
-	let games = $state([]);
+	let games = $state({ open: [], live: [], mine: [] });
 	let tab = $state('mine');
 	let botLevel = $state('medium');
-	let inviteCode = $state('');
+	let link = $state('');
 	let creating = $state(false);
-	// Reactive: recomputes once the anonymous user hydrates, so grouping is correct.
-	let myId = $derived($user?.id ?? null);
+	let error = $state('');
 
 	onMount(() => {
 		currentGame.set(null); // idle board in the lobby
@@ -19,53 +18,61 @@
 		refresh();
 	});
 
+	// The lobby depends on who is asking, so reload once the session exists.
+	$effect(() => {
+		if ($user) refresh();
+	});
+
 	async function refresh() {
-		games = await listGames();
-	}
-
-	const amPlayer = (g) =>
-		myId != null && ((g.white_user && g.white_user.id === myId) || (g.black_user && g.black_user.id === myId));
-	const hasOpenSeat = (g) => !g.white_user || !g.black_user;
-	const isFinished = (g) => !!g.winner; // 'w' | 'b' | 'd' (draw)
-
-	let mine = $derived(games.filter((g) => amPlayer(g)));
-	let open = $derived(games.filter((g) => !amPlayer(g) && hasOpenSeat(g) && !isFinished(g)));
-	let watch = $derived(games.filter((g) => !amPlayer(g) && !(hasOpenSeat(g) && !isFinished(g))));
-	let shown = $derived(tab === 'mine' ? mine : tab === 'open' ? open : watch);
-
-	async function onCreate() {
-		creating = true;
-		const r = await createGame();
-		creating = false;
-		if (r.response_key === 'SUCCESS') goto(`/game/${r.data}`);
-	}
-	async function onBot() {
-		creating = true;
-		localStorage.setItem('botLevel', botLevel);
-		const r = await createBotGame(botLevel);
-		creating = false;
-		if (r.response_key === 'SUCCESS') goto(`/game/${r.data}`);
-	}
-	async function onLocal() {
-		creating = true;
-		const r = await createLocalGame();
-		creating = false;
-		if (r.response_key === 'SUCCESS') goto(`/game/${r.data}`);
-	}
-	async function onJoinCode() {
-		if (!inviteCode.trim()) return;
-		const r = await joinGame(inviteCode.trim());
-		if (r.response_key === 'SUCCESS') goto(`/game/${r.data}`);
-		else alert('Invalid invite code!');
-	}
-	async function onRow(g) {
-		if (!amPlayer(g) && hasOpenSeat(g) && !isFinished(g)) {
-			const r = await joinGame(g.invite_code);
-			if (r.response_key === 'SUCCESS') return goto(`/game/${r.data}`);
-			return alert('Could not join this game.');
+		try {
+			games = await lobby();
+		} catch {
+			// keep the last list
 		}
-		goto(`/game/${g.id}`);
 	}
+
+	let shown = $derived(tab === 'mine' ? games.mine : tab === 'open' ? games.open : games.live);
+
+	async function start(options) {
+		creating = true;
+		error = '';
+		try {
+			goto(`/game/${await createGame(options)}`);
+		} catch (e) {
+			error = e.message;
+		} finally {
+			creating = false;
+		}
+	}
+	const onCreate = () => start({ mode: 'online' });
+	function onBot() {
+		localStorage.setItem('botLevel', botLevel);
+		start({ mode: 'bot', level: botLevel });
+	}
+	const onLocal = () => start({ mode: 'local' });
+
+	// Accepts a full game link or just its id.
+	async function onJoinLink() {
+		const id = link.trim().split('/').filter(Boolean).pop();
+		if (!id) return;
+		await join(id);
+	}
+	async function join(id) {
+		error = '';
+		try {
+			await joinGame(id);
+			goto(`/game/${id}`);
+		} catch (e) {
+			error = e.message;
+		}
+	}
+	function onRow(g) {
+		if (tab === 'open') join(g.id);
+		else goto(`/game/${g.id}`);
+	}
+
+	const statusLabel = (g) =>
+		g.status === 'finished' ? g.result : g.status === 'waiting' ? 'Waiting' : `Move ${Math.floor(g.plies / 2) + 1}`;
 </script>
 
 <div class="rail-stack">
@@ -77,7 +84,7 @@
 			<span class="btn-create-icon"><i class="fa fa-plus"></i></span>
 			<span class="btn-create-text">
 				<strong>Create a game</strong>
-				<small>Random side, share the code to invite</small>
+				<small>Random side, share the link to invite</small>
 			</span>
 			<i class="fa fa-arrow-right btn-create-go"></i>
 		</button>
@@ -97,17 +104,18 @@
 			<i class="fa fa-users"></i><span>Pass &amp; play</span>
 		</button>
 
-		<div class="divider"><span>or join with a code</span></div>
+		<div class="divider"><span>or join with a link</span></div>
 		<div class="join-row">
-			<input class="field" placeholder="Paste an invite code" bind:value={inviteCode}
-				onkeydown={(e) => e.key === 'Enter' && onJoinCode()} />
-			<button class="btn-ghost" onclick={onJoinCode}>Join</button>
+			<input class="field" placeholder="Paste a game link" bind:value={link}
+				onkeydown={(e) => e.key === 'Enter' && onJoinLink()} />
+			<button class="btn-ghost" onclick={onJoinLink}>Join</button>
 		</div>
+		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</section>
 
 	<section class="panel games">
 		<div class="games-head">
-			{#each [['mine', 'Your games', mine.length], ['open', 'Open tables', open.length], ['watch', 'Watch', watch.length]] as [key, label, n]}
+			{#each [['mine', 'Your games', games.mine.length], ['open', 'Open tables', games.open.length], ['watch', 'Watch', games.live.length]] as [key, label, n]}
 				<button class="tab" class:is-active={tab === key} onclick={() => (tab = key)}>
 					{label} <span class="tab-count">{n}</span>
 				</button>
@@ -118,11 +126,11 @@
 			{#each shown as g (g.id)}
 				<button class="game-row" onclick={() => onRow(g)}>
 					<span class="gr-players">
-						<span class="gr-name">{g.white_user ? formatUserName(g.white_user.name) : 'Open'}</span>
+						<span class="gr-name">{g.white ? formatUserName(g.white.name) : 'Open'}</span>
 						<span class="gr-vs">vs</span>
-						<span class="gr-name">{g.black_user ? formatUserName(g.black_user.name) : 'Open'}</span>
+						<span class="gr-name">{g.black ? formatUserName(g.black.name) : 'Open'}</span>
 					</span>
-					<i class="fa fa-chevron-right gr-go"></i>
+					<span class="gr-status">{statusLabel(g)}</span>
 				</button>
 			{:else}
 				<p class="games-empty">Nothing here yet.</p>
@@ -225,8 +233,15 @@
 		font-weight: 500;
 		font-size: 0.8rem;
 	}
-	.gr-go {
+	.gr-status {
 		color: var(--text-faint);
+		font-size: 0.8rem;
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+	}
+	.form-error {
+		color: var(--danger);
+		font-size: 0.85rem;
 	}
 	.games-empty {
 		padding: 30px;

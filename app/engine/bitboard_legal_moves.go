@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"chess-engine/app/domain/dao"
 	"strings"
 )
 
@@ -13,7 +12,7 @@ import (
 // throw half the result away in FilterMovesByTurn -- on Kiwipete that meant
 // validating 103 candidate moves to produce 48 legal ones, and each validation
 // costs a full move generation.
-func GenerateLegalMovesForAllPositions(gs dao.GameState) (map[uint64]uint64, string) {
+func GenerateLegalMovesForAllPositions(gs GameState) (map[uint64]uint64, string) {
 	pseudoLegalMoves, legalMoves := GenerateInitialMoves(gs)
 	legalMoves = filterLegalMoves(gs, legalMoves, pseudoLegalMoves)
 
@@ -40,7 +39,7 @@ func GenerateLegalMovesForAllPositions(gs dao.GameState) (map[uint64]uint64, str
 	return legalMoves, ""
 }
 
-func filterLegalMoves(gs dao.GameState, legalMoves map[uint64]uint64, pseudoLegalMoves map[uint64]uint64) map[uint64]uint64 {
+func filterLegalMoves(gs GameState, legalMoves map[uint64]uint64, pseudoLegalMoves map[uint64]uint64) map[uint64]uint64 {
 
 	sideToMove := gs.WhiteBitboard
 	if gs.Turn == "b" {
@@ -96,7 +95,7 @@ func filterLegalMoves(gs dao.GameState, legalMoves map[uint64]uint64, pseudoLega
 // differently depending on what it promoted to -- so it defaults to a queen.
 // Callers that care about the promoted piece (the search) call
 // applyBitboardMove directly.
-func simulateMove(gs dao.GameState, piece uint64, move uint64) dao.GameState {
+func simulateMove(gs GameState, piece uint64, move uint64) GameState {
 	return applyBitboardMove(gs, piece, move, "q")
 }
 
@@ -105,7 +104,7 @@ func simulateMove(gs dao.GameState, piece uint64, move uint64) dao.GameState {
 // This is the hot path of legality checking: it runs once per candidate move.
 // It used to call GenerateInitialMoves -- a full pseudo-legal generation for
 // both colours, allocating two maps -- and now asks about one square directly.
-func isKingInCheck(gs dao.GameState, isWhiteKing bool) bool {
+func isKingInCheck(gs GameState, isWhiteKing bool) bool {
 	king := kingSquare(gs, isWhiteKing)
 	if king == 0 {
 		return false
@@ -113,7 +112,7 @@ func isKingInCheck(gs dao.GameState, isWhiteKing bool) bool {
 	return isSquareAttacked(gs, king, !isWhiteKing)
 }
 
-func GenerateInitialMoves(gs dao.GameState) (map[uint64]uint64, map[uint64]uint64) {
+func GenerateInitialMoves(gs GameState) (map[uint64]uint64, map[uint64]uint64) {
 	pseudo_legal_moves := make(map[uint64]uint64)
 	legal_moves := make(map[uint64]uint64)
 
@@ -127,7 +126,7 @@ func GenerateInitialMoves(gs dao.GameState) (map[uint64]uint64, map[uint64]uint6
 	return pseudo_legal_moves, legal_moves
 }
 
-func generatePawnMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, legal_moves map[uint64]uint64) {
+func generatePawnMoves(gs GameState, pseudo_legal_moves map[uint64]uint64, legal_moves map[uint64]uint64) {
 
 	// Generate moves for white pawns
 	for whitePawnBitboard := (gs.PawnBitboard & gs.WhiteBitboard); whitePawnBitboard != 0; whitePawnBitboard &= whitePawnBitboard - 1 {
@@ -198,7 +197,7 @@ func generatePawnMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, l
 	}
 }
 
-func generateKnightMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, legal_moves map[uint64]uint64) {
+func generateKnightMoves(gs GameState, pseudo_legal_moves map[uint64]uint64, legal_moves map[uint64]uint64) {
 
 	for knightBitboard := gs.KnightBitboard; knightBitboard != 0; knightBitboard &= knightBitboard - 1 {
 
@@ -219,7 +218,7 @@ func generateKnightMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64,
 	}
 }
 
-func generateBishopMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, legal_moves map[uint64]uint64) {
+func generateBishopMoves(gs GameState, pseudo_legal_moves map[uint64]uint64, legal_moves map[uint64]uint64) {
 
 	allOccupied := gs.WhiteBitboard | gs.BlackBitboard
 
@@ -252,7 +251,7 @@ func generateBishopMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64,
 	}
 }
 
-func generateRookMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, legal_moves map[uint64]uint64) {
+func generateRookMoves(gs GameState, pseudo_legal_moves map[uint64]uint64, legal_moves map[uint64]uint64) {
 
 	allOccupied := gs.WhiteBitboard | gs.BlackBitboard
 
@@ -281,7 +280,7 @@ func generateRookMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, l
 	}
 }
 
-func generateQueenMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, legal_moves map[uint64]uint64) {
+func generateQueenMoves(gs GameState, pseudo_legal_moves map[uint64]uint64, legal_moves map[uint64]uint64) {
 
 	allOccupied := gs.WhiteBitboard | gs.BlackBitboard
 
@@ -311,7 +310,7 @@ func generateQueenMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, 
 	}
 }
 
-func generateKingMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, legal_moves map[uint64]uint64) {
+func generateKingMoves(gs GameState, pseudo_legal_moves map[uint64]uint64, legal_moves map[uint64]uint64) {
 	for kingBitboard := gs.KingBitboard; kingBitboard != 0; kingBitboard &= kingBitboard - 1 {
 		piece := kingBitboard & -kingBitboard
 
@@ -398,14 +397,14 @@ func generateKingMoves(gs dao.GameState, pseudo_legal_moves map[uint64]uint64, l
 // attack set -- so the enemy king could legally move next to it. It also made
 // the result depend on which king had the lower square index, since that one was
 // generated before the other's entry existed.
-func attackSetFor(gs dao.GameState, piece, pseudoMoves uint64) uint64 {
+func attackSetFor(gs GameState, piece, pseudoMoves uint64) uint64 {
 	if gs.KingBitboard&piece != 0 {
 		return KingAttackBitboard[piece]
 	}
 	return pseudoMoves
 }
 
-func getAttackedSquares(gs dao.GameState, enemyBitboard uint64, moves map[uint64]uint64) uint64 {
+func getAttackedSquares(gs GameState, enemyBitboard uint64, moves map[uint64]uint64) uint64 {
 	attackedSquares := uint64(0)
 
 	for enemyBitboard != 0 {
@@ -460,7 +459,7 @@ func crossesBoundary(bitboard uint64, direction int) bool {
 	return false
 }
 
-func CheckIfKingIsInCheck(gs dao.GameState, moves map[uint64]uint64, isWhiteKing bool) (bool, uint64) {
+func CheckIfKingIsInCheck(gs GameState, moves map[uint64]uint64, isWhiteKing bool) (bool, uint64) {
 	var kingBitboard uint64
 	if isWhiteKing {
 		kingBitboard = gs.KingBitboard & gs.WhiteBitboard

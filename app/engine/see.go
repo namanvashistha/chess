@@ -1,7 +1,5 @@
 package engine
 
-import "chess-engine/app/domain/dao"
-
 // Static exchange evaluation.
 //
 // Quiescence follows every capture, including ones that are obviously terrible
@@ -19,7 +17,7 @@ var seePieceValue = [kindKing + 1]int{0, 100, 320, 330, 500, 900, 20000}
 // occupied is passed separately rather than read from gs so the caller can
 // remove pieces as an exchange proceeds; sliding attackers hidden behind them
 // then appear, which is how x-rays are handled.
-func attackersTo(gs dao.GameState, square, occupied uint64) uint64 {
+func attackersTo(gs GameState, square, occupied uint64) uint64 {
 	var att uint64
 
 	// A white pawn attacks `square` exactly when it stands on a square a black
@@ -38,7 +36,7 @@ func attackersTo(gs dao.GameState, square, occupied uint64) uint64 {
 }
 
 // leastValuableAttacker returns the cheapest attacker belonging to one colour.
-func leastValuableAttacker(gs dao.GameState, attackers uint64, white bool) (uint64, pieceKind) {
+func leastValuableAttacker(gs GameState, attackers uint64, white bool) (uint64, pieceKind) {
 	side := gs.BlackBitboard
 	if white {
 		side = gs.WhiteBitboard
@@ -66,7 +64,7 @@ func leastValuableAttacker(gs dao.GameState, attackers uint64, white bool) (uint
 //
 // It does not understand en passant: the captured pawn is not on the
 // destination square, so callers skip SEE for those.
-func see(gs dao.GameState, from, to uint64) int {
+func see(gs GameState, from, to uint64) int {
 	var gain [32]int
 
 	occupied := gs.WhiteBitboard | gs.BlackBitboard

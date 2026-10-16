@@ -1,82 +1,52 @@
-// Thin client over the Go JSON API. All responses are { response_key, data }.
+// Client for the JSON API. The session is an HttpOnly cookie the server sets,
+// so requests just need to be same-origin. Errors come back as
+// { error: { code, message } } with a non-2xx status.
 import { user } from './stores.js';
 
-const KEY_TOKEN = 'userToken';
-const KEY_DATA = 'userData';
-
-export function token() {
-	return localStorage.getItem(KEY_TOKEN);
-}
-
-export function userId() {
-	try {
-		return JSON.parse(localStorage.getItem(KEY_DATA))?.id ?? null;
-	} catch {
-		return null;
+export class ApiError extends Error {
+	constructor(status, code, message) {
+		super(message);
+		this.status = status;
+		this.code = code;
 	}
 }
 
-async function post(url, body) {
+async function request(method, url, body) {
 	const res = await fetch(url, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body ?? {})
+		method,
+		headers: body ? { 'Content-Type': 'application/json' } : {},
+		body: body ? JSON.stringify(body) : undefined
 	});
-	return res.json();
+	if (res.status === 204) return null;
+	const data = await res.json().catch(() => null);
+	if (!res.ok) {
+		const err = data?.error ?? {};
+		throw new ApiError(res.status, err.code ?? 'unknown', err.message ?? 'Something went wrong.');
+	}
+	return data;
 }
 
-// Ensure a valid anonymous user and hydrate the `user` store. A stored token is
-// VERIFIED against the server (it can go stale if the DB is reset/migrated); if
-// it no longer maps to a user, a fresh identity is created. This prevents moves
-// from being rejected as "user 0 is not in the game".
+// Ensure there is a session and hydrate the `user` store: reuse the cookie's
+// session if it is still valid, otherwise start a new anonymous one.
 export async function ensureUser() {
-	const stored = localStorage.getItem(KEY_TOKEN);
-	if (stored) {
-		try {
-			const me = await post('/api/user/me', { token: stored });
-			if (me.response_key === 'SUCCESS' && me.data && me.data.id) {
-				localStorage.setItem(KEY_DATA, JSON.stringify(me.data));
-				user.set(me.data);
-				return me.data;
-			}
-		} catch {
-			// network error: fall through and try to (re)create
-		}
+	try {
+		const me = await request('GET', '/api/me');
+		user.set(me);
+		return me;
+	} catch (e) {
+		if (!(e instanceof ApiError) || e.status !== 401) throw e;
 	}
-	const j = await post('/api/user');
-	if (j.response_key === 'SUCCESS') {
-		localStorage.setItem(KEY_TOKEN, j.data.token);
-		localStorage.setItem(KEY_DATA, JSON.stringify(j.data));
-		user.set(j.data);
-		return j.data;
-	}
-	return null;
+	const s = await request('POST', '/api/session');
+	user.set(s.user);
+	return s.user;
 }
 
-export async function listGames() {
-	const res = await fetch('/api/chess/game');
-	const j = await res.json();
-	return j.response_key === 'SUCCESS' && Array.isArray(j.data) ? j.data : [];
-}
+export const lobby = () => request('GET', '/api/lobby');
+export const getGame = (id) => request('GET', `/api/games/${id}`);
+export const joinGame = (id) => request('POST', `/api/games/${id}/join`);
 
-export async function getGame(id) {
-	const res = await fetch(`/api/chess/game/${id}`);
-	const j = await res.json();
-	return j.response_key === 'SUCCESS' ? j.data : null;
-}
-
-export async function createGame() {
-	return post('/api/chess/game', { token: token() });
-}
-
-export async function createBotGame(difficulty) {
-	return post('/api/chess/game/bot', { token: token(), difficulty });
-}
-
-export async function createLocalGame() {
-	return post('/api/chess/game/local', { token: token() });
-}
-
-export async function joinGame(inviteCode) {
-	return post('/api/chess/game/join', { invite_code: inviteCode, token: token() });
+// mode: "online" | "bot" | "local"; color: "w" | "b" | "random"; level for bots.
+export async function createGame({ mode, color = 'random', level, listed }) {
+	const { id } = await request('POST', '/api/games', { mode, color, level, listed });
+	return id;
 }

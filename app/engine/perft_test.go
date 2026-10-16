@@ -1,8 +1,6 @@
 package engine
 
 import (
-	"chess-engine/app/domain/dao"
-	"chess-engine/app/domain/dto"
 	"testing"
 )
 
@@ -10,13 +8,13 @@ import (
 // legal moves via GenerateLegalMoveList (which expands promotions) and applies
 // each with ApplyMove, so it exercises FEN parsing, move generation, promotion
 // handling and move application together.
-func perft(gs dao.GameState, depth int) int {
+func perft(gs GameState, depth int) int {
 	if depth == 0 {
 		return 1
 	}
 	nodes := 0
 	for _, m := range GenerateLegalMoveList(gs) {
-		move := dto.Move{
+		move := Move{
 			Piece:       getPieceCode(m.Src, gs.WhiteBitboard&m.Src != 0, gs),
 			Source:      bitToSquare(m.Src, defFiles, defRanks),
 			Destination: bitToSquare(m.Dst, defFiles, defRanks),

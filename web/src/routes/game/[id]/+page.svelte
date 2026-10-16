@@ -1,19 +1,16 @@
 <script>
 	import { page } from '$app/stores';
 	import { onDestroy } from 'svelte';
-	import { getGame } from '$lib/api.js';
-	import { currentGame, user, reviewPly } from '$lib/stores.js';
+	import { currentGame, reviewPly } from '$lib/stores.js';
 	import { connectSocket, disconnectSocket } from '$lib/socket.js';
-	import { positionsFrom, sanLabel } from '$lib/replay.js';
+	import { resultText } from '$lib/game.js';
 
 	let id = $derived($page.params.id);
-	let myId = $derived($user?.id ?? null);
 
-	// Load initial state and (re)bind the socket whenever the game id changes.
+	// The socket's first message is a snapshot, so connecting is all it takes to
+	// load the game; it rebinds whenever the id changes.
 	$effect(() => {
-		const gid = id;
-		getGame(gid).then((g) => currentGame.set(g));
-		connectSocket(gid);
+		connectSocket(id);
 	});
 
 	onDestroy(() => {
@@ -21,30 +18,19 @@
 		currentGame.set(null);
 	});
 
-	let g = $derived($currentGame);
-	const amPlayer = $derived(
-		g && myId != null && ((g.white_user && g.white_user.id === myId) || (g.black_user && g.black_user.id === myId))
-	);
-	let waiting = $derived(g && amPlayer && (!g.white_user || !g.black_user) && !g.winner);
-
-	let waitPoll;
-	$effect(() => {
-		clearInterval(waitPoll);
-		if (waiting) waitPoll = setInterval(() => getGame(id).then((x) => currentGame.set(x)), 3000);
-		return () => clearInterval(waitPoll);
-	});
+	let g = $derived($currentGame?.id === id ? $currentGame : null);
+	let waiting = $derived(g?.status === 'waiting' && g.you !== '');
 
 	let statusText = $derived(
 		!g ? 'Loading…'
-			: g.winner === 'w' ? 'White wins'
-			: g.winner === 'b' ? 'Black wins'
-			: g.state?.turn === 'w' ? 'White to move'
+			: g.result ? resultText(g)
+			: g.status === 'waiting' ? 'Waiting for an opponent'
+			: g.turn === 'w' ? 'White to move'
 			: 'Black to move'
 	);
 
 	// ---- move navigation ----
-	let positions = $derived(positionsFrom(g?.moves));
-	let total = $derived(g?.moves?.length ?? 0);
+	let total = $derived(g?.moves.length ?? 0);
 	let cur = $derived($reviewPly ?? total); // active ply shown on the board
 
 	let moveRows = $derived.by(() => {
@@ -53,8 +39,8 @@
 		for (let i = 0; i < m.length; i += 2) {
 			rows.push({
 				n: i / 2 + 1,
-				w: { ply: i + 1, san: sanLabel(positions[i], m[i].move) },
-				b: m[i + 1] ? { ply: i + 2, san: sanLabel(positions[i + 1], m[i + 1].move) } : null
+				w: { ply: i + 1, san: m[i].san },
+				b: m[i + 1] ? { ply: i + 2, san: m[i + 1].san } : null
 			});
 		}
 		return rows;
@@ -73,8 +59,8 @@
 	}
 
 	let copied = $state(false);
-	function copyCode() {
-		navigator.clipboard?.writeText(g.invite_code).then(() => {
+	function copyLink() {
+		navigator.clipboard?.writeText(location.href).then(() => {
 			copied = true;
 			setTimeout(() => (copied = false), 1400);
 		});
@@ -88,9 +74,9 @@
 		<section class="panel share">
 			<span class="spinner"></span>
 			<h2>Waiting for an opponent</h2>
-			<p class="muted">Share this code. The game starts the moment they join.</p>
-			<button class="code-btn" class:is-copied={copied} onclick={copyCode}>
-				<span class="code-val">{g.invite_code}</span>
+			<p class="muted">Share this link. The game starts the moment they join.</p>
+			<button class="code-btn" class:is-copied={copied} onclick={copyLink}>
+				<span class="code-val">{location.host}/game/{g.id}</span>
 				<span class="code-copy"><i class="fa fa-{copied ? 'check' : 'copy'}"></i> {copied ? 'Copied' : 'Copy'}</span>
 			</button>
 		</section>
@@ -128,6 +114,9 @@
 			<button onclick={goNext} disabled={cur >= total} aria-label="Next move" title="Next"><i class="fa fa-angle-right"></i></button>
 			<button onclick={goLast} disabled={cur >= total} aria-label="Latest move" title="Latest"><i class="fa fa-angles-right"></i></button>
 		</div>
+		{#if g && g.moves.length}
+			<a class="back" href="/api/games/{g.id}/pgn" download><i class="fa fa-download"></i> Download PGN</a>
+		{/if}
 		<a class="back" href="/"><i class="fa fa-plus"></i> New game</a>
 	</section>
 </div>

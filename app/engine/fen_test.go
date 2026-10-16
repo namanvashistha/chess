@@ -1,14 +1,13 @@
 package engine
 
 import (
-	"chess-engine/app/domain/dao"
 	"testing"
 )
 
 // StartState must match the hardcoded starting bitboards used by the game server.
 func TestStartStateBitboards(t *testing.T) {
 	gs := StartState()
-	want := dao.GameState{
+	want := GameState{
 		WhiteBitboard:  0xFFFF,
 		BlackBitboard:  0xFFFF000000000000,
 		PawnBitboard:   0x00FF00000000FF00,

@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"chess-engine/app/domain/dao"
 	"math/bits"
 	"strings"
 )
@@ -58,7 +57,7 @@ func init() {
 // The key is recomputed from scratch rather than updated incrementally. That is
 // ~32 XORs per call, which is negligible next to this engine's real cost -- it
 // regenerates the full legal move list at every node.
-func PositionKey(gs dao.GameState) uint64 {
+func PositionKey(gs GameState) uint64 {
 	var key uint64
 
 	boards := [...]struct {

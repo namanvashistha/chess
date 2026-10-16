@@ -1,15 +1,13 @@
 package engine
 
 import (
-	"chess-engine/app/domain/dao"
-	"chess-engine/app/domain/dto"
 	"testing"
 )
 
 // isKingInCheckSlow is the original implementation: generate every pseudo-legal
 // move for both colours and scan the result. It is kept solely as the reference
 // that the fast single-square detector is checked against.
-func isKingInCheckSlow(gs dao.GameState, isWhiteKing bool) bool {
+func isKingInCheckSlow(gs GameState, isWhiteKing bool) bool {
 	pseudo, _ := GenerateInitialMoves(gs)
 	in, _ := CheckIfKingIsInCheck(gs, pseudo, isWhiteKing)
 	return in
@@ -28,8 +26,8 @@ func TestFastCheckDetectionMatchesExhaustive(t *testing.T) {
 	gs := mustFEN(t, "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1")
 	found := 0
 
-	var walk func(gs dao.GameState, depth int, line string)
-	walk = func(gs dao.GameState, depth int, line string) {
+	var walk func(gs GameState, depth int, line string)
+	walk = func(gs GameState, depth int, line string) {
 		if found > 2 {
 			return
 		}
@@ -47,7 +45,7 @@ func TestFastCheckDetectionMatchesExhaustive(t *testing.T) {
 			return
 		}
 		for _, m := range GenerateLegalMoveList(gs) {
-			mv := dto.Move{
+			mv := Move{
 				Piece:       getPieceCode(m.Src, gs.WhiteBitboard&m.Src != 0, gs),
 				Source:      bitToSquare(m.Src, defFiles, defRanks),
 				Destination: bitToSquare(m.Dst, defFiles, defRanks),

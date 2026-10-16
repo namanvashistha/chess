@@ -1,17 +1,14 @@
 <script>
-	// Persistent board. Renders from a game's current_state (or a decorative
-	// start position when idle). Click-to-move and smooth pointer drag (the
-	// dragged piece follows the cursor) for the side to move; emits
-	// (piece, source, destination) via onmove.
+	// Persistent board. Renders a position (or a decorative opening when idle).
+	// Click-to-move and pointer drag for the side the viewer controls; emits
+	// (from, to) via onmove.
 	let {
-		game = null,
-		myId = null,
+		position = null, // square -> FEN piece letter; null shows the idle board
+		targets = {}, // from-square -> [to-squares] the viewer may play
+		canMove = false,
+		lastMove = null, // UCI of the move to highlight
 		pov = 'w',
-		onmove = () => {},
-		position = null, // override board map (move review); null = live current_state
-		reviewing = false, // viewing a past ply -> read-only
-		lastMoveStr = null, // override last-move highlight for the viewed ply
-		local = false // pass & play: one client controls both sides
+		onmove = () => {}
 	} = $props();
 
 	const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
@@ -39,36 +36,20 @@
 	let selected = $state(null);
 	let drag = $state(null); // { from, code, x, y, moved, size }
 
-	// Reviewing a past ply is read-only: never carry a selection/drag into it.
+	// Losing the move (or reviewing a past ply) drops any selection or drag.
 	$effect(() => {
-		if (reviewing) {
+		if (!canMove) {
 			selected = null;
 			drag = null;
 		}
 	});
 
-	let state = $derived(position ?? game?.current_state ?? idleState());
-	let legal = $derived(reviewing ? {} : (game?.legal_moves ?? {}));
-	let myColor = $derived(
-		!game || myId == null
-			? null
-			: game.white_user && game.white_user.id === myId
-				? 'w'
-				: game.black_user && game.black_user.id === myId
-					? 'b'
-					: null
-	);
-	// In pass & play either side may move; otherwise only your own colour on your turn.
-	let isMyTurn = $derived(
-		!!(game && !reviewing && !game.winner && (local || (myColor && game.state?.turn === myColor)))
-	);
+	let state = $derived(position ?? idleState());
+	let legal = $derived(canMove ? targets : {});
+	let isMyTurn = $derived(canMove);
 
-	let lastMove = $derived.by(() => {
-		const lm = reviewing ? lastMoveStr : game?.state?.last_move;
-		if (!lm || lm.length < 5) return new Set();
-		return new Set([lm.substring(1, 3), lm.substring(3, 5)]);
-	});
-	let targets = $derived(selected && legal[selected] ? new Set(legal[selected]) : new Set());
+	let lastSquares = $derived(lastMove ? new Set([lastMove.slice(0, 2), lastMove.slice(2, 4)]) : new Set());
+	let targetSet = $derived(selected && legal[selected] ? new Set(legal[selected]) : new Set());
 
 	let cells = $derived.by(() => {
 		const out = [];
@@ -83,7 +64,7 @@
 					rank,
 					dark: (file.charCodeAt(0) - 97 + rank) % 2 === 1,
 					piece: state[sq] || null,
-					last: lastMove.has(sq),
+					last: lastSquares.has(sq),
 					showFile: r === 7,
 					showRank: c === 0
 				});
@@ -95,10 +76,9 @@
 	const movableFrom = (sq) => isMyTurn && Array.isArray(legal[sq]) && legal[sq].length > 0;
 
 	function doMove(from, to) {
-		const piece = state[from];
 		selected = null;
 		drag = null;
-		if (piece) onmove(piece, from, to);
+		onmove(from, to);
 	}
 
 	function squareAt(x, y) {
@@ -113,7 +93,7 @@
 			return;
 		}
 		// A piece is selected and we tapped a legal target -> move.
-		if (selected && selected !== cell.sq && targets.has(cell.sq)) {
+		if (selected && selected !== cell.sq && targetSet.has(cell.sq)) {
 			doMove(selected, cell.sq);
 			return;
 		}
@@ -174,9 +154,9 @@
 				class="sq {cell.dark ? 'sq--d' : 'sq--l'}"
 				data-sq={cell.sq}
 				class:is-last={cell.last}
-				class:is-select={!reviewing && selected === cell.sq}
-				class:is-move={targets.has(cell.sq)}
-				class:has-piece={targets.has(cell.sq) && cell.piece}
+				class:is-select={selected === cell.sq}
+				class:is-move={targetSet.has(cell.sq)}
+				class:has-piece={targetSet.has(cell.sq) && cell.piece}
 				class:can-move={movableFrom(cell.sq)}
 				role="button"
 				tabindex="-1"

@@ -1,7 +1,5 @@
 package engine
 
-import "chess-engine/app/domain/dao"
-
 // Quiescence search.
 //
 // Without it, the search evaluates whatever position it happens to reach at
@@ -26,7 +24,7 @@ const deltaMargin = 200
 
 // isNoisyMove reports whether a move changes material -- a capture (including en
 // passant) or a promotion. These are the moves quiescence follows.
-func isNoisyMove(gs dao.GameState, m botMove) bool {
+func isNoisyMove(gs GameState, m botMove) bool {
 	if m.promo != "" {
 		return true
 	}
@@ -38,7 +36,7 @@ func isNoisyMove(gs dao.GameState, m botMove) bool {
 }
 
 // staticEval scores the position in centipawns from the side to move's view.
-func staticEval(gs dao.GameState) int {
+func staticEval(gs GameState) int {
 	score := evaluate(gs)
 	if gs.Turn == "b" {
 		return -score
@@ -51,7 +49,7 @@ func staticEval(gs dao.GameState) int {
 // When the side to move is in check it searches every move instead, because
 // standing pat in check would let the search assume it can decline to move out
 // of one.
-func quiescence(c *searchCtx, gs dao.GameState, alpha, beta, qdepth int) int {
+func quiescence(c *searchCtx, gs GameState, alpha, beta, qdepth int) int {
 	c.nodes++
 	if c.nodes&1023 == 0 && abortRequested(c.deadline, c.stop) {
 		c.aborted = true

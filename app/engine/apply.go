@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"chess-engine/app/domain/dao"
 	"strings"
 )
 
@@ -53,7 +52,7 @@ func squareBit(square string) uint64 {
 	return uint64(1) << uint(PositionToIndex(square))
 }
 
-func kindAt(gs dao.GameState, sq uint64) pieceKind {
+func kindAt(gs GameState, sq uint64) pieceKind {
 	switch {
 	case gs.PawnBitboard&sq != 0:
 		return kindPawn
@@ -72,7 +71,7 @@ func kindAt(gs dao.GameState, sq uint64) pieceKind {
 }
 
 // clearSquare removes whatever occupies sq from every bitboard.
-func clearSquare(gs *dao.GameState, sq uint64) {
+func clearSquare(gs *GameState, sq uint64) {
 	mask := ^sq
 	gs.WhiteBitboard &= mask
 	gs.BlackBitboard &= mask
@@ -84,7 +83,7 @@ func clearSquare(gs *dao.GameState, sq uint64) {
 	gs.KingBitboard &= mask
 }
 
-func placePiece(gs *dao.GameState, sq uint64, kind pieceKind, isWhite bool) {
+func placePiece(gs *GameState, sq uint64, kind pieceKind, isWhite bool) {
 	if isWhite {
 		gs.WhiteBitboard |= sq
 	} else {
@@ -136,7 +135,7 @@ func isPromotionSquare(dst uint64, isWhite bool) bool {
 // It handles captures, en-passant captures, castling rook relocation, promotion
 // (honouring the requested piece), castling-rights updates including a rook
 // captured on its home square, and setting/clearing the en-passant square.
-func applyBitboardMove(gs dao.GameState, src, dst uint64, promotion string) dao.GameState {
+func applyBitboardMove(gs GameState, src, dst uint64, promotion string) GameState {
 	kind := kindAt(gs, src)
 	if kind == kindNone {
 		return gs // nothing on the source square: not a move
@@ -196,7 +195,7 @@ func applyBitboardMove(gs dao.GameState, src, dst uint64, promotion string) dao.
 	return ns
 }
 
-func relocateRook(gs *dao.GameState, from, to uint64, isWhite bool) {
+func relocateRook(gs *GameState, from, to uint64, isWhite bool) {
 	clearSquare(gs, from)
 	placePiece(gs, to, kindRook, isWhite)
 }

@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"chess-engine/app/domain/dao"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,7 +11,7 @@ const StartFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 // fenPieceBit returns a pointer to the (color, piece) bitboards a FEN piece
 // letter belongs to, or false if the letter is not a valid piece.
-func fenPieceBit(c byte, gs *dao.GameState) (color, piece *uint64, ok bool) {
+func fenPieceBit(c byte, gs *GameState) (color, piece *uint64, ok bool) {
 	white := c >= 'A' && c <= 'Z'
 	colorBB := &gs.BlackBitboard
 	if white {
@@ -41,8 +40,8 @@ func fenPieceBit(c byte, gs *dao.GameState) (color, piece *uint64, ok bool) {
 // target is expanded into the engine's two-bit convention (see ToFEN/ProcessMove):
 // the target square plus the just-pushed pawn's square, so the move generator's
 // `EnPassant & opponentBitboard` guard fires.
-func ParseFEN(fen string) (dao.GameState, error) {
-	var gs dao.GameState
+func ParseFEN(fen string) (GameState, error) {
+	var gs GameState
 	fields := strings.Fields(fen)
 	if len(fields) < 4 {
 		return gs, fmt.Errorf("invalid FEN: expected at least 4 fields, got %d", len(fields))
@@ -129,7 +128,7 @@ func ParseFEN(fen string) (dao.GameState, error) {
 // fullmove counter is always emitted as 1, since GameState does not track it.
 // The en-passant target is
 // the single rank-3/rank-6 square (the lower-or-higher of the two stored bits).
-func ToFEN(gs dao.GameState) string {
+func ToFEN(gs GameState) string {
 	board := ConvertGameStateToMap(gs)
 
 	var sb strings.Builder
@@ -182,7 +181,7 @@ func ToFEN(gs dao.GameState) string {
 }
 
 // StartState returns the GameState for the standard starting position.
-func StartState() dao.GameState {
+func StartState() GameState {
 	gs, _ := ParseFEN(StartFEN)
 	return gs
 }

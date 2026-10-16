@@ -1,12 +1,14 @@
-// Live game socket. Binds the server's game_update broadcasts to the
-// currentGame store and sends moves. One connection at a time; reconnects on
-// unexpected drops; rebinds when the game id changes.
-import { currentGame } from './stores.js';
-import { token } from './api.js';
+// The live game socket. Snapshots replace the game; move messages extend it;
+// errors are shown briefly. Reconnects after unexpected drops, and the server
+// sends a fresh snapshot on every connect, so nothing is lost.
+import { get } from 'svelte/store';
+import { currentGame, moveError } from './stores.js';
+import { fromSnapshot, withMove } from './game.js';
 
 let socket = null;
 let currentId = null;
 let reconnectTimer = null;
+let retries = 0;
 
 const moveSound =
 	typeof Audio !== 'undefined'
@@ -15,19 +17,35 @@ const moveSound =
 
 function open() {
 	const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-	socket = new WebSocket(`${proto}://${location.host}/ws/${currentId}`);
-	socket.onmessage = (e) => {
+	const s = new WebSocket(`${proto}://${location.host}/ws/games/${currentId}`);
+	socket = s;
+	s.onopen = () => (retries = 0);
+	s.onmessage = (e) => {
 		let msg;
 		try {
 			msg = JSON.parse(e.data);
 		} catch {
 			return;
 		}
-		if (msg.payload) currentGame.set(msg.payload);
-		if (msg.status === 'success') moveSound?.play().catch(() => {});
+		if (msg.t === 'snapshot') {
+			currentGame.set(fromSnapshot(msg.game));
+		} else if (msg.t === 'move') {
+			const next = withMove(get(currentGame), msg);
+			if (next) {
+				currentGame.set(next);
+				moveSound?.play().catch(() => {});
+			} else {
+				s.close(); // out of step; reconnecting brings a snapshot
+			}
+		} else if (msg.t === 'error') {
+			moveError.set(msg.message);
+			setTimeout(() => moveError.set(null), 2500);
+		}
 	};
-	socket.onclose = (e) => {
-		if (currentId && !e.wasClean) reconnectTimer = setTimeout(open, 3000);
+	s.onclose = () => {
+		if (socket !== s || !currentId) return;
+		const delay = Math.min(10000, 500 * 2 ** retries++);
+		reconnectTimer = setTimeout(open, delay);
 	};
 }
 
@@ -43,18 +61,10 @@ export function disconnectSocket() {
 	const s = socket;
 	currentId = null;
 	socket = null;
-	if (s) {
-		s.onclose = null;
-		s.close();
-	}
+	s?.close();
 }
 
-export function sendMove(piece, source, destination) {
+export function sendMove(ply, uci) {
 	if (!socket || socket.readyState !== WebSocket.OPEN) return;
-	socket.send(
-		JSON.stringify({
-			type: 'game_update',
-			payload: { piece, source, destination, game_id: currentId, token: token() }
-		})
-	);
+	socket.send(JSON.stringify({ t: 'move', ply, uci }));
 }

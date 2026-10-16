@@ -2,35 +2,21 @@
 	import '../app.css';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { ensureUser, userId } from '$lib/api.js';
-	import { currentGame, reviewPly } from '$lib/stores.js';
+	import { ensureUser } from '$lib/api.js';
+	import { currentGame, reviewPly, moveError } from '$lib/stores.js';
 	import { formatUserName } from '$lib/format.js';
 	import { avatarUrl } from '$lib/avatar.js';
 	import { computeCaptured } from '$lib/captured.js';
 	import { positionsFrom } from '$lib/replay.js';
+	import { uciFor, resultText } from '$lib/game.js';
 	import { sendMove } from '$lib/socket.js';
 	import Board from '$lib/components/Board.svelte';
 
 	let { children } = $props();
-	let myId = $state(null);
 	let povOverride = $state(null);
 
-	// Cosmetic clocks: count down the side to move. Not server-enforced (no flag
-	// loss); a visual stand-in until real time controls land.
-	const START_SECONDS = 600;
-	let clockW = $state(START_SECONDS);
-	let clockB = $state(START_SECONDS);
-	const fmt = (s) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0, s) % 60).padStart(2, '0')}`;
-
-	onMount(async () => {
-		await ensureUser();
-		myId = userId();
-		setInterval(() => {
-			const g = $currentGame;
-			if (!g || g.winner || !g.white_user || !g.black_user) return;
-			if (g.state?.turn === 'w' && clockW > 0) clockW -= 1;
-			else if (g.state?.turn === 'b' && clockB > 0) clockB -= 1;
-		}, 1000);
+	onMount(() => {
+		ensureUser();
 	});
 
 	function toggleTheme() {
@@ -40,66 +26,51 @@
 		localStorage.setItem('theme', next);
 	}
 
-	// Reset a manual flip whenever the game changes.
+	let g = $derived($currentGame);
+
+	// Reset a manual flip and the review cursor whenever the game changes.
 	let lastGameId = null;
 	$effect(() => {
-		const gid = $currentGame?.id ?? null;
+		const gid = g?.id ?? null;
 		if (gid !== lastGameId) {
 			lastGameId = gid;
 			povOverride = null;
-			clockW = START_SECONDS;
-			clockB = START_SECONDS;
 			reviewPly.set(null);
 		}
 	});
 
-	// Move-review: show a past position when reviewPly points before the latest.
-	let moveCount = $derived($currentGame?.moves?.length ?? 0);
+	// Move review: show a past position when reviewPly points before the latest.
+	let moveCount = $derived(g?.moves.length ?? 0);
 	let liveMode = $derived($reviewPly === null || $reviewPly >= moveCount);
-	let positions = $derived(liveMode ? null : positionsFrom($currentGame?.moves));
-	let viewPosition = $derived(liveMode ? null : positions[$reviewPly]);
+	let viewPosition = $derived(liveMode ? (g?.board ?? null) : positionsFrom(g.moves)[$reviewPly]);
 	let viewLastMove = $derived(
-		liveMode ? null : $reviewPly > 0 ? $currentGame.moves[$reviewPly - 1].move : null
+		liveMode ? (g?.lastMove ?? null) : $reviewPly > 0 ? g.moves[$reviewPly - 1].uci : null
 	);
 
-	// Pass & play: same user seated as both colours -> control both sides, and
-	// flip the board to whoever is to move.
-	let isLocal = $derived(
-		!!(
-			$currentGame?.white_user &&
-			$currentGame?.black_user &&
-			$currentGame.white_user.id === $currentGame.black_user.id
-		)
-	);
-	let basePov = $derived(
-		isLocal
-			? $currentGame.state?.turn ?? 'w'
-			: $currentGame && myId != null && $currentGame.black_user && $currentGame.black_user.id === myId
-				? 'b'
-				: 'w'
-	);
+	// Pass & play turns the board to whoever is to move; otherwise Black players
+	// see the board from Black's side.
+	let basePov = $derived(!g ? 'w' : g.you === 'both' ? g.turn : g.you === 'b' ? 'b' : 'w');
 	let pov = $derived(povOverride ?? basePov);
 	function flip() {
 		povOverride = pov === 'w' ? 'b' : 'w';
 	}
 
+	function onMove(from, to) {
+		const uci = uciFor(g, from, to);
+		if (uci) sendMove(g.moves.length, uci);
+	}
+
 	let topColor = $derived(pov === 'w' ? 'b' : 'w');
 	let bottomColor = $derived(pov === 'w' ? 'w' : 'b');
-	let turn = $derived($currentGame?.state?.turn ?? null);
-	let cap = $derived(computeCaptured($currentGame?.current_state));
+	let cap = $derived(computeCaptured(g?.board));
 
-	const seat = (color) =>
-		!$currentGame ? null : color === 'w' ? $currentGame.white_user : $currentGame.black_user;
+	const seat = (color) => (!g ? null : color === 'w' ? g.white : g.black);
 
 	const CAP_IMG = {
 		P: 'wP', R: 'wR', N: 'wN', B: 'wB', Q: 'wQ',
 		p: 'bP', r: 'bR', n: 'bN', b: 'bB', q: 'bQ'
 	};
 	const capUrl = (code) => `/static/images/${CAP_IMG[code]}.svg`;
-
-	let winnerText = $derived(
-		!$currentGame?.winner ? '' : $currentGame.winner === 'w' ? 'White wins' : $currentGame.winner === 'b' ? 'Black wins' : 'Draw'
-	);
 </script>
 
 <div class="app">
@@ -125,15 +96,13 @@
 			<div class="board-stack">
 				{@render bar(topColor)}
 				<Board
-				game={$currentGame}
-				{myId}
-				{pov}
-				local={isLocal}
-				onmove={sendMove}
-				position={viewPosition}
-				reviewing={!liveMode}
-				lastMoveStr={viewLastMove}
-			/>
+					position={viewPosition}
+					targets={g?.targets ?? {}}
+					canMove={liveMode && !!g?.canMove}
+					lastMove={viewLastMove}
+					{pov}
+					onmove={onMove}
+				/>
 				{@render bar(bottomColor)}
 				{#if !$currentGame}<p class="board-cap">After 1. e4</p>{/if}
 			</div>
@@ -145,12 +114,16 @@
 	</main>
 </div>
 
-{#if $currentGame?.winner}
+{#if $moveError}
+	<div class="toast" role="status">{$moveError}</div>
+{/if}
+
+{#if g?.result}
 	<div class="winner">
 		<div class="winner-card">
 			<span class="winner-icon">♔</span>
 			<h2>Game over</h2>
-			<p class="winner-msg">{winnerText}</p>
+			<p class="winner-msg">{resultText(g)}</p>
 			<button class="btn-create winner-home" onclick={() => goto('/')}>
 				<span class="btn-create-text"><strong>New game</strong></span>
 			</button>
@@ -162,20 +135,19 @@
 	{@const u = seat(color)}
 	{@const taken = color === 'w' ? cap.whiteCaptured : cap.blackCaptured}
 	{@const adv = color === 'w' ? cap.adv : -cap.adv}
-	{@const label = isLocal
+	{@const label = g?.you === 'both'
 		? color === 'w' ? 'White' : 'Black'
 		: u
 			? formatUserName(u.name)
-			: $currentGame
+			: g
 				? 'Waiting for opponent…'
 				: color === bottomColor ? 'You' : 'Opponent'}
-	{@const seed = isLocal ? label : u ? formatUserName(u.name) : color === bottomColor ? 'You' : 'Opponent'}
-	<div class="player-bar" class:is-turn={$currentGame && turn === color && !$currentGame.winner}>
+	<div class="player-bar" class:is-turn={g && g.status === 'active' && g.turn === color}>
 		<div class="player-id">
-			<img class="player-dp" src={avatarUrl(seed)} alt="" />
+			<img class="player-dp" src={avatarUrl(label)} alt="" />
 			<div class="player-meta">
-				<span class="player-name" class:muted={$currentGame && !u}>{label}</span>
-				{#if $currentGame && (taken.length || adv > 0)}
+				<span class="player-name" class:muted={g && !u}>{label}</span>
+				{#if g && (taken.length || adv > 0)}
 					<span class="player-captured">
 						{#each taken as code, i (i)}<img src={capUrl(code)} alt="" />{/each}
 						{#if adv > 0}<span class="material">+{adv}</span>{/if}
@@ -183,11 +155,8 @@
 				{/if}
 			</div>
 		</div>
-		{#if $currentGame}
-			{@const secs = color === 'w' ? clockW : clockB}
-			<span class="clock" class:running={turn === color && !$currentGame.winner} class:flagged={secs <= 0}>
-				{fmt(secs)}
-			</span>
+		{#if g && g.status === 'active' && g.turn === color}
+			<span class="turn-pill">{u?.bot ? 'Thinking' : 'To move'}</span>
 		{/if}
 	</div>
 {/snippet}
@@ -231,6 +200,20 @@
 		background: var(--good-soft);
 		padding: 4px 9px;
 		border-radius: 99px;
+	}
+	.toast {
+		position: fixed;
+		left: 50%;
+		bottom: 28px;
+		transform: translateX(-50%);
+		z-index: 120;
+		padding: 10px 16px;
+		border-radius: var(--radius);
+		background: var(--surface);
+		border: 1px solid var(--border);
+		box-shadow: var(--shadow-md);
+		font-size: 0.9rem;
+		font-weight: 600;
 	}
 	.winner {
 		position: fixed;

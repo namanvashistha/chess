@@ -1,8 +1,6 @@
 package engine
 
 import (
-	"chess-engine/app/domain/dao"
-	"chess-engine/app/domain/dto"
 	"math/bits"
 	"sort"
 	"time"
@@ -28,13 +26,13 @@ type SearchOptions struct {
 
 // SearchResult is the outcome of (a completed iteration of) a search.
 type SearchResult struct {
-	Best    dto.Move   // best move found; valid only when HasBest is true
-	HasBest bool       // false when the side to move has no legal moves
-	Score   int        // centipawns from the side-to-move's perspective
-	Mate    int        // mate distance in moves (+ we mate, - we are mated); 0 if not a mate
-	Depth   int        // depth of the last completed iteration
-	Nodes   int        // cumulative nodes searched
-	PV      []dto.Move // principal variation, starting with Best
+	Best    Move   // best move found; valid only when HasBest is true
+	HasBest bool   // false when the side to move has no legal moves
+	Score   int    // centipawns from the side-to-move's perspective
+	Mate    int    // mate distance in moves (+ we mate, - we are mated); 0 if not a mate
+	Depth   int    // depth of the last completed iteration
+	Nodes   int    // cumulative nodes searched
+	PV      []Move // principal variation, starting with Best
 	Elapsed time.Duration
 }
 
@@ -44,7 +42,7 @@ const maxSearchDepth = 64
 // the deepest fully completed iteration. If info is non-nil it is called once per
 // completed depth, enabling streaming UCI "info" lines. A partially searched
 // depth (cut short by time/Stop) is discarded.
-func Search(gs dao.GameState, opts SearchOptions, info func(SearchResult)) SearchResult {
+func Search(gs GameState, opts SearchOptions, info func(SearchResult)) SearchResult {
 	start := time.Now()
 
 	maxDepth := opts.MaxDepth
@@ -96,8 +94,8 @@ func Search(gs dao.GameState, opts SearchOptions, info func(SearchResult)) Searc
 		c.nodes = 0
 		c.path = rootPath
 		best := -searchInf
-		var bestMove dto.Move
-		var bestPV []dto.Move
+		var bestMove Move
+		var bestPV []Move
 		alpha := -searchInf
 
 		for _, m := range rootMoves {
@@ -105,7 +103,7 @@ func Search(gs dao.GameState, opts SearchOptions, info func(SearchResult)) Searc
 				c.aborted = true
 				break
 			}
-			var childPV []dto.Move
+			var childPV []Move
 			score := -negamaxPV(c, applyBotMove(gs, m), depth-1, -searchInf, -alpha, 1, &childPV)
 			if c.aborted {
 				break
@@ -113,7 +111,7 @@ func Search(gs dao.GameState, opts SearchOptions, info func(SearchResult)) Searc
 			if score > best {
 				best = score
 				bestMove = botMoveToDTO(gs, m)
-				bestPV = append([]dto.Move{bestMove}, childPV...)
+				bestPV = append([]Move{bestMove}, childPV...)
 				if best > alpha {
 					alpha = best
 				}
@@ -178,7 +176,7 @@ type searchCtx struct {
 }
 
 // sideIndex is 0 for White, 1 for Black.
-func sideIndex(gs dao.GameState) int {
+func sideIndex(gs GameState) int {
 	if gs.Turn == "b" {
 		return 1
 	}
@@ -188,7 +186,7 @@ func sideIndex(gs dao.GameState) int {
 // recordCutoff credits a quiet move that caused a beta cutoff. The depth-squared
 // weight means a cutoff found deep in the tree, where it took more work to
 // establish, counts for more.
-func (c *searchCtx) recordCutoff(gs dao.GameState, m botMove, depth, ply int) {
+func (c *searchCtx) recordCutoff(gs GameState, m botMove, depth, ply int) {
 	c.recordKiller(ply, m)
 	from := bits.TrailingZeros64(m.src)
 	to := bits.TrailingZeros64(m.dst)
@@ -198,7 +196,7 @@ func (c *searchCtx) recordCutoff(gs dao.GameState, m botMove, depth, ply int) {
 // orderMoves sorts moves best-first for the main search: the transposition
 // table's suggestion, then captures by MVV-LVA, then killers, then quiet moves
 // by history score.
-func (c *searchCtx) orderMoves(gs dao.GameState, moves []botMove, ttMove botMove, hasTT bool, ply int) {
+func (c *searchCtx) orderMoves(gs GameState, moves []botMove, ttMove botMove, hasTT bool, ply int) {
 	killers := c.killerMoves(ply)
 	side := sideIndex(gs)
 
@@ -257,14 +255,14 @@ func (c *searchCtx) repeats(key uint64) bool {
 // the exact ply the fifty-move counter expires is scored as a draw rather than a
 // mate. Detecting that would cost a full move generation at every node; the
 // position is vanishingly rare and every engine makes this trade.
-func (c *searchCtx) drawAtNode(gs dao.GameState, key uint64) bool {
+func (c *searchCtx) drawAtNode(gs GameState, key uint64) bool {
 	return c.repeats(key) || gs.HalfmoveClock >= 100
 }
 
 // negamaxPV is negamax with node counting, principal-variation collection,
 // repetition/fifty-move draw detection, transposition-table probing, and
 // cooperative abort on time/Stop.
-func negamaxPV(c *searchCtx, gs dao.GameState, depth, alpha, beta, ply int, pv *[]dto.Move) int {
+func negamaxPV(c *searchCtx, gs GameState, depth, alpha, beta, ply int, pv *[]Move) int {
 	c.nodes++
 
 	// Check for time/Stop periodically to keep the overhead negligible.
@@ -309,7 +307,7 @@ func negamaxPV(c *searchCtx, gs dao.GameState, depth, alpha, beta, ply int, pv *
 		null.EnPassant = 0
 		null.HalfmoveClock = gs.HalfmoveClock + 1
 
-		var discard []dto.Move
+		var discard []Move
 		score := -negamaxPV(c, null, depth-1-reduction, -beta, -beta+1, ply+1, &discard)
 		if c.aborted {
 			return 0
@@ -334,10 +332,10 @@ func negamaxPV(c *searchCtx, gs dao.GameState, depth, alpha, beta, ply int, pv *
 
 	best := -searchInf
 	var bestMove botMove
-	var bestChildPV []dto.Move
+	var bestChildPV []Move
 	for i, m := range moves {
 		child := applyBotMove(gs, m)
-		var childPV []dto.Move
+		var childPV []Move
 		var score int
 
 		if i == 0 {
@@ -376,7 +374,7 @@ func negamaxPV(c *searchCtx, gs dao.GameState, depth, alpha, beta, ply int, pv *
 			best = score
 			bestMove = m
 			mv := botMoveToDTO(gs, m)
-			bestChildPV = append([]dto.Move{mv}, childPV...)
+			bestChildPV = append([]Move{mv}, childPV...)
 		}
 		if best > alpha {
 			alpha = best
@@ -425,12 +423,12 @@ func abortRequested(deadline time.Time, stop <-chan struct{}) bool {
 	return !deadline.IsZero() && time.Now().After(deadline)
 }
 
-// botMoveToDTO builds a dto.Move from a search move, deriving the piece letter
+// botMoveToDTO builds a Move from a search move, deriving the piece letter
 // from the source square. The promotion piece comes from the move itself, so an
 // underpromotion the search chose survives the round trip through UCI instead of
 // being rewritten as a queen.
-func botMoveToDTO(gs dao.GameState, m botMove) dto.Move {
-	return dto.Move{
+func botMoveToDTO(gs GameState, m botMove) Move {
+	return Move{
 		Piece:       getPieceCode(m.src, gs.WhiteBitboard&m.src != 0, gs),
 		Source:      bitToSquare(m.src, defFiles, defRanks),
 		Destination: bitToSquare(m.dst, defFiles, defRanks),

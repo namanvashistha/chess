@@ -19,17 +19,14 @@ services:
       - "9000"
     environment:
       - PORT=${PORT:-9000}
-      - APPLICATION_NAME=${APPLICATION_NAME:-chess}
-      - DB_DSN=${DB_DSN:-host=postgres user=namanvashistha dbname=chess password=your_password port=5432 sslmode=disable}
-      - REDIS_ADDR=${REDIS_ADDR:-redis:6379}
-      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
-      # WebSocket origin allowlist. Empty (the default) means same-origin only;
-      # set a comma-separated list of origins to permit others, or "*" to allow
-      # any origin. See pkg.CheckWebSocketOrigin.
+      - DATABASE_URL=${DATABASE_URL:-postgres://namanvashistha:your_password@postgres:5432/chess?sslmode=disable}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      # Caddy sits in front and sets X-Forwarded-For, so rate limits use it.
+      - TRUST_PROXY=true
+      # Extra origins allowed to call the API and open sockets. Empty (the
+      # default) means same-origin only; "*" allows any.
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-}
     depends_on:
-      redis:
-        condition: service_healthy
       postgres:
         condition: service_healthy
     networks:
@@ -40,7 +37,7 @@ services:
       caddy.reverse_proxy: "{{upstreams 9000}}"
     healthcheck:
       # alpine base, so busybox wget is present. /health answers 503 when
-      # Postgres or Redis is unreachable; "/" is a static file and would pass
+      # Postgres is unreachable; "/" is a static file and would pass
       # with both backends dead.
       test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:9000/health"]
       interval: 30s
@@ -62,17 +59,6 @@ services:
       - LICHESS_BOT_TOKEN=${LICHESS_API_TOKEN:?set LICHESS_API_TOKEN}
     restart: unless-stopped
 
-  redis:
-    image: redis:7.0
-    networks:
-      - backend
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
   postgres:
     image: postgres:15
@@ -98,4 +84,3 @@ networks:
 
 volumes:
   postgres_data:
-  redis_data:

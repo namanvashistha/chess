@@ -165,7 +165,9 @@ final class GameModel {
         guard let from = Squares.parse(uci.prefix(2)),
               let to = Squares.parse(uci.dropFirst(2).prefix(2)) else { return }
         let before = board, legalBefore = legal
-        do { try game.play(uci) } catch { return }
+        var err: NSError?
+        _ = game.play(uci, error: &err)
+        if err != nil { return }
 
         history.append((ids, lastMove))
         let captured = moveIDs(from: from, to: to, before: before)

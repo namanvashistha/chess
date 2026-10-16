@@ -1,7 +1,5 @@
 package engine
 
-import "chess-engine/app/domain/dao"
-
 // A direct legal move generator for the search.
 //
 // The original generator's currency is map[uint64]uint64 keyed by a piece's
@@ -23,7 +21,7 @@ const (
 
 // appendLegalMoves appends every legal move for the side to move to out and
 // returns the extended slice. Promotions are expanded into all four pieces.
-func appendLegalMoves(gs dao.GameState, out []botMove) []botMove {
+func appendLegalMoves(gs GameState, out []botMove) []botMove {
 	white := gs.Turn != "b"
 
 	own, enemy := gs.BlackBitboard, gs.WhiteBitboard
@@ -95,7 +93,7 @@ func appendLegalMoves(gs dao.GameState, out []botMove) []botMove {
 
 // appendPieceMoves filters a target bitboard down to the moves that leave the
 // mover's own king safe, expanding promotions.
-func appendPieceMoves(gs dao.GameState, out []botMove, from, targets uint64, isPawn, white bool) []botMove {
+func appendPieceMoves(gs GameState, out []botMove, from, targets uint64, isPawn, white bool) []botMove {
 	for t := targets; t != 0; t &= t - 1 {
 		to := t & -t
 		if !leavesKingSafe(gs, from, to, white) {
@@ -114,7 +112,7 @@ func appendPieceMoves(gs dao.GameState, out []botMove, from, targets uint64, isP
 
 // leavesKingSafe plays the move and asks whether the mover's king is attacked.
 // The promotion piece cannot change the answer, so it is left as a queen.
-func leavesKingSafe(gs dao.GameState, from, to uint64, white bool) bool {
+func leavesKingSafe(gs GameState, from, to uint64, white bool) bool {
 	next := applyBitboardMove(gs, from, to, "q")
 	king := kingSquare(next, white)
 	if king == 0 {
@@ -126,7 +124,7 @@ func leavesKingSafe(gs dao.GameState, from, to uint64, white bool) bool {
 // appendCastlingMoves adds castling, which needs the king's path to be both
 // empty and unattacked -- a condition the generic per-move safety filter cannot
 // express, since it only ever sees the final square.
-func appendCastlingMoves(gs dao.GameState, out []botMove, king, occupied uint64, white bool) []botMove {
+func appendCastlingMoves(gs GameState, out []botMove, king, occupied uint64, white bool) []botMove {
 	if white {
 		if king != sqE1 {
 			return out
@@ -156,7 +154,7 @@ func appendCastlingMoves(gs dao.GameState, out []botMove, king, occupied uint64,
 	return out
 }
 
-func anyAttacked(gs dao.GameState, byWhite bool, squares ...uint64) bool {
+func anyAttacked(gs GameState, byWhite bool, squares ...uint64) bool {
 	for _, sq := range squares {
 		if isSquareAttacked(gs, sq, byWhite) {
 			return true

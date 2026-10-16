@@ -11,20 +11,20 @@ COPY web/ ./
 RUN npm run build
 
 # --- Stage 2: build the Go server ---
-FROM golang:1.23-alpine AS build
+FROM golang:1.22-alpine AS build
 WORKDIR /src
 # pre-copy/cache go.mod for pre-downloading dependencies and only redownloading
 # them in subsequent builds if they change
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 COPY . .
-RUN CGO_ENABLED=0 go build -v -o /out/main .
+RUN CGO_ENABLED=0 go build -trimpath -o /out/main ./cmd/server
 
 # --- Stage 3: minimal runtime image ---
 FROM alpine:3.20
 WORKDIR /app
 COPY --from=build /out/main ./main
-# Static assets served via relative paths in app/router/route.go.
+# Piece images and the web app, served from the paths cmd/server defaults to.
 COPY --from=build /src/app/static ./app/static
 COPY --from=web /web/build ./web/build
 EXPOSE 9000

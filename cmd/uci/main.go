@@ -15,8 +15,6 @@ import (
 	"sync"
 	"time"
 
-	"chess-engine/app/domain/dao"
-	"chess-engine/app/domain/dto"
 	"chess-engine/app/engine"
 )
 
@@ -34,7 +32,7 @@ type uciEngine struct {
 	out *bufio.Writer
 	mu  sync.Mutex // serializes writes to stdout
 
-	state dao.GameState
+	state engine.GameState
 	// history holds the Zobrist keys of every position before the current one,
 	// accumulated as "position ... moves ..." is applied. The search needs it to
 	// see a repetition that reaches back before the root.
@@ -144,7 +142,7 @@ func (e *uciEngine) handleSetOption(fields []string) {
 func (e *uciEngine) handlePosition(fields []string) {
 	e.stopSearch()
 
-	var gs dao.GameState
+	var gs engine.GameState
 	var history []uint64
 	idx := 1
 	if idx >= len(fields) {
@@ -326,7 +324,7 @@ func (e *uciEngine) printBestMove(r engine.SearchResult) {
 	e.println("bestmove " + engine.MoveToUCI(r.Best))
 }
 
-func pvString(pv []dto.Move) string {
+func pvString(pv []engine.Move) string {
 	parts := make([]string, len(pv))
 	for i, m := range pv {
 		parts[i] = engine.MoveToUCI(m)

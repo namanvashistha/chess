@@ -1,12 +1,11 @@
 package engine
 
 import (
-	"chess-engine/app/domain/dao"
 	"testing"
 )
 
-func startState(turn string) dao.GameState {
-	return dao.GameState{
+func startState(turn string) GameState {
+	return GameState{
 		WhiteBitboard:  0xFFFF,
 		BlackBitboard:  0xFFFF000000000000,
 		PawnBitboard:   0x00FF00000000FF00,

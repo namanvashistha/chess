@@ -1,7 +1,5 @@
 package engine
 
-import "chess-engine/app/domain/dao"
-
 // LegalMove is a fully specified move. It exists because the generator's native
 // output -- map[srcBit]dstBitboard -- has nowhere to record a promotion choice,
 // so a promoting move was indistinguishable from a single move and the engine
@@ -20,7 +18,7 @@ var promotionChoices = [4]string{"q", "r", "b", "n"}
 
 // GenerateLegalMoveList returns every legal move for the side to move, with each
 // promoting pawn move expanded into its four choices, in a deterministic order.
-func GenerateLegalMoveList(gs dao.GameState) []LegalMove {
+func GenerateLegalMoveList(gs GameState) []LegalMove {
 	moves := appendLegalMoves(gs, nil)
 	out := make([]LegalMove, 0, len(moves))
 	for _, m := range moves {

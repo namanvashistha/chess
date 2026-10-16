@@ -1,7 +1,5 @@
 package engine
 
-import "chess-engine/app/domain/dao"
-
 // Single-square attack detection.
 //
 // Legality checking used to answer "is my king in check?" by generating every
@@ -39,7 +37,7 @@ func pawnAttacks(pawns uint64, white bool) uint64 {
 
 // isSquareAttacked reports whether square is attacked by the given colour.
 // square must be a single set bit.
-func isSquareAttacked(gs dao.GameState, square uint64, byWhite bool) bool {
+func isSquareAttacked(gs GameState, square uint64, byWhite bool) bool {
 	attackers := gs.BlackBitboard
 	if byWhite {
 		attackers = gs.WhiteBitboard
@@ -83,7 +81,7 @@ func isSquareAttacked(gs dao.GameState, square uint64, byWhite bool) bool {
 
 // kingSquare returns the given colour's king, or 0 if it has none (which only
 // happens in hand-built test positions).
-func kingSquare(gs dao.GameState, white bool) uint64 {
+func kingSquare(gs GameState, white bool) uint64 {
 	if white {
 		return gs.KingBitboard & gs.WhiteBitboard
 	}

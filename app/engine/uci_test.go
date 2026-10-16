@@ -1,8 +1,6 @@
 package engine
 
 import (
-	"chess-engine/app/domain/dao"
-	"chess-engine/app/domain/dto"
 	"testing"
 )
 
@@ -11,13 +9,13 @@ func TestParseUCIMove(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		state    dao.GameState
+		state    GameState
 		uci      string
 		wantPc   string
 		wantProm string
 	}{
 		{"quiet pawn", start, "e2e4", "P", ""},
-		{"black knight", func() dao.GameState { g := start; g.Turn = "b"; return g }(), "g8f6", "n", ""},
+		{"black knight", func() GameState { g := start; g.Turn = "b"; return g }(), "g8f6", "n", ""},
 		{"white castle king", mustFEN(t, "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1"), "e1g1", "K", ""},
 		{"underpromotion knight", mustFEN(t, "8/4P3/8/8/8/8/8/k6K w - - 0 1"), "e7e8n", "P", "n"},
 		{"promotion queen", mustFEN(t, "8/4P3/8/8/8/8/8/k6K w - - 0 1"), "e7e8q", "P", "q"},
@@ -87,33 +85,7 @@ func TestApplyMoveCastlingMovesRook(t *testing.T) {
 	}
 }
 
-// ApplyMove (UCI path) and ProcessMove (validated server path) must produce the
-// same state for the same legal move.
-func TestApplyMoveMatchesProcessMove(t *testing.T) {
-	white := dao.User{ID: 1}
-	black := dao.User{ID: 2}
-	game := &dao.ChessGame{
-		WhiteUser: &white,
-		BlackUser: &black,
-		State:     StartState(),
-	}
-
-	move := dto.Move{Piece: "P", Source: "e2", Destination: "e4"}
-	if _, err := ProcessMove(game, move, white); err != nil {
-		t.Fatalf("ProcessMove: %v", err)
-	}
-
-	applied := ApplyMove(StartState(), move)
-
-	if applied.WhiteBitboard != game.State.WhiteBitboard ||
-		applied.PawnBitboard != game.State.PawnBitboard ||
-		applied.EnPassant != game.State.EnPassant ||
-		applied.Turn != game.State.Turn {
-		t.Fatalf("ApplyMove != ProcessMove:\n apply:   %+v\n process: %+v", applied, game.State)
-	}
-}
-
-func mustFEN(t *testing.T, fen string) dao.GameState {
+func mustFEN(t *testing.T, fen string) GameState {
 	t.Helper()
 	gs, err := ParseFEN(fen)
 	if err != nil {
