@@ -100,8 +100,6 @@ private struct HomeScreen: View {
                     .padding(.top, 20)
                 cta
                     .padding(.top, 22)
-                friendLink
-                    .padding(.top, 14)
                 if let saved, saved.passAndPlay {
                     Button { Haptics.tap(); resume() } label: {
                         Label("Continue your game on this phone", systemImage: "iphone")
@@ -247,25 +245,35 @@ private struct HomeScreen: View {
 
     @ViewBuilder
     private var cta: some View {
-        if seat.isUnlocked {
-            VStack(spacing: 10) {
+        VStack(spacing: 18) {
+            if seat.isUnlocked {
                 Button { go() } label: {
                     Text(savedHere == nil ? "Begin" : "Continue")
                 }
                 .buttonStyle(PrimaryButtonStyle())
-                if savedHere != nil {
-                    Button("Start a new game instead") { Haptics.tap(); start(.engine, seat) }
-                        .font(.system(size: 13.5, weight: .medium))
-                        .foregroundStyle(Palette.mist)
-                        .buttonStyle(.plain)
-                }
+            } else {
+                Text("Win \(winsLeft) more against the \(seat.previous?.name ?? "") to sit down here")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Palette.mist)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, minHeight: 56)
             }
-        } else {
-            Text("Win \(winsLeft) more against the \(seat.previous?.name ?? "") to sit down here")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Palette.mist)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity, minHeight: 56)
+            // The quieter ways in, side by side in one pill, each a full-size target.
+            HStack(spacing: 0) {
+                if savedHere != nil {
+                    Button { Haptics.tap(); start(.engine, seat) } label: {
+                        Label("New game", systemImage: "plus")
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    Rectangle().fill(Palette.mist.opacity(0.3)).frame(width: 0.5, height: 22)
+                }
+                friendLink
+            }
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(Palette.ink)
+            .glassEffect(.regular.interactive(), in: .capsule)
         }
     }
 
@@ -286,11 +294,10 @@ private struct HomeScreen: View {
             }
             Button("Play on this phone", systemImage: "iphone") { start(.passAndPlay, seat) }
         } label: {
-            Label("Play a friend instead", systemImage: "person.2")
-                .frame(maxWidth: .infinity)
+            Label("Play a friend", systemImage: "person.2")
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .contentShape(.rect)
         }
-        .font(.system(size: 14.5, weight: .semibold))
-        .foregroundStyle(Palette.accentText)
     }
 
     @ViewBuilder
