@@ -695,7 +695,7 @@ private struct CoachView: View {
             }
             .frame(width: 46, height: 46)
         } else {
-            Text(card.badge)
+            Text(card.kind.verdict?.badge ?? card.badge)
                 .font(Typeface.display(20))
                 .foregroundStyle(card.kind == .coach ? Palette.onAccent : Palette.ink)
                 .frame(width: 46, height: 46)
@@ -901,7 +901,7 @@ private struct FinishCard: View {
                 HStack(spacing: 8) {
                     Stat(value: finish.accuracy.map { "\($0)%" } ?? "–", label: "Accuracy")
                     Stat(value: "\(finish.great)", label: "Great")
-                    Stat(value: "\(finish.blunders)", label: "Blunders")
+                    Stat(value: "\(finish.goodMoves)", label: "Good moves")
                 }
                 .padding(.bottom, 12)
                 if let toward = finish.towardNext {

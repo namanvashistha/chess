@@ -61,7 +61,22 @@ struct Rays: Equatable {
 
 /// What the coach is saying.
 struct CoachCard: Equatable, Codable {
-    enum Kind: String, Codable { case great, good, inaccuracy, mistake, blunder, coach, warning, opponent }
+    enum Kind: String, Codable {
+        case great, good, inaccuracy, mistake, blunder, coach, warning, opponent
+
+        /// The app's own words for a verdict: kind, never harsh. The engine's
+        /// chess terms (inaccuracy, mistake, blunder) stay out of sight.
+        var verdict: (title: String, badge: String)? {
+            switch self {
+            case .great: ("Great move", "!!")
+            case .good: ("Good move", "✓")
+            case .inaccuracy: ("Almost", "≈")
+            case .mistake: ("Not quite", "↗")
+            case .blunder: ("Oops", "↺")
+            default: nil
+            }
+        }
+    }
     let id: Int
     let kind: Kind
     let badge: String
@@ -142,6 +157,8 @@ struct Finish: Equatable {
     let accuracy: Int?
     let great: Int
     let blunders: Int
+    /// Good and great moves together, for the finish card.
+    var goodMoves = 0
     /// The opponent this win opened up, if it was the one that did.
     var unlocked: Opponent?
     /// The first win ever against this opponent.
@@ -360,7 +377,8 @@ final class GameModel {
             reviewing = entry.id
             showPosition(afterPly: entry.ply)
             coach = CoachCard(id: bump(), kind: entry.card.kind, badge: entry.card.badge,
-                              title: "\((entry.ply / 2) + 1). \(entry.san) · \(entry.card.title)", text: entry.card.text)
+                              title: "\((entry.ply / 2) + 1). \(entry.san) · \(entry.card.kind.verdict?.title ?? entry.card.title)",
+                              text: entry.card.text)
         }
     }
 
@@ -667,12 +685,14 @@ final class GameModel {
         rays = nil
         loose = []
         if let k = board.firstIndex(of: "K") { toppled = ids[k] }
-        let f = Finish(outcome: .lost, title: "You resigned", text: "Your opponent takes this one. The next is yours.",
+        let f = Finish(outcome: .lost, title: "Good game", text: "Every game teaches something. The next one is yours.",
                        accuracy: accuracy, great: great, blunders: blunders)
         let count = (moves.count + 1) / 2
         Task {
             try? await Task.sleep(for: .seconds(0.9))
-            finish = f
+            var shown = f
+            shown.goodMoves = trail.filter { $0.card.kind == .good || $0.card.kind == .great }.count
+            finish = shown
             emit(.lose)
             Stats.record(accuracy: f.accuracy, great: f.great)
             Stats.addRecord(GameRecord(date: .now, opponent: opponent.name, outcome: "lost", accuracy: f.accuracy, moves: count,
@@ -712,8 +732,9 @@ final class GameModel {
         let kind = CoachCard.Kind(rawValue: v.kind) ?? .good
         if kind == .great { great += 1 }
         if kind == .blunder { blunders += 1 }
-        let badge = ["great": "!!", "good": "✓", "inaccuracy": "?!", "mistake": "?", "blunder": "??"][v.kind] ?? "✓"
-        say(kind, badge, v.title, v.text)
+        let words = kind.verdict ?? ("Good move", "✓")
+        let nudge = kind == .blunder ? " Undo and try again." : ""
+        say(kind, words.badge, words.title, v.text + nudge)
         if let card = coach { trail.append(TrailEntry(id: bump(), ply: ply, san: san, card: card)) }
         reviewing = nil
         emit(kind == .great ? .great : kind == .good ? .good : .bad)
@@ -819,13 +840,15 @@ final class GameModel {
             f = Finish(outcome: .draw, title: "A draw", text: why, accuracy: accuracy, great: great, blunders: blunders)
         }
         var final = f
+        final.goodMoves = trail.filter { $0.card.kind == .good || $0.card.kind == .great }.count
         if mode == .engine, f.outcome == .won {
             let next = Opponent(rawValue: opponent.rawValue + 1)
             let wasLocked = next.map { !$0.isUnlocked } ?? false
             final.firstWin = Stats.wins(against: opponent) == 0
             Stats.addWin(against: opponent)
             final = Finish(outcome: .won, title: "You beat the \(opponent.name)!", text: f.text,
-                           accuracy: f.accuracy, great: f.great, blunders: f.blunders, firstWin: final.firstWin)
+                           accuracy: f.accuracy, great: f.great, blunders: f.blunders, goodMoves: final.goodMoves,
+                           firstWin: final.firstWin)
             if let next, wasLocked {
                 if next.isUnlocked { final.unlocked = next }
                 else { final.towardNext = (next, Stats.wins(against: opponent)) }

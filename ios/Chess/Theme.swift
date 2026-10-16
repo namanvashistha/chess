@@ -11,6 +11,8 @@ enum Palette {
     static let squareLight = Color.dynamic(light: 0xDDD8CB, dark: 0xC1BBAE)
     static let squareDark = Color.dynamic(light: 0x84918A, dark: 0x67736B)
     static let coordinate = Color.dynamic(light: 0x6F7A70, dark: 0x4F5A52)
+    /// A soft honey that reads on both limestone and slate.
+    static let lastMove = Color.dynamic(light: 0xE8C468, dark: 0xD9B556)
 
     // The accent is evergreen: a deeper cut of the slate square, so the whole
     // app reads as one family of stone and moss. It marks what you can act on.
@@ -38,8 +40,9 @@ enum Palette {
     static let inaccuracyFill = Color.dynamic(light: 0xF6E3A6, dark: 0x4A3D14)
     static let mistake = Color.dynamic(light: 0xB8601B, dark: 0xF5A565)
     static let mistakeFill = Color.dynamic(light: 0xF7CFAA, dark: 0x4D2F17)
-    static let blunder = Color.dynamic(light: 0xC23B3B, dark: 0xFF8A8A)
-    static let blunderFill = Color.dynamic(light: 0xF6C1C1, dark: 0x4F2222)
+    // "Oops" is a warm coral, not an alarm red; red stays for check.
+    static let blunder = Color.dynamic(light: 0xC2654C, dark: 0xF29C86)
+    static let blunderFill = Color.dynamic(light: 0xF6D3C8, dark: 0x4D2C23)
 }
 
 extension Color {

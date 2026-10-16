@@ -125,8 +125,12 @@ private struct SquaresLayer: View {
                         ZStack {
                             Rectangle().fill(dark ? Palette.squareDark : Palette.squareLight)
                             if let last, last.from == sq || last.to == sq {
-                                // neutral: amber is kept for what the player can act on
-                                Rectangle().fill(Color.white.opacity(0.34))
+                                // The last move, easy to find: a warm wash on both squares,
+                                // stronger where the piece landed, with a soft edge there.
+                                Rectangle().fill(Palette.lastMove.opacity(sq == last.to ? 0.5 : 0.3))
+                                if sq == last.to {
+                                    Rectangle().strokeBorder(Palette.lastMove.opacity(0.9), lineWidth: max(1.5, q * 0.045))
+                                }
                             }
                             if sq == check {
                                 RadialGradient(colors: [Palette.danger.opacity(0.75), .clear], center: .center,

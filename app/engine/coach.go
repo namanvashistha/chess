@@ -129,13 +129,13 @@ func (g *Game) reason(kind, uci, best string) string {
 	if reply.HasBest {
 		dst := PositionToIndex(reply.Best.Destination)
 		if v := pieceAt(child, dst) | 0x20; v == 'n' || v == 'b' || v == 'r' || v == 'q' {
-			return "Your " + pieceNames[v] + " on " + reply.Best.Destination + " can now be taken."
+			return "Careful: your " + pieceNames[v] + " on " + reply.Best.Destination + " can be taken now."
 		}
 	}
 	if best != "" {
-		return sanFor(gs, best, g.legal, false, false) + " was stronger here."
+		return sanFor(gs, best, g.legal, false, false) + " would have been even better."
 	}
-	return "There was a better move."
+	return "There was an even better move here."
 }
 
 // Describe says in a few words what a move does, as a commentator would of

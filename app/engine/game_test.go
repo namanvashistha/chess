@@ -137,7 +137,7 @@ func TestCoach(t *testing.T) {
 	}
 	g3, _ := NewGameFromFEN("4k3/8/8/4p3/8/8/8/3QK3 w - - 0 1")
 	c, _ := g3.Assess("d1d4") // the queen walks into the pawn's capture
-	if c.Kind != KindBlunder || c.Text != "Your queen on d4 can now be taken." {
+	if c.Kind != KindBlunder || c.Text != "Careful: your queen on d4 can be taken now." {
 		t.Errorf("Qd4 = %+v", c)
 	}
 	if d := g3.Describe("e5d4"); d != "" {
