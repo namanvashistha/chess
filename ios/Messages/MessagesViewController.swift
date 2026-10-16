@@ -74,7 +74,7 @@ final class MessageLink: MatchLink {
         guard let conversation else { return }
         session = MSSession()
         white = conversation.localParticipantIdentifier.uuidString
-        model.startFriend(name: "Your friend", color: "w", moves: [], link: self)
+        model.startFriend(name: GameModel.unnamedFriend, color: "w", moves: [], link: self)
         controller?.requestPresentationStyle(.expanded)
     }
 
@@ -84,7 +84,7 @@ final class MessageLink: MatchLink {
         session = message.session
         white = game.white
         let color = game.white == conversation.localParticipantIdentifier.uuidString ? "w" : "b"
-        model.startFriend(name: "Your friend", color: color, moves: game.moves, link: self)
+        model.startFriend(name: GameModel.unnamedFriend, color: color, moves: game.moves, link: self)
         if game.resigned, message.senderParticipantIdentifier != conversation.localParticipantIdentifier {
             model.receive(moves: game.moves, resigned: true)
         }
@@ -115,17 +115,17 @@ final class MessageLink: MatchLink {
         let layout = MSMessageTemplateLayout()
         let san = model.moves.isEmpty ? "" : ChesscoreSANs(model.moves)
         let title: String
-        if resigned { title = "I resigned. Good game!" }
-        else if model.isOver { title = model.status == ChesscoreStatusCheckmate ? "Checkmate!" : "It's a draw" }
-        else { title = "Your move" }
+        if resigned { title = L("I resigned. Good game!") }
+        else if model.isOver { title = model.status == ChesscoreStatusCheckmate ? L("Checkmate!") : L("It's a draw") }
+        else { title = L("Your move") }
         if let data = ShareMoment(board: model.board, move: model.lastMove, title: title,
                                   detail: san, footer: "Cozy Chess").boardPNG() {
             layout.image = UIImage(data: data)
         }
         layout.caption = title
-        layout.subcaption = san.isEmpty ? "Cozy Chess" : "\(san) · Cozy Chess"
+        layout.subcaption = san.isEmpty ? "Cozy Chess" : L("\(san) · Cozy Chess")
         message.layout = layout
-        message.summaryText = "Played \(san)"
+        message.summaryText = L("Played \(san)")
 
         conversation.insert(message) { _ in }
         // Back to the chat, where the move waits in the field to be sent.

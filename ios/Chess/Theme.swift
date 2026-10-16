@@ -21,6 +21,9 @@ enum Palette {
     static let accentEdge = Color.dynamic(light: 0x1F4538, dark: 0x4E7D69)
     static let onAccent = Color.dynamic(light: 0xF3F1EA, dark: 0x0F1A15)
     static let accentText = Color.dynamic(light: 0x2E6150, dark: 0x8DC4AC)
+    /// Lines of light on the board: a brighter, softer green than the accent,
+    /// so they glow on pale stone instead of reading as dark ink.
+    static let ray = Color.dynamic(light: 0x4FA887, dark: 0x8DCBB0)
     static let thinking = Color.dynamic(light: 0x4F7FC9, dark: 0x7DA6E6)
     static let danger = Color.dynamic(light: 0xC23B3B, dark: 0xFF8A8A)
 

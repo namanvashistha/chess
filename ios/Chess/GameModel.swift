@@ -68,11 +68,11 @@ struct CoachCard: Equatable, Codable {
         /// chess terms (inaccuracy, mistake, blunder) stay out of sight.
         var verdict: (title: String, badge: String)? {
             switch self {
-            case .great: ("Great move", "★")
-            case .good: ("Good move", "✓")
-            case .inaccuracy: ("Almost", "~")
-            case .mistake: ("Not quite", "?")
-            case .blunder: ("Oops", "↩")
+            case .great: (L("Great move"), "★")
+            case .good: (L("Good move"), "✓")
+            case .inaccuracy: (L("Almost"), "~")
+            case .mistake: (L("Not quite"), "?")
+            case .blunder: (L("Oops"), "↩")
             default: nil
             }
         }
@@ -119,8 +119,15 @@ struct GameRecord: Identifiable, Equatable, Codable {
     /// The name to show. Records saved before the rename say Pebble, Flint or Obsidian.
     var opponentName: String {
         if let level, let o = Opponent(rawValue: level) { return o.name }
-        return ["Pebble": "Rookie", "Flint": "Master", "Obsidian": "Grandmaster", "Club Player": "Rookie",
-                "Easy": "Rookie", "Medium": "Master", "Hard": "Grandmaster"][opponent] ?? opponent
+        let old = ["Pebble": 0, "Flint": 1, "Obsidian": 2, "Club Player": 0, "Rookie": 0, "Master": 1, "Grandmaster": 2,
+                   "Easy": 0, "Medium": 1, "Hard": 2][opponent]
+        return old.flatMap(Opponent.init)?.name ?? opponent
+    }
+
+    /// The opponent's level, for records saved before levels were stored.
+    var resolvedLevel: Int? {
+        level ?? ["Pebble": 0, "Flint": 1, "Obsidian": 2, "Club Player": 0, "Rookie": 0, "Master": 1, "Grandmaster": 2,
+                  "Easy": 0, "Medium": 1, "Hard": 2][opponent]
     }
 }
 
@@ -205,11 +212,11 @@ enum Opponent: Int, CaseIterable, Identifiable {
     case easy, medium, hard
     var id: Int { rawValue }
     /// Chess titles, so each win reads as a step up.
-    var name: String { ["Rookie", "Master", "Grandmaster"][rawValue] }
-    var subtitle: String { ["Beginner", "Intermediate", "Expert"][rawValue] }
+    var name: String { [L("Rookie"), L("Master"), L("Grandmaster")][rawValue] }
+    var subtitle: String { [L("Beginner"), L("Intermediate"), L("Expert")][rawValue] }
     /// Easy is a true beginner; each level above it is the engine's next step up.
     var engineLevel: String { ["beginner", "easy", "medium"][rawValue] }
-    var startLabel: String { "Play the \(name)" }
+    var startLabel: String { L("Play the \(name)") }
 
     /// Hints at the start of a game: the gentler the opponent, the more help.
     var hints: Int { [5, 4, 3][rawValue] }
@@ -411,9 +418,9 @@ final class GameModel {
         if !keepingSave && mode != .friend { SavedGame.clear() }
         refresh()
         moveSerial += 1
-        say(.coach, "✦", "Your move", mode == .engine
-            ? "You play White. Tap a piece to see where it can go."
-            : "White starts. Pass the phone after each move.")
+        say(.coach, "✦", L("Your move"), mode == .engine
+            ? L("You play White. Tap a piece to see where it can go.")
+            : L("White starts. Pass the phone after each move."))
     }
 
     /// Opens a game against a friend: this player's colour, the friend's name and
@@ -475,13 +482,17 @@ final class GameModel {
     }
 
     /// The friend's name mid-sentence: "your friend" when there's no name.
-    var friendInSentence: String { friendName == "Your friend" ? "your friend" : friendName }
+    var friendInSentence: String { friendName == Self.unnamedFriend ? L("your friend") : friendName }
+
+    /// The name for a friend whose name the link doesn't know.
+    static var unnamedFriend: String { L("Your friend") }
 
     private func greetFriendTurn() {
         if turn == myColor {
-            say(.coach, "✦", "Your move", "You play \(myColor == "w" ? "White" : "Black") against \(friendInSentence).")
+            say(.coach, "✦", L("Your move"), myColor == "w" ? L("You play White against \(friendInSentence).")
+                                                              : L("You play Black against \(friendInSentence)."))
         } else {
-            say(.opponent, "…", "\(friendName)'s move", "You'll get a notification when they've played.")
+            say(.opponent, "…", L("\(friendName)'s move"), L("You'll get a notification when they've played."))
         }
     }
 
@@ -507,7 +518,7 @@ final class GameModel {
         refresh()
         if let last = moves.last { lastMove = BoardMove(uci: last, board: board) }
         moveSerial += 1
-        say(.coach, "✦", "Welcome back", "Your game is where you left it.")
+        say(.coach, "✦", L("Welcome back"), L("Your game is where you left it."))
         save()
         fillEvals()
         if mode == .engine, turn == "b", !isOver { engineTurn() }
@@ -640,7 +651,7 @@ final class GameModel {
               (rank[e.card.kind] ?? 0) >= 3,
               let after = position(afterPly: e.ply), let move = after.move,
               let before = position(afterPly: e.ply - 1) else { return nil }
-        return BestMove(side: mode == .passAndPlay ? (e.ply % 2 == 0 ? "White" : "Black") : nil,
+        return BestMove(side: mode == .passAndPlay ? (e.ply % 2 == 0 ? L("White") : L("Black")) : nil,
                         before: before.board, after: after.board, move: move, moveNumber: e.ply / 2 + 1,
                         kind: e.card.kind, text: e.card.text)
     }
@@ -660,7 +671,7 @@ final class GameModel {
         let number = entry.ply / 2 + 1
         let label = entry.ply % 2 == 0 ? "\(number). \(entry.san)" : "\(number)… \(entry.san)"
         return ShareMoment(board: p?.board ?? board, move: p?.move, title: "\(label) · Great move",
-                           detail: entry.card.text, footer: "Found with Cozy Chess")
+                           detail: entry.card.text, footer: L("Found with Cozy Chess"))
     }
 
     /// A win against the engine, ready to share.
@@ -672,18 +683,18 @@ final class GameModel {
             let accuracy = finish.accuracy.map { " · \($0)% accuracy" } ?? ""
             let who = mode == .friend ? friendName : "the \(opponent.name)"
             return ShareMoment(board: board, move: lastMove, title: "I beat \(who)",
-                               detail: finish.text + accuracy, footer: "Played on Cozy Chess")
+                               detail: finish.text + accuracy, footer: L("Played on Cozy Chess"))
         }
         // Not a win: share warmly, about what went well, never the loss.
         let against = mode == .engine ? " against the \(opponent.name)" : mode == .friend ? " against \(friendName)" : ""
         guard let best = finish.best else {
             let title = mode == .engine ? "I played the \(opponent.name)" : mode == .friend ? "I played \(friendName)" : finish.title
             return ShareMoment(board: board, move: lastMove, title: title,
-                               detail: "Every game teaches me something.", footer: "Learning with Cozy Chess")
+                               detail: L("Every game teaches me something."), footer: L("Learning with Cozy Chess"))
         }
         let title = best.side.map { "\($0)'s best move" } ?? "A move I'm proud of"
         return ShareMoment(board: best.after, move: best.move, title: title,
-                           detail: "Move \(best.moveNumber)\(against) · \(best.text)", footer: "Learning with Cozy Chess")
+                           detail: L("Move \(best.moveNumber)\(against) · \(best.text)"), footer: L("Learning with Cozy Chess"))
     }
 
     /// When the player is clearly behind and nearly out of hints, gives one
@@ -706,12 +717,12 @@ final class GameModel {
     /// then a chance to win something, then a tip for this stage of the game.
     private func watchFor(_ m: BoardMove?, taken: Character?) -> (title: String, text: String, urgent: Bool) {
         let me = mode == .passAndPlay ? turn : myColor, them = me == "w" ? "b" : "w"
-        func name(_ sq: Square) -> String { "\(Self.pieceName(board[sq])) on \(Squares.name(sq))" }
+        func name(_ sq: Square) -> String { L("\(Self.pieceName(board[sq])) on \(Squares.name(sq))") }
         func squares(_ s: String) -> [Square] { s.split(separator: " ").compactMap { Squares.parse($0) } }
         func isMine(_ sq: Square) -> Bool { board[sq] != "." && (board[sq].isUppercase ? "w" : "b") == me }
 
         if inCheck {
-            return ("Your king is in check", "Move it, block the line, or take the checking piece.", true)
+            return (L("Your king is in check"), L("Move it, block the line, or take the checking piece."), true)
         }
         if let m {
             let mover = Self.pieceName(board[m.to])
@@ -719,27 +730,27 @@ final class GameModel {
             let hit = (0..<64).filter { isMine($0) && board[$0] != "K" && squares(game.attackers(Squares.name($0))).contains(m.to) }
                 .sorted { (Self.value[Character(board[$0].lowercased())] ?? 0) > (Self.value[Character(board[$1].lowercased())] ?? 0) }
             if let sq = hit.first(where: { game.guards(Squares.name($0)).isEmpty }) {
-                return ("Watch your \(name(sq))", "Their \(mover) now attacks it, and nothing guards it.", true)
+                return (L("Watch your \(name(sq))"), L("Their \(mover) now attacks it, and nothing guards it."), true)
             }
             if let taken {
                 let back = !game.attackers(Squares.name(m.to)).isEmpty
-                return ("They took your \(Self.pieceName(taken))",
-                        back ? "You can take back on \(Squares.name(m.to))." : "Look for a way to win it back.", false)
+                return (L("They took your \(Self.pieceName(taken))"),
+                        back ? L("You can take back on \(Squares.name(m.to)).") : L("Look for a way to win it back."), false)
             }
             if let sq = hit.first, (Self.value[Character(board[sq].lowercased())] ?? 0) > (Self.value[Character(board[m.to].lowercased())] ?? 0) {
-                return ("Their \(mover) eyes your \(Self.pieceName(board[sq]))",
-                        "It's guarded, but their \(mover) is worth less, so a trade would cost you.", true)
+                return (L("Their \(mover) eyes your \(Self.pieceName(board[sq]))"),
+                        L("It's guarded, but their \(mover) is worth less, so a trade would cost you."), true)
             }
         }
         if let sq = loose.sorted().first {
-            return ("Your \(name(sq)) is loose", "It's attacked and nothing guards it.", true)
+            return (L("Your \(name(sq)) is loose"), L("It's attacked and nothing guards it."), true)
         }
         if let sq = squares(game.loose(them)).first {
-            return ("A chance", "Their \(name(sq)) is under attack and unguarded.", false)
+            return (L("A chance"), L("Their \(name(sq)) is under attack and unguarded."), false)
         }
         // Nothing pressing: a quiet "Your move", with a tip only now and then.
         quietTurns += 1
-        return ("Your move", quietTurns % 3 == 0 ? tip() : "", false)
+        return (L("Your move"), quietTurns % 3 == 0 ? tip() : "", false)
     }
 
     /// A tip that fits the position, or one of the app's gestures, each shown once.
@@ -750,20 +761,20 @@ final class GameModel {
                                                 : [(1, "n"), (6, "n"), (2, "b"), (5, "b")]      // b8 g8 c8 f8
         let undeveloped = home.filter { board[$0.0] == $0.1 }.count
         if moves.count < 16 && undeveloped >= 2 {
-            return "Bring a knight or bishop toward the centre."
+            return L("Bring a knight or bishop toward the centre.")
         }
         if moves.count < 30 && board[white ? 60 : 4] == (white ? "K" : "k")
             && castling.contains(where: { white ? ($0 == "K" || $0 == "Q") : ($0 == "k" || $0 == "q") }) {
-            return "Castling tucks your king away and brings a rook into play."
+            return L("Castling tucks your king away and brings a rook into play.")
         }
-        let gestures = [("tip.hold", "Hold any piece to see what guards it and what attacks it."),
-                        ("tip.drag", "You can drag pieces as well as tap them."),
-                        ("tip.swipe", "Swipe this card to look back at your earlier moves.")]
+        let gestures = [("tip.hold", L("Hold any piece to see what guards it and what attacks it.")),
+                        ("tip.drag", L("You can drag pieces as well as tap them.")),
+                        ("tip.swipe", L("Swipe this card to look back at your earlier moves."))]
         if let (key, text) = gestures.first(where: { !UserDefaults.standard.bool(forKey: $0.0) }) {
             UserDefaults.standard.set(true, forKey: key)
             return text
         }
-        return "Before you move, ask what their last move wants."
+        return L("Before you move, ask what their last move wants.")
     }
 
     // MARK: - Touch
@@ -808,18 +819,20 @@ final class GameModel {
         beforeInspect = coach
         let piece = board[square]
         let mineColor = (piece.isUppercase ? "w" : "b") == myColor
-        let whose = switch mode {
-        case .engine: mineColor ? "Your" : "Your opponent's"
-        case .friend: mineColor ? "Your" : "\(friendName)'s"
-        case .passAndPlay: piece.isUppercase ? "White's" : "Black's"
+        let what = Self.pieceName(piece)
+        let title = switch mode {
+        case .engine: mineColor ? L("Your \(what) on \(name)") : L("Your opponent's \(what) on \(name)")
+        case .friend: mineColor ? L("Your \(what) on \(name)") : L("\(friendName)'s \(what) on \(name)")
+        case .passAndPlay: piece.isUppercase ? L("White's \(what) on \(name)") : L("Black's \(what) on \(name)")
         }
-        func count(_ n: Int, _ word: String) -> String { n == 0 ? "no \(word)s" : n == 1 ? "1 \(word)" : "\(n) \(word)s" }
-        let text: String = switch (guards.count, attackers.count) {
-        case (_, 0): "Nothing attacks it" + (guards.isEmpty ? "." : ", and it's guarded by \(count(guards.count, "piece")).")
-        case (0, _): "Attacked by \(count(attackers.count, "piece")) and nothing guards it."
-        default: "Attacked by \(count(attackers.count, "piece")), guarded by \(count(guards.count, "piece"))."
+        let g = guards.count, a = attackers.count
+        let text: String = switch (g, a) {
+        case (0, 0): L("Nothing attacks it, and nothing guards it.")
+        case (_, 0): L("Nothing attacks it, and it's guarded by \(g) of your pieces.")
+        case (0, _): L("Attacked by \(a) of their pieces, and nothing guards it.")
+        default: L("Attacked by \(a), guarded by \(g).")
         }
-        say(.coach, "◎", "\(whose) \(Self.pieceName(piece)) on \(name)", text)
+        say(.coach, "◎", title, text)
         emit(.select)
         return true
     }
@@ -863,7 +876,7 @@ final class GameModel {
             nudge = nil
             hintRevealed = true
             rays = makeRays(.hint, [m])
-            say(.great, "✦", "Try this", shown.text)
+            say(.great, "✦", L("Try this"), shown.text)
             emit(.good)
             return
         }
@@ -876,7 +889,7 @@ final class GameModel {
         Task.detached(priority: .userInitiated) {
             let best = game.search(3, moveTimeMs: 0)?.bestMove ?? ""
             let san = best.isEmpty ? "" : game.san(best)
-            let why = best.isEmpty ? "" : game.explain(best)
+            let why = best.isEmpty ? "" : EngineText.localize(game.explain(best))
             await MainActor.run {
                 self.busy = false
                 guard !best.isEmpty, game === self.game, let m = BoardMove(uci: best, board: self.board) else { return }
@@ -885,8 +898,8 @@ final class GameModel {
                 self.hintRevealed = false
                 self.nudge = m.from
                 let piece = Self.pieceName(self.board[m.from])
-                self.say(.coach, "✦", "Look at your \(piece)",
-                         "Your \(piece) on \(Squares.name(m.from)) has a good move. Find it, or tap Show the move.")
+                self.say(.coach, "✦", L("Look at your \(piece)"),
+                         L("Your \(piece) on \(Squares.name(m.from)) has a good move. Find it, or tap Show the move."))
                 self.emit(.select)
             }
         }
@@ -924,7 +937,7 @@ final class GameModel {
         movingPiece = nil
         refresh()
         moveSerial += 1
-        say(.coach, "↶", "Rewound", "Your move again. Take another look.")
+        say(.coach, "↶", L("Rewound"), L("Your move again. Take another look."))
         save()
     }
 
@@ -937,7 +950,7 @@ final class GameModel {
         loose = []
         if let k = board.firstIndex(of: myColor == "w" ? "K" : "k") { toppled = ids[k] }
         if mode == .friend { link?.didResign(self) }
-        let f = Finish(outcome: .lost, title: "Good game", text: "Every game teaches something. The next one is yours.",
+        let f = Finish(outcome: .lost, title: L("Good game"), text: L("Every game teaches something. The next one is yours."),
                        accuracy: accuracy, great: great, blunders: blunders)
         let count = (moves.count + 1) / 2
         Task {
@@ -990,17 +1003,18 @@ final class GameModel {
         let kind = CoachCard.Kind(rawValue: v.kind) ?? .good
         if kind == .great { great += 1 }
         if kind == .blunder { blunders += 1 }
-        let words = kind.verdict ?? ("Good move", "✓")
-        let nudge = kind == .blunder ? " Undo and try again." : ""
+        let words = kind.verdict ?? (L("Good move"), "✓")
+        let nudge = kind == .blunder ? " " + L("Undo and try again.") : ""
         // A calm coach: a good move is the norm, so it gets the badge and a
         // word, no explanation and no pause. Great moves and slips are worth
         // a sentence and the time to read it.
-        say(kind, words.badge, words.title, kind == .good ? "" : v.text + nudge)
+        let reason = EngineText.localize(v.text)
+        say(kind, words.badge, words.title, kind == .good ? "" : reason + nudge)
         // The trail keeps the verdict without "Undo and try again", which only
         // makes sense right after the move.
         verdictShownAt = kind == .good ? nil : .now
         if let card = coach {
-            let kept = CoachCard(id: card.id, kind: card.kind, badge: card.badge, title: card.title, text: v.text)
+            let kept = CoachCard(id: card.id, kind: card.kind, badge: card.badge, title: card.title, text: reason)
             let entry = TrailEntry(id: bump(), ply: ply, san: san, card: kept)
             trail.append(entry)
             if let to = lastMove?.to {
@@ -1021,7 +1035,7 @@ final class GameModel {
         Task.detached(priority: .userInitiated) {
             let candidates = game.candidates(4).split(separator: " ").map(String.init)
             let choice = game.botMove(level)
-            let line = choice.isEmpty ? "" : game.describe(choice)
+            let line = choice.isEmpty ? "" : EngineText.localize(game.describe(choice))
             await MainActor.run { self.showThinking(candidates, choice, line, game) }
         }
     }
@@ -1051,7 +1065,7 @@ final class GameModel {
             let san = apply(choice)
             busy = false
             if endIfOver() {
-                say(.opponent, san, "Your opponent \(line).", "That's the game.")
+                say(.opponent, san, L("Your opponent \(line)."), L("That's the game."))
                 return
             }
             let eval = await Task.detached { game.eval(2) }.value
@@ -1105,28 +1119,28 @@ final class GameModel {
         let moves = (self.moves.count + 1) / 2
         let f: Finish
         if friendResigned {
-            f = Finish(outcome: .won, title: "You beat \(friendName)!", text: "\(friendName) resigned after \(moves) moves.",
+            f = Finish(outcome: .won, title: L("You beat \(friendName)!"), text: L("\(friendName) resigned after \(moves) moves."),
                        accuracy: accuracy, great: great, blunders: blunders)
         } else if mate, mode == .friend {
             let iWon = turn != myColor
-            f = Finish(outcome: iWon ? .won : .lost, title: iWon ? "You beat \(friendName)!" : "Good fight",
-                       text: iWon ? "Checkmate in \(moves) moves." : "Checkmate after \(moves) moves. Next time is yours.",
+            f = Finish(outcome: iWon ? .won : .lost, title: iWon ? L("You beat \(friendName)!") : L("Good fight"),
+                       text: iWon ? L("Checkmate in \(moves) moves.") : L("Checkmate after \(moves) moves. Next time is yours."),
                        accuracy: accuracy, great: great, blunders: blunders)
         } else if mate {
             let whiteWon = turn == "b"
             if mode == .passAndPlay {
-                f = Finish(outcome: .won, title: "\(whiteWon ? "White" : "Black") wins",
-                           text: "Checkmate in \(moves) moves.", accuracy: accuracy, great: great, blunders: blunders)
+                f = Finish(outcome: .won, title: whiteWon ? L("White wins") : L("Black wins"),
+                           text: L("Checkmate in \(moves) moves."), accuracy: accuracy, great: great, blunders: blunders)
             } else {
-                f = Finish(outcome: whiteWon ? .won : .lost, title: whiteWon ? "You won!" : "Good fight",
-                           text: whiteWon ? "Checkmate in \(moves) moves." : "Checkmate after \(moves) moves. Next time is yours.", accuracy: accuracy, great: great, blunders: blunders)
+                f = Finish(outcome: whiteWon ? .won : .lost, title: whiteWon ? L("You won!") : L("Good fight"),
+                           text: whiteWon ? L("Checkmate in \(moves) moves.") : L("Checkmate after \(moves) moves. Next time is yours."), accuracy: accuracy, great: great, blunders: blunders)
             }
         } else {
-            let why = [ChesscoreStatusStalemate: "Stalemate: no legal moves, and no check.",
-                       ChesscoreStatusRepetition: "The same position came up three times.",
-                       ChesscoreStatusFiftyMove: "Fifty moves without a capture or a pawn move.",
-                       ChesscoreStatusInsufficient: "Neither side has enough left to mate."][status] ?? "The game is drawn."
-            f = Finish(outcome: .draw, title: "A draw", text: why, accuracy: accuracy, great: great, blunders: blunders)
+            let why = [ChesscoreStatusStalemate: L("Stalemate: no legal moves, and no check."),
+                       ChesscoreStatusRepetition: L("The same position came up three times."),
+                       ChesscoreStatusFiftyMove: L("Fifty moves without a capture or a pawn move."),
+                       ChesscoreStatusInsufficient: L("Neither side has enough left to mate.")][status] ?? L("The game is drawn.")
+            f = Finish(outcome: .draw, title: L("A draw"), text: why, accuracy: accuracy, great: great, blunders: blunders)
         }
         var final = f
         final.goodMoves = trail.filter { $0.card.kind == .good || $0.card.kind == .great }.count
@@ -1135,7 +1149,7 @@ final class GameModel {
             let wasLocked = next.map { !$0.isUnlocked } ?? false
             final.firstWin = Stats.wins(against: opponent) == 0
             Stats.addWin(against: opponent)
-            final = Finish(outcome: .won, title: "You beat the \(opponent.name)!", text: f.text,
+            final = Finish(outcome: .won, title: L("You beat the \(opponent.name)!"), text: f.text,
                            accuracy: f.accuracy, great: f.great, blunders: f.blunders, goodMoves: final.goodMoves,
                            firstWin: final.firstWin)
             if let next, wasLocked {
@@ -1238,7 +1252,20 @@ final class GameModel {
     }
 
     static func pieceName(_ c: Character) -> String {
-        ["p": "pawn", "n": "knight", "b": "bishop", "r": "rook", "q": "queen", "k": "king"][Character(c.lowercased())] ?? "piece"
+        localizedPiece(["p": "pawn", "n": "knight", "b": "bishop", "r": "rook", "q": "queen", "k": "king"][Character(c.lowercased())] ?? "piece")
+    }
+
+    /// A piece's English name ("knight") in the player's language.
+    nonisolated static func localizedPiece(_ english: String) -> String {
+        switch english {
+        case "pawn": L("pawn")
+        case "knight": L("knight")
+        case "bishop": L("bishop")
+        case "rook": L("rook")
+        case "queen": L("queen")
+        case "king": L("king")
+        default: L("piece")
+        }
     }
 
     /// Pieces the given side has captured, most valuable first.

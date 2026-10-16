@@ -75,6 +75,9 @@ private struct HomeScreen: View {
     @AppStorage("opponent") private var opponentRaw = Opponent.easy.rawValue
     @State private var settings = false
     @State private var history = false
+    @State private var learn = false
+    @AppStorage("learn.done") private var learned = false
+    @AppStorage("learn.cardClosed") private var cardClosed = false
     @State private var seat: Opponent = .easy
     @State private var swipe: CGFloat = 0
     private let saved = SavedGame.load()
@@ -96,6 +99,10 @@ private struct HomeScreen: View {
                     .font(Typeface.display(26)).tracking(-0.4)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 18)
+                if !learned && !cardClosed && saved == nil {
+                    learnCard
+                        .padding(.top, 16)
+                }
                 table
                     .padding(.top, 20)
                 cta
@@ -116,6 +123,8 @@ private struct HomeScreen: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
+            .frame(maxWidth: 560)
+            .frame(maxWidth: .infinity)
         }
         .scrollBounceBehavior(.basedOnSize)
         .foregroundStyle(Palette.ink)
@@ -123,12 +132,43 @@ private struct HomeScreen: View {
             if let saved, !saved.passAndPlay, let o = Opponent(rawValue: saved.opponent) { seat = o }
             else { seat = Opponent(rawValue: opponentRaw).flatMap { $0.isUnlocked ? $0 : nil } ?? .easy }
         }
-        .sheet(isPresented: $settings) { SettingsSheet().presentationDetents([.height(260)]) }
+        .sheet(isPresented: $settings) {
+            SettingsSheet(learn: {
+                settings = false
+                Task { try? await Task.sleep(for: .seconds(0.4)); learn = true }
+            })
+            .presentationDetents([.height(340)])
+        }
+        .fullScreenCover(isPresented: $learn) { LearnView { start(.engine, .easy) } }
         .sheet(isPresented: $history) {
             ScrollView { RecentGames(records: recent, limit: 20).padding(20) }
                 .presentationDetents([.medium, .large])
                 .presentationBackground(.regularMaterial)
         }
+    }
+
+    // MARK: New to chess
+
+    private var learnCard: some View {
+        HStack(spacing: 12) {
+            GlassPiece(code: "N").frame(width: 40, height: 40)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("New to chess?").font(.system(size: 15.5, weight: .semibold))
+                Text("Learn how the pieces move · 2 minutes").font(.system(size: 13)).foregroundStyle(Palette.mist)
+            }
+            Spacer(minLength: 0)
+            Button { Haptics.tap(); withAnimation { cardClosed = true } } label: {
+                Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Palette.mist)
+                    .frame(width: 28, height: 28).contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Not now")
+        }
+        .padding(.leading, 12).padding(.trailing, 6).padding(.vertical, 10)
+        .contentShape(.rect)
+        .onTapGesture { Haptics.tap(); learn = true }
+        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 18))
+        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: Bar
@@ -157,6 +197,9 @@ private struct HomeScreen: View {
                 OpponentAvatar(opponent: seat, size: 42)
                     .opacity(seat.isUnlocked ? 1 : 0.5)
                 VStack(alignment: .leading, spacing: 1) {
+                    // Labelled, so the name never reads as a greeting to the player.
+                    Text("Your opponent").font(.system(size: 10.5, weight: .bold)).tracking(1).textCase(.uppercase)
+                        .foregroundStyle(Palette.mist)
                     Text(seat.name).font(Typeface.display(19))
                     Text(seatLine).font(.system(size: 13)).foregroundStyle(Palette.mist)
                 }
@@ -231,8 +274,8 @@ private struct HomeScreen: View {
     }
 
     private var seatLine: String {
-        if !seat.isUnlocked { return "\(seat.subtitle) · locked" }
-        if let s = savedHere { return "Your game · move \(s.moves.count / 2 + 1)" }
+        if !seat.isUnlocked { return L("\(seat.subtitle) · locked") }
+        if let s = savedHere { return L("Your game · move \(s.moves.count / 2 + 1)") }
         return seat.subtitle
     }
 
@@ -323,23 +366,23 @@ private struct HomeScreen: View {
 
     private var historySummary: String? {
         let a = recent.filter { $0.opponent != "Pass & play" }.compactMap(\.accuracy).prefix(10)
-        guard a.count >= 2 else { return "\(recent.count) played" }
-        return "\(a.reduce(0, +) / a.count)% lately"
+        guard a.count >= 2 else { return L("\(recent.count) played") }
+        return L("\(a.reduce(0, +) / a.count)% lately")
     }
 
     private var greeting: String {
         switch Calendar.current.component(.hour, from: .now) {
-        case 5..<12: "Good morning"
-        case 12..<17: "Good afternoon"
-        default: "Good evening"
+        case 5..<12: L("Good morning")
+        case 12..<17: L("Good afternoon")
+        default: L("Good evening")
         }
     }
 }
 
 private struct SectionLabel: View {
-    let text: String
+    let text: LocalizedStringKey
     var body: some View {
-        Text(text.uppercased())
+        Text(text).textCase(.uppercase)
             .font(.system(size: 11, weight: .bold)).tracking(1.2)
             .foregroundStyle(Palette.mist)
     }
@@ -572,7 +615,7 @@ private struct RecentGames: View {
         guard recent.count >= 2 else { return nil }
         let avg = recent.reduce(0, +) / recent.count
         let great = Stats.greatMoves
-        return great > 0 ? "\(avg)% lately · \(great) great moves" : "\(avg)% lately"
+        return great > 0 ? L("\(avg)% lately · \(great) great moves") : L("\(avg)% lately")
     }
 
     var body: some View {
@@ -591,7 +634,7 @@ private struct RecentGames: View {
                     ForEach(Array(shown.enumerated()), id: \.element.id) { k, r in
                         HStack(spacing: 12) {
                             Group {
-                                if let o = r.level.flatMap(Opponent.init) ?? Opponent.allCases.first(where: { $0.name == r.opponentName }) {
+                                if let o = r.resolvedLevel.flatMap(Opponent.init) {
                                     OpponentAvatar(opponent: o, size: 30)
                                 } else {
                                     Image(systemName: "person.2.fill").font(.system(size: 13)).foregroundStyle(Palette.mist)
@@ -630,14 +673,37 @@ private struct RecentGames: View {
 }
 
 private struct SettingsSheet: View {
+    var learn: () -> Void = {}
     @AppStorage("sound") private var sound = true
     @AppStorage("haptics") private var haptics = true
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text("Settings").font(Typeface.display(22))
             Toggle("Sound", isOn: $sound)
             Toggle("Haptics", isOn: $haptics)
+            Button { learn() } label: {
+                HStack {
+                    Label("Learn the moves", systemImage: "graduationcap")
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Palette.mist)
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            // iOS keeps each app's language in Settings; this opens that page.
+            Button { openURL(URL(string: UIApplication.openSettingsURLString)!) } label: {
+                HStack {
+                    Label("Language", systemImage: "globe")
+                    Spacer()
+                    Text(Locale.current.localizedString(forLanguageCode: Locale.current.language.languageCode?.identifier ?? "en") ?? "")
+                        .foregroundStyle(Palette.mist)
+                    Image(systemName: "arrow.up.forward").font(.system(size: 12, weight: .semibold)).foregroundStyle(Palette.mist)
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
             Text("Light and dark follow your iPhone's appearance.")
                 .font(.system(size: 13)).foregroundStyle(Palette.mist)
         }
@@ -698,33 +764,67 @@ struct GameScreen: View {
     /// How far the screen has been pulled from the left edge, on the way home.
     @State private var pull: CGFloat = 0
 
+    /// The coach card, with its swipe to step through past moves, and a way
+    /// back to the game while looking back.
+    private var coach: some View {
+        VStack(spacing: 6) {
+            CoachView(card: model.coach, opponent: model.opponent, friend: model.mode == .friend ? model.friendName : nil)
+                .padding(.top, 4)
+                .contentShape(.rect)
+                // Swipe right for the move before, left for the move after.
+                .gesture(DragGesture(minimumDistance: 24).onEnded { v in
+                    guard abs(v.translation.width) > abs(v.translation.height), abs(v.translation.width) > 40 else { return }
+                    withAnimation(.smooth(duration: 0.3)) { model.step(v.translation.width > 0 ? -1 : 1) }
+                })
+            if model.reviewing != nil {
+                Button { Haptics.tap(); model.endReview() } label: {
+                    Label("Back to game", systemImage: "arrow.uturn.forward")
+                }
+                .font(.system(size: 13.5, weight: .semibold))
+                .buttonStyle(.glass)
+                .buttonBorderShape(.capsule)
+                .transition(.opacity)
+            }
+        }
+    }
+
     var body: some View {
         ZStack {
-            VStack(spacing: 6) {
-                TopBar(model: model, back: back)
-                CapturedRow(pieces: model.captured(by: "b"), lead: model.materialLead(for: "b"))
-                BoardView(model: model)
-                CapturedRow(pieces: model.captured(by: "w"), lead: model.materialLead(for: "w"))
-                CoachView(card: model.coach, opponent: model.opponent, friend: model.mode == .friend ? model.friendName : nil)
-                    .padding(.top, 4)
-                    .contentShape(.rect)
-                    // Swipe right for the move before, left for the move after.
-                    .gesture(DragGesture(minimumDistance: 24).onEnded { v in
-                        guard abs(v.translation.width) > abs(v.translation.height), abs(v.translation.width) > 40 else { return }
-                        withAnimation(.smooth(duration: 0.3)) { model.step(v.translation.width > 0 ? -1 : 1) }
-                    })
-                // Looking back at a past move: a quiet way back to the game.
-                if model.reviewing != nil {
-                    Button { Haptics.tap(); model.endReview() } label: {
-                        Label("Back to game", systemImage: "arrow.uturn.forward")
+            GeometryReader { geo in
+                // A wide screen (iPad in landscape): the board on the left, the
+                // coach and controls in a column beside it. Otherwise one
+                // column, kept to a comfortable width on iPad.
+                if geo.size.width > 700 && geo.size.width > geo.size.height {
+                    HStack(alignment: .center, spacing: 28) {
+                        VStack(spacing: 6) {
+                            CapturedRow(pieces: model.captured(by: "b"), lead: model.materialLead(for: "b"))
+                            BoardView(model: model)
+                            CapturedRow(pieces: model.captured(by: "w"), lead: model.materialLead(for: "w"))
+                        }
+                        .frame(width: min(geo.size.height - 70, geo.size.width - 420))
+                        VStack(spacing: 10) {
+                            TopBar(model: model, back: back)
+                            coach
+                            Spacer(minLength: 0)
+                            Dock(model: model)
+                        }
+                        .frame(width: 360)
                     }
-                    .font(.system(size: 13.5, weight: .semibold))
-                    .buttonStyle(.glass)
-                    .buttonBorderShape(.capsule)
-                    .transition(.opacity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.vertical, 12)
+                } else {
+                    VStack(spacing: 6) {
+                        TopBar(model: model, back: back)
+                        CapturedRow(pieces: model.captured(by: "b"), lead: model.materialLead(for: "b"))
+                        BoardView(model: model)
+                        CapturedRow(pieces: model.captured(by: "w"), lead: model.materialLead(for: "w"))
+                        coach
+                        Spacer(minLength: 0)
+                        Dock(model: model)
+                    }
+                    .frame(maxWidth: min(760, geo.size.height * 0.6))
+                    .frame(maxWidth: .infinity)
                 }
-                Spacer(minLength: 0)
-                Dock(model: model)
             }
             .padding(.horizontal, 14)
             .padding(.bottom, 8)
@@ -798,11 +898,11 @@ private struct TopBar: View {
     }
 
     private var stateText: String {
-        if model.isOver { return "Game over" }
-        if model.thinking { return "Thinking" }
-        if model.mode == .passAndPlay { return model.turn == "w" ? "White to move" : "Black to move" }
-        if model.mode == .friend { return model.turn == model.myColor ? "Your move" : "Their move" }
-        return model.turn == "w" ? "Your move" : ""
+        if model.isOver { return L("Game over") }
+        if model.thinking { return L("Thinking") }
+        if model.mode == .passAndPlay { return model.turn == "w" ? L("White to move") : L("Black to move") }
+        if model.mode == .friend { return model.turn == model.myColor ? L("Your move") : L("Their move") }
+        return model.turn == "w" ? L("Your move") : ""
     }
 }
 
@@ -1083,7 +1183,8 @@ private struct FinishCard: View {
                                 }
                             }
                             let left = Opponent.winsToUnlock - toward.wins
-                            Text("\(left) more \(left == 1 ? "win" : "wins") to face the \(toward.next.name)")
+                            Text(left == 1 ? L("1 more win to face the \(toward.next.name)")
+                                           : L("\(left) more wins to face the \(toward.next.name)"))
                         }
                         .font(.system(size: 13.5, weight: .medium))
                     }
@@ -1118,6 +1219,7 @@ private struct FinishCard: View {
                 .padding(.top, 4)
             }
             .padding(.horizontal, 24).padding(.top, 28).padding(.bottom, 26)
+            .frame(maxWidth: 460)
             .glassEffect(.regular, in: .rect(cornerRadius: 32))
             .overlay(alignment: .top) {
                 if finish.outcome == .won { Celebration().offset(y: 40) }
@@ -1130,14 +1232,14 @@ private struct FinishCard: View {
     /// "94% accuracy · 2 great · 3 good", leaving out what's zero or unknown.
     private var numbers: String {
         if let s = finish.sides {
-            return s.white + s.black == 0 ? "A game for two" : "White \(s.white) great · Black \(s.black) great"
+            return s.white + s.black == 0 ? L("A game for two") : L("White \(s.white) great · Black \(s.black) great")
         }
         var parts: [String] = []
-        if let a = finish.accuracy { parts.append("\(a)% accuracy") }
-        if finish.great > 0 { parts.append("\(finish.great) great") }
+        if let a = finish.accuracy { parts.append(L("\(a)% accuracy")) }
+        if finish.great > 0 { parts.append(L("\(finish.great) great")) }
         let good = finish.goodMoves - finish.great
-        if good > 0 { parts.append("\(good) good") }
-        return parts.isEmpty ? "Every game teaches something" : parts.joined(separator: " · ")
+        if good > 0 { parts.append(L("\(good) good")) }
+        return parts.isEmpty ? L("Every game teaches something") : parts.joined(separator: " · ")
     }
 }
 

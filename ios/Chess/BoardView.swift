@@ -237,7 +237,7 @@ private struct RaysLayer: View {
         ZStack {
             if let rays {
                 let color: Color = switch rays.kind {
-                case .options, .chosen: Palette.accent
+                case .options, .chosen: Palette.ray
                 case .thinking: Palette.thinking
                 case .hint: Palette.great
                 }
@@ -256,7 +256,8 @@ private struct RaysLayer: View {
     private func kindKey(_ k: Rays.Kind) -> String { "\(k)" }
 }
 
-private struct Ray: View {
+/// One line of light from a square to another; a knight's bends into its L.
+struct Ray: View {
     let move: BoardMove
     let knight: Bool
     let size: CGFloat

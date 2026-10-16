@@ -10,6 +10,8 @@
 		0C0000000000000000000008 /* Chesscore.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0C0000000000000000000007 /* Chesscore.xcframework */; };
 		0C0000000000000000000022 /* Chesscore.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0C0000000000000000000007 /* Chesscore.xcframework */; };
 		0C0000000000000000000023 /* Messages.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0C0000000000000000000020 /* Messages.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E088DE433082E88D005000B1 /* Chess-InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E088DE3E3082E88D005000B1 /* Chess-InfoPlist.strings */; };
+		E088DE443082E88D005000B1 /* Messages-InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E088DE3F3082E88D005000B1 /* Messages-InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,6 +42,10 @@
 		0C0000000000000000000006 /* Chess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chess.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0C0000000000000000000007 /* Chesscore.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Chesscore.xcframework; sourceTree = "<group>"; };
 		0C0000000000000000000020 /* Messages.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Messages.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E07D97BD3082E88F0065FF54 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = "es.lproj/Chess-InfoPlist.strings"; sourceTree = "<group>"; };
+		E07D97BE3082E88F0065FF54 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = "es.lproj/Messages-InfoPlist.strings"; sourceTree = "<group>"; };
+		E088DE403082E88D005000B1 /* hi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hi; path = "hi.lproj/Messages-InfoPlist.strings"; sourceTree = "<group>"; };
+		E088DE413082E88D005000B1 /* hi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hi; path = "hi.lproj/Chess-InfoPlist.strings"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -92,6 +98,8 @@
 		0C0000000000000000000002 = {
 			isa = PBXGroup;
 			children = (
+				E088DE3E3082E88D005000B1 /* Chess-InfoPlist.strings */,
+				E088DE3F3082E88D005000B1 /* Messages-InfoPlist.strings */,
 				0C0000000000000000000005 /* Chess */,
 				0C0000000000000000000021 /* Messages */,
 				0C0000000000000000000004 /* Frameworks */,
@@ -186,6 +194,8 @@
 			knownRegions = (
 				en,
 				Base,
+				hi,
+				es,
 			);
 			mainGroup = 0C0000000000000000000002;
 			minimizedProjectReferenceProxies = 1;
@@ -205,6 +215,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E088DE433082E88D005000B1 /* Chess-InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -212,6 +223,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E088DE443082E88D005000B1 /* Messages-InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -241,6 +253,27 @@
 			targetProxy = 0C0000000000000000000025 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		E088DE3E3082E88D005000B1 /* Chess-InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E088DE413082E88D005000B1 /* hi */,
+				E07D97BD3082E88F0065FF54 /* es */,
+			);
+			name = "Chess-InfoPlist.strings";
+			sourceTree = "<group>";
+		};
+		E088DE3F3082E88D005000B1 /* Messages-InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E088DE403082E88D005000B1 /* hi */,
+				E07D97BE3082E88F0065FF54 /* es */,
+			);
+			name = "Messages-InfoPlist.strings";
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		0C000000000000000000000F /* Debug */ = {
@@ -309,6 +342,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -318,7 +352,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -341,6 +375,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -350,7 +385,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -378,7 +413,7 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG MESSAGES $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -406,7 +441,7 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "MESSAGES $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};

@@ -5,8 +5,8 @@ import SwiftUI
 struct ChessActivity: GroupActivity {
     var metadata: GroupActivityMetadata {
         var m = GroupActivityMetadata()
-        m.title = "Cozy Chess"
-        m.subtitle = "A calm game of chess"
+        m.title = L("Cozy Chess")
+        m.subtitle = L("A calm game of chess")
         m.type = .generic
         return m
     }
@@ -82,7 +82,7 @@ final class SharePlay: NSObject {
         let color = state.white == session.localParticipant.id ? "w" : "b"
         if white != state.white || model.link !== self {
             white = state.white
-            model.startFriend(name: "Your friend", color: color, moves: state.moves, link: self)
+            model.startFriend(name: GameModel.unnamedFriend, color: color, moves: state.moves, link: self)
             showGame()
         }
         model.receive(moves: state.moves, resigned: state.resigned)
@@ -90,7 +90,7 @@ final class SharePlay: NSObject {
 
     private func open(moves: [String]) {
         guard let model else { return }
-        model.startFriend(name: "Your friend", color: "w", moves: moves, link: self)
+        model.startFriend(name: GameModel.unnamedFriend, color: "w", moves: moves, link: self)
         showGame()
     }
 

@@ -63,7 +63,7 @@ final class GameCenter: NSObject {
         let request = GKMatchRequest()
         request.minPlayers = 2
         request.maxPlayers = 2
-        request.inviteMessage = "Let's play a calm game of chess."
+        request.inviteMessage = L("Let's play a calm game of chess.")
         let vc = GKTurnBasedMatchmakerViewController(matchRequest: request)
         vc.turnBasedMatchmakerDelegate = self
         vc.showExistingMatches = false
@@ -85,7 +85,7 @@ final class GameCenter: NSObject {
     /// The friend's name, or a placeholder while the invitation is out.
     static func friendName(in match: GKTurnBasedMatch) -> String {
         let other = match.participants.first { $0.player?.gamePlayerID != GKLocalPlayer.local.gamePlayerID }
-        return other?.player?.displayName ?? "Your friend"
+        return other?.player?.displayName ?? GameModel.unnamedFriend
     }
 
     static func moves(in match: GKTurnBasedMatch) -> [String] {
