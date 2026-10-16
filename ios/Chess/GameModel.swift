@@ -122,6 +122,7 @@ struct SavedGame: Codable {
     let great: Int
     let blunders: Int
     let hintsLeft: Int
+    var evals: [Int?]?
     /// Extra hints already given for falling behind; missing in older saves.
     var comebacks: Int?
     let fen: String
@@ -224,6 +225,9 @@ final class GameModel {
     /// White's share of the position, 0 to 1. The board's warm light sits on
     /// the side that is ahead.
     private(set) var whiteShare = 0.5
+    /// The evaluation after each half-move, in centipawns from White's side,
+    /// for the game line. A gap means it was never measured (older saves).
+    private(set) var evals: [Int?] = []
     private(set) var busy = false
     private(set) var thinking = false
     private(set) var losses: [Int] = []
@@ -258,7 +262,8 @@ final class GameModel {
     @ObservationIgnored private var serial = 0
     @ObservationIgnored private var great = 0
     @ObservationIgnored private var blunders = 0
-    @ObservationIgnored private var moves: [String] = []
+    /// The game so far in UCI; observed, because the game line grows with it.
+    private(set) var moves: [String] = []
     /// The hint already paid for in this position, shown again for free.
     @ObservationIgnored private var hintShown: (ply: Int, uci: String, text: String)?
     /// The piece a hint is pointing at, before it shows the whole move.
@@ -319,6 +324,7 @@ final class GameModel {
         busy = false
         thinking = false
         whiteShare = 0.5
+        evals = []
         trail = []
         moves = []
         hintsLeft = mode == .engine ? opponent.hints : 3
@@ -351,20 +357,51 @@ final class GameModel {
         blunders = saved.blunders
         hintsLeft = saved.hintsLeft
         comebacks = saved.comebacks ?? 0
+        evals = Array((saved.evals ?? []).prefix(moves.count))
+        if let cp = evals.last ?? nil { whiteShare = abs(cp) >= 9000 ? (cp > 0 ? 1 : 0) : 1 / (1 + exp(-Double(cp) / 220)) }
         ids = Array(repeating: nil, count: 64)
         refresh()
         if let last = moves.last { lastMove = BoardMove(uci: last, board: board) }
         moveSerial += 1
         say(.coach, "✦", "Welcome back", "Your game is where you left it.")
         save()
+        fillEvals()
         if mode == .engine, turn == "b", !isOver { engineTurn() }
         return true
+    }
+
+    /// Games saved before the game line existed have no evaluations. Measures
+    /// the missing ones in the background so the line tells the whole story.
+    private func fillEvals() {
+        let moves = self.moves, have = evals
+        guard have.count < moves.count || have.contains(where: { $0 == nil }) else { return }
+        let game = self.game
+        Task.detached(priority: .utility) {
+            guard let g = ChesscoreNewGame() else { return }
+            var out: [Int?] = []
+            for (i, m) in moves.enumerated() {
+                guard g.play(m) else { break }
+                out.append(i < have.count && have[i] != nil ? have[i] : g.eval(2))
+            }
+            await MainActor.run {
+                guard game === self.game else { return }
+                var merged = out
+                for i in self.evals.indices {
+                    if i < merged.count { if let v = self.evals[i] { merged[i] = v } } else { merged.append(self.evals[i]) }
+                }
+                self.evals = Array(merged.prefix(self.moves.count))
+                if self.moves.count == out.count, let cp = out.last ?? nil {
+                    self.whiteShare = abs(cp) >= 9000 ? (cp > 0 ? 1 : 0) : 1 / (1 + exp(-Double(cp) / 220))
+                }
+                self.save()
+            }
+        }
     }
 
     private func save() {
         guard !isOver else { SavedGame.clear(); return }
         SavedGame(passAndPlay: mode == .passAndPlay, opponent: opponent.rawValue, moves: moves, trail: trail,
-                  losses: losses, great: great, blunders: blunders, hintsLeft: hintsLeft, comebacks: comebacks,
+                  losses: losses, great: great, blunders: blunders, hintsLeft: hintsLeft, evals: evals, comebacks: comebacks,
                   fen: game.fen()).store()
     }
 
@@ -378,7 +415,7 @@ final class GameModel {
             showPosition(afterPly: entry.ply)
             coach = CoachCard(id: bump(), kind: entry.card.kind, badge: entry.card.badge,
                               title: "\((entry.ply / 2) + 1). \(entry.san) · \(entry.card.kind.verdict?.title ?? entry.card.title)",
-                              text: entry.card.text)
+                              text: entry.card.text.replacingOccurrences(of: " Undo and try again.", with: ""))
         }
     }
 
@@ -397,6 +434,15 @@ final class GameModel {
         rays = nil
         review(trail[next])
         emit(.select)
+    }
+
+    /// Shows a past move without toggling, for scrubbing along the game line.
+    func show(_ entry: TrailEntry) {
+        guard reviewing != entry.id else { return }
+        selected = nil
+        rays = nil
+        nudge = nil
+        review(entry)
     }
 
     func endReview() {
@@ -515,7 +561,7 @@ final class GameModel {
         }
         let gestures = [("tip.hold", "Hold any piece to see what guards it and what attacks it."),
                         ("tip.drag", "You can drag pieces as well as tap them."),
-                        ("tip.swipe", "Swipe this card to look back at earlier moves.")]
+                        ("tip.line", "Drag along the line under the board to look back at your moves.")]
         if let (key, text) = gestures.first(where: { !UserDefaults.standard.bool(forKey: $0.0) }) {
             UserDefaults.standard.set(true, forKey: key)
             return text
@@ -664,6 +710,7 @@ final class GameModel {
         }
         if !losses.isEmpty { losses.removeLast() }
         if !trail.isEmpty { trail.removeLast() }
+        evals = Array(evals.prefix(moves.count))
         hintShown = nil
         reviewing = nil
         selected = nil
@@ -735,7 +782,12 @@ final class GameModel {
         let words = kind.verdict ?? ("Good move", "✓")
         let nudge = kind == .blunder ? " Undo and try again." : ""
         say(kind, words.badge, words.title, v.text + nudge)
-        if let card = coach { trail.append(TrailEntry(id: bump(), ply: ply, san: san, card: card)) }
+        // The trail keeps the verdict without "Undo and try again", which only
+        // makes sense right after the move.
+        if let card = coach {
+            let kept = CoachCard(id: card.id, kind: card.kind, badge: card.badge, title: card.title, text: v.text)
+            trail.append(TrailEntry(id: bump(), ply: ply, san: san, card: kept))
+        }
         reviewing = nil
         emit(kind == .great ? .great : kind == .good ? .good : .bad)
         save()
@@ -915,6 +967,10 @@ final class GameModel {
 
     private func setEval(_ cp: Int) {
         whiteShare = abs(cp) >= 9000 ? (cp > 0 ? 1 : 0) : 1 / (1 + exp(-Double(cp) / 220))
+        let i = moves.count - 1
+        guard i >= 0 else { return }
+        if evals.count <= i { evals += Array(repeating: nil, count: i + 1 - evals.count) }
+        evals[i] = cp
     }
 
     private func say(_ kind: CoachCard.Kind, _ badge: String, _ title: String, _ text: String) {

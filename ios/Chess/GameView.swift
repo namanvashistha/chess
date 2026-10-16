@@ -526,7 +526,7 @@ private struct GameScreen: View {
                         guard abs(v.translation.width) > abs(v.translation.height), abs(v.translation.width) > 40 else { return }
                         withAnimation(.smooth(duration: 0.3)) { model.step(v.translation.width > 0 ? -1 : 1) }
                     })
-                MoveTrail(model: model)
+                GameLine(model: model)
                 Spacer(minLength: 0)
                 Dock(model: model)
             }
@@ -724,65 +724,157 @@ private struct CoachView: View {
 
 /// Every rated move so far, as chips coloured by verdict. Tapping one shows its
 /// verdict again.
-private struct MoveTrail: View {
+/// The game as a line: up while the player is ahead, down while behind, with
+/// a bead for each of the player's moves in its verdict's colour. Drag along
+/// it to rewind the board to any of those moves.
+private struct GameLine: View {
     let model: GameModel
+    private let height: CGFloat = 64
+    private let pad: CGFloat = 8
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if model.trail.isEmpty {
-                Text("Your moves and how good they were will collect here.")
+            header
+            if model.moves.isEmpty {
+                Text("As you play, a line grows here: up when you're ahead, down when you're behind.")
                     .font(.system(size: 12.5)).foregroundStyle(Palette.mist)
                     .padding(.horizontal, 4)
             } else {
-                ScrollViewReader { proxy in
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(model.trail) { e in
-                                Button { model.review(e) } label: {
-                                    HStack(spacing: 5) {
-                                        Circle().fill(verdictColor(e.card.kind)).frame(width: 7, height: 7)
-                                        Text(e.san).font(.system(size: 13, weight: .semibold)).monospacedDigit()
-                                    }
-                                    .padding(.horizontal, 10).padding(.vertical, 7)
-                                    .contentShape(.capsule)
-                                }
-                                .buttonStyle(PressableStyle(scale: 0.92))
-                                .glassEffect(model.reviewing == e.id ? .regular.tint(Palette.accent.opacity(0.3)) : .regular,
-                                             in: .capsule)
-                                .id(e.id)
-                                .accessibilityLabel("\(e.san), \(e.card.title)")
-                            }
-                        }
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 2)
-                    }
-                    .scrollEdgeEffectHidden(true, for: .all)
-                    // let the chips' glass shadows draw past the row instead of being cut into a band
-                    .scrollClipDisabled()
-                    .onChange(of: model.trail.count) { _, _ in
-                        if let last = model.trail.last { withAnimation { proxy.scrollTo(last.id, anchor: .trailing) } }
-                    }
-                    .onChange(of: model.reviewing) { _, id in
-                        if let id { withAnimation { proxy.scrollTo(id, anchor: .center) } }
-                    }
+                GeometryReader { geo in
+                    line(width: geo.size.width)
                 }
-                if model.reviewing != nil {
-                    HStack {
-                        Label("Swipe the card to step through", systemImage: "hand.draw")
-                            .font(.system(size: 12.5)).foregroundStyle(Palette.mist)
-                        Spacer()
-                        Button("Back to game") { Haptics.tap(); model.endReview() }
-                            .font(.system(size: 13, weight: .semibold))
-                            .buttonStyle(.glass)
-                            .buttonBorderShape(.capsule)
-                    }
-                    .padding(.horizontal, 2)
-                    .transition(.opacity)
-                }
+                .frame(height: height)
+                .padding(.horizontal, 4)
+                .accessibilityElement()
+                .accessibilityLabel("Game line")
+                .accessibilityValue(status)
+                .accessibilityAdjustableAction { dir in model.step(dir == .increment ? 1 : -1) }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 2)
+        .animation(.smooth(duration: 0.3), value: model.reviewing)
+    }
+
+    // MARK: Header
+
+    private var header: some View {
+        HStack {
+            if let e = reviewed {
+                Text("Move \(e.ply / 2 + 1) · \(e.card.kind.verdict?.title ?? e.card.title)")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(verdictColor(e.card.kind))
+                Spacer()
+                Button("Back to game") { Haptics.tap(); model.endReview() }
+                    .font(.system(size: 13, weight: .semibold))
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.capsule)
+            } else if !model.moves.isEmpty {
+                Text(status).font(.system(size: 13, weight: .semibold)).foregroundStyle(Palette.ink)
+                Spacer()
+                if !model.trail.isEmpty {
+                    Label("Drag to look back", systemImage: "hand.draw")
+                        .font(.system(size: 12)).foregroundStyle(Palette.mist)
+                }
+            }
+        }
+        .padding(.horizontal, 4)
+        .frame(minHeight: 30)
+    }
+
+    private var reviewed: TrailEntry? {
+        model.reviewing.flatMap { id in model.trail.first { $0.id == id } }
+    }
+
+    private var status: String {
+        let share = model.whiteShare
+        if model.mode == .passAndPlay {
+            return share > 0.6 ? "White is ahead" : share < 0.4 ? "Black is ahead" : "Even game"
+        }
+        return share > 0.6 ? "You're ahead" : share < 0.4 ? "You're behind" : "Even game"
+    }
+
+    // MARK: Line
+
+    /// White's share of the position after each half-move, from the start.
+    private var shares: [Double] {
+        var out: [Double] = [0.5]
+        var last = 0
+        for k in 0..<model.moves.count {
+            if model.evals.indices.contains(k), let cp = model.evals[k] { last = cp }
+            let cp = Double(max(-1500, min(1500, last)))
+            out.append(1 / (1 + exp(-cp / 220)))
+        }
+        return out
+    }
+
+    /// The line fills the width as the game goes; early on it grows from the left.
+    private func x(_ k: Int, _ w: CGFloat) -> CGFloat {
+        let span = CGFloat(max(model.moves.count, 16))
+        return pad + CGFloat(k) / span * (w - 2 * pad)
+    }
+
+    private func y(_ share: Double) -> CGFloat {
+        pad + CGFloat(1 - share) * (height - 2 * pad)
+    }
+
+    @ViewBuilder
+    private func line(width w: CGFloat) -> some View {
+        let s = shares
+        let pts = s.indices.map { CGPoint(x: x($0, w), y: y(s[$0])) }
+        let mid = height / 2
+        ZStack(alignment: .topLeading) {
+            // Even: a quiet dashed rule across the middle.
+            Path { p in p.move(to: CGPoint(x: 0, y: mid)); p.addLine(to: CGPoint(x: w, y: mid)) }
+                .stroke(Palette.mist.opacity(0.4), style: StrokeStyle(lineWidth: 0.75, dash: [3, 3]))
+            // The area between the line and even, so the lead reads as weight.
+            Self.smooth(pts, closingAt: mid)
+                .fill(Palette.accent.opacity(0.1))
+            Self.smooth(pts)
+                .stroke(Palette.accent, style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
+            if let e = reviewed, pts.indices.contains(e.ply + 1) {
+                Rectangle().fill(Palette.ink.opacity(0.35))
+                    .frame(width: 1, height: height)
+                    .position(x: pts[e.ply + 1].x, y: mid)
+            }
+            ForEach(model.trail) { e in
+                if pts.indices.contains(e.ply + 1) {
+                    let on = model.reviewing == e.id
+                    let great = e.card.kind == .great
+                    Circle()
+                        .fill(verdictColor(e.card.kind))
+                        .frame(width: great ? 11 : 8, height: great ? 11 : 8)
+                        .overlay(Circle().strokeBorder(Palette.backgroundTop, lineWidth: great || on ? 1.5 : 0))
+                        .scaleEffect(on ? 1.5 : 1)
+                        .position(pts[e.ply + 1])
+                }
+            }
+        }
+        .contentShape(Rectangle())
+        .gesture(DragGesture(minimumDistance: 0).onChanged { v in
+            // Snap to the nearest of the player's moves.
+            guard let e = model.trail.min(by: {
+                abs(x($0.ply + 1, w) - v.location.x) < abs(x($1.ply + 1, w) - v.location.x)
+            }) else { return }
+            if model.reviewing != e.id {
+                model.show(e)
+                if Sound.hapticsOn { UISelectionFeedbackGenerator().selectionChanged() }
+            }
+        })
+    }
+
+    /// A smooth curve through the points; with `closingAt`, closed down to that height.
+    private static func smooth(_ pts: [CGPoint], closingAt base: CGFloat? = nil) -> Path {
+        Path { p in
+            guard let first = pts.first else { return }
+            if let base { p.move(to: CGPoint(x: first.x, y: base)); p.addLine(to: first) } else { p.move(to: first) }
+            for i in 1..<max(1, pts.count) {
+                let a = pts[i - 1], b = pts[i]
+                p.addQuadCurve(to: CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2), control: a)
+            }
+            if let last = pts.last { p.addLine(to: last) }
+            if let base, let last = pts.last { p.addLine(to: CGPoint(x: last.x, y: base)); p.closeSubpath() }
+        }
     }
 }
 
