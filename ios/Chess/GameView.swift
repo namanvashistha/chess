@@ -369,7 +369,7 @@ private struct ProgressCard: View {
                     }
                     .frame(height: 82, alignment: .bottom)
                     HStack(spacing: 6) {
-                        Text("!!").font(.system(size: 12, weight: .heavy)).foregroundStyle(Palette.great)
+                        Image(systemName: "star.fill").font(.system(size: 11)).foregroundStyle(Palette.great)
                         Text("\(Stats.greatMoves) great \(Stats.greatMoves == 1 ? "move" : "moves") found")
                             .font(.system(size: 13.5)).foregroundStyle(Palette.mist)
                     }
@@ -695,11 +695,16 @@ private struct CoachView: View {
             }
             .frame(width: 46, height: 46)
         } else {
-            Text(card.kind.verdict?.badge ?? card.badge)
-                .font(Typeface.display(20))
-                .foregroundStyle(card.kind == .coach ? Palette.onAccent : Palette.ink)
-                .frame(width: 46, height: 46)
-                .background(badgeFill(card.kind), in: .rect(cornerRadius: 14))
+            Group {
+                if let symbol = card.kind.symbol {
+                    Image(systemName: symbol).font(.system(size: 19, weight: .bold))
+                } else {
+                    Text(card.badge).font(Typeface.display(20))
+                }
+            }
+            .foregroundStyle(card.kind == .coach ? Palette.onAccent : Palette.ink)
+            .frame(width: 46, height: 46)
+            .background(badgeFill(card.kind), in: .rect(cornerRadius: 14))
         }
     }
 
@@ -730,7 +735,9 @@ private struct CoachView: View {
 private struct GameLine: View {
     let model: GameModel
     private let height: CGFloat = 64
-    private let pad: CGFloat = 8
+    private let pad: CGFloat = 10
+    /// The handle's one-time nudge, to show that it slides.
+    @State private var nudge: CGFloat = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -772,10 +779,8 @@ private struct GameLine: View {
             } else if !model.moves.isEmpty {
                 Text(status).font(.system(size: 13, weight: .semibold)).foregroundStyle(Palette.ink)
                 Spacer()
-                if !model.trail.isEmpty {
-                    Label("Drag to look back", systemImage: "hand.draw")
-                        .font(.system(size: 12)).foregroundStyle(Palette.mist)
-                }
+                Text("Move \(model.moves.count / 2 + 1)").font(.system(size: 12.5)).foregroundStyle(Palette.mist)
+                    .monospacedDigit()
             }
         }
         .padding(.horizontal, 4)
@@ -833,7 +838,7 @@ private struct GameLine: View {
             Self.smooth(pts)
                 .stroke(Palette.accent, style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
             if let e = reviewed, pts.indices.contains(e.ply + 1) {
-                Rectangle().fill(Palette.ink.opacity(0.35))
+                Rectangle().fill(Palette.ink.opacity(0.25))
                     .frame(width: 1, height: height)
                     .position(x: pts[e.ply + 1].x, y: mid)
             }
@@ -845,10 +850,32 @@ private struct GameLine: View {
                         .fill(verdictColor(e.card.kind))
                         .frame(width: great ? 11 : 8, height: great ? 11 : 8)
                         .overlay(Circle().strokeBorder(Palette.backgroundTop, lineWidth: great || on ? 1.5 : 0))
-                        .scaleEffect(on ? 1.5 : 1)
                         .position(pts[e.ply + 1])
                 }
             }
+            // The handle: a glass knob on the newest point, or on the move being
+            // looked at. It reads as something to slide, so it needs no label.
+            if let at = reviewed.flatMap({ pts.indices.contains($0.ply + 1) ? pts[$0.ply + 1] : nil }) ?? pts.last {
+                Circle()
+                    .fill(Palette.backgroundTop)
+                    .frame(width: 18, height: 18)
+                    .overlay(Circle().strokeBorder(Palette.accent, lineWidth: 2))
+                    .overlay(Circle().fill(Palette.accent).frame(width: 6, height: 6))
+                    .shadow(color: .black.opacity(0.18), radius: 3, y: 1.5)
+                    .position(at)
+                    .offset(x: nudge)
+                    .animation(.spring(response: 0.35, dampingFraction: 0.75), value: model.reviewing)
+                    .accessibilityHidden(true)
+            }
+        }
+        .task(id: model.trail.count > 1) {
+            // Once, when there are moves to slide back to: a small slide left and back.
+            guard model.trail.count > 1, !UserDefaults.standard.bool(forKey: "line.nudged") else { return }
+            UserDefaults.standard.set(true, forKey: "line.nudged")
+            try? await Task.sleep(for: .seconds(0.8))
+            withAnimation(.easeInOut(duration: 0.35)) { nudge = -18 }
+            try? await Task.sleep(for: .seconds(0.4))
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.55)) { nudge = 0 }
         }
         .contentShape(Rectangle())
         .gesture(DragGesture(minimumDistance: 0).onChanged { v in

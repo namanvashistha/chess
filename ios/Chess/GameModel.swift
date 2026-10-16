@@ -68,11 +68,23 @@ struct CoachCard: Equatable, Codable {
         /// chess terms (inaccuracy, mistake, blunder) stay out of sight.
         var verdict: (title: String, badge: String)? {
             switch self {
-            case .great: ("Great move", "!!")
+            case .great: ("Great move", "★")
             case .good: ("Good move", "✓")
-            case .inaccuracy: ("Almost", "≈")
-            case .mistake: ("Not quite", "↗")
-            case .blunder: ("Oops", "↺")
+            case .inaccuracy: ("Almost", "~")
+            case .mistake: ("Not quite", "?")
+            case .blunder: ("Oops", "↩")
+            default: nil
+            }
+        }
+
+        /// The everyday icon for a verdict: no chess notation.
+        var symbol: String? {
+            switch self {
+            case .great: "star.fill"
+            case .good: "checkmark"
+            case .inaccuracy: "hand.thumbsup.fill"
+            case .mistake: "questionmark"
+            case .blunder: "arrow.uturn.backward"
             default: nil
             }
         }
@@ -255,6 +267,11 @@ final class GameModel {
 
     @ObservationIgnored private var game: ChesscoreGame
     @ObservationIgnored private var beforeInspect: CoachCard?
+    /// When the verdict on the player's last move appeared.
+    @ObservationIgnored private var verdictShownAt: Date?
+    /// The verdict on the last move, pinned to the piece that made it until the
+    /// next move: the trail entry and the square the piece stands on.
+    private(set) var mark: (entry: TrailEntry, square: Square)?
     @ObservationIgnored private var legal: [String] = []
     @ObservationIgnored private var ids: [Int?] = Array(repeating: nil, count: 64)
     @ObservationIgnored private var nextID = 0
@@ -332,6 +349,7 @@ final class GameModel {
         reviewing = nil
         hintShown = nil
         nudge = nil
+        mark = nil
         hintRevealed = false
         if !keepingSave { SavedGame.clear() }
         refresh()
@@ -436,6 +454,22 @@ final class GameModel {
         emit(.select)
     }
 
+    /// The mark to draw: hidden while reviewing, or once its piece is gone.
+    var shownMark: (entry: TrailEntry, square: Square)? {
+        guard reviewing == nil, let mark, board.indices.contains(mark.square) else { return nil }
+        let piece = board[mark.square]
+        let moverIsWhite = mark.entry.ply % 2 == 0
+        guard piece != ".", piece.isUppercase == moverIsWhite else { return nil }
+        return mark
+    }
+
+    /// Tapping the mark: the coach shows that move's verdict again.
+    func revealMark() {
+        guard let mark = shownMark else { return }
+        coach = mark.entry.card
+        emit(.select)
+    }
+
     /// Shows a past move without toggling, for scrubbing along the game line.
     func show(_ entry: TrailEntry) {
         guard reviewing != entry.id else { return }
@@ -482,7 +516,7 @@ final class GameModel {
         let p = position(afterPly: entry.ply)
         let number = entry.ply / 2 + 1
         let label = entry.ply % 2 == 0 ? "\(number). \(entry.san)" : "\(number)… \(entry.san)"
-        return ShareMoment(board: p?.board ?? board, move: p?.move, title: "\(label)!!",
+        return ShareMoment(board: p?.board ?? board, move: p?.move, title: "\(label) · Great move",
                            detail: entry.card.text, footer: "Found with Cozy Chess")
     }
 
@@ -691,6 +725,7 @@ final class GameModel {
     }
 
     func undo() {
+        mark = nil
         nudge = nil
         hintRevealed = false
         var steps = mode == .engine ? 2 : 1
@@ -784,9 +819,12 @@ final class GameModel {
         say(kind, words.badge, words.title, v.text + nudge)
         // The trail keeps the verdict without "Undo and try again", which only
         // makes sense right after the move.
+        verdictShownAt = .now
         if let card = coach {
             let kept = CoachCard(id: card.id, kind: card.kind, badge: card.badge, title: card.title, text: v.text)
-            trail.append(TrailEntry(id: bump(), ply: ply, san: san, card: kept))
+            let entry = TrailEntry(id: bump(), ply: ply, san: san, card: kept)
+            trail.append(entry)
+            if let to = lastMove?.to { mark = (entry, to) }
         }
         reviewing = nil
         emit(kind == .great ? .great : kind == .good ? .good : .bad)
@@ -819,6 +857,11 @@ final class GameModel {
             }
             if let m = BoardMove(uci: choice, board: board) { rays = makeRays(.chosen, [m]) }
             try? await Task.sleep(for: .milliseconds(420))
+            // Let the verdict on the player's move be read before it's replaced.
+            if let shown = verdictShownAt {
+                let left = Self.readingTime(trail.last?.card) - Date.now.timeIntervalSince(shown)
+                if left > 0 { try? await Task.sleep(for: .seconds(left)) }
+            }
             guard game === self.game else { return }
             rays = nil
             thinking = false
@@ -834,6 +877,7 @@ final class GameModel {
             let tip = watchFor(lastMove, taken: taken)
             let extra = offerComebackHint(eval: eval) ? " You're behind, so here's an extra hint." : ""
             say(tip.urgent ? .warning : .opponent, san, tip.title, tip.text + extra)
+            verdictShownAt = nil
         }
     }
 
@@ -846,6 +890,9 @@ final class GameModel {
         moves.append(uci)
 
         history.append((ids, lastMove))
+        // A new move by the player replaces the old mark; the opponent's reply
+        // keeps it, unless it took that piece.
+        if mode == .passAndPlay || turn == "w" { mark = nil }
         nudge = nil
         hintRevealed = false
         let captured = moveIDs(from: from, to: to, before: before)
@@ -975,6 +1022,13 @@ final class GameModel {
 
     private func say(_ kind: CoachCard.Kind, _ badge: String, _ title: String, _ text: String) {
         coach = CoachCard(id: bump(), kind: kind, badge: badge, title: title, text: text)
+    }
+
+    /// How long the coach's verdict needs on screen to be read: longer for
+    /// longer lines, never under two seconds or over four.
+    private static func readingTime(_ card: CoachCard?) -> Double {
+        guard let card else { return 0 }
+        return min(4, max(2, 1.2 + Double(card.title.count + card.text.count) * 0.035))
     }
 
     private func emit(_ kind: Feedback.Kind) {

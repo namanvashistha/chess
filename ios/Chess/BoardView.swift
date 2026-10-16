@@ -33,6 +33,7 @@ struct BoardView: View {
                     RaysLayer(rays: model.rays, size: size)
                 }
                 PiecesLayer(model: model, size: size, drag: touch?.dragging == true ? touch : nil)
+                if !still { MarkLayer(model: model, size: size) }
                 ForEach(model.bursts) { b in
                     ShardBurst(dark: b.dark, size: size / 8)
                         .position(center(b.square, size))
@@ -96,7 +97,16 @@ extension BoardView {
                     }
                 } else {
                     touch = nil
-                    if !t.moved { model.tap(t.start) }
+                    guard !t.moved else { return }
+                    // The verdict badge sits on the top-right corner of its square.
+                    let q = size / 8
+                    if let m = model.shownMark, m.square == t.start,
+                       v.location.x - CGFloat(Squares.file(m.square)) * q > q * 0.55,
+                       v.location.y - CGFloat(Squares.row(m.square)) * q < q * 0.45 {
+                        model.revealMark()
+                    } else {
+                        model.tap(t.start)
+                    }
                 }
             }
     }
@@ -125,11 +135,13 @@ private struct SquaresLayer: View {
                         ZStack {
                             Rectangle().fill(dark ? Palette.squareDark : Palette.squareLight)
                             if let last, last.from == sq || last.to == sq {
-                                // The last move, easy to find: a warm wash on both squares,
-                                // stronger where the piece landed, with a soft edge there.
-                                Rectangle().fill(Palette.lastMove.opacity(sq == last.to ? 0.5 : 0.3))
+                                // The last move: a honey wash on both squares, lighter where
+                                // the piece left. Where it landed, the wash warms toward the
+                                // piece's base, so the eye finds it without a hard edge.
+                                Rectangle().fill(Palette.lastMove.opacity(sq == last.to ? 0.4 : 0.26))
                                 if sq == last.to {
-                                    Rectangle().strokeBorder(Palette.lastMove.opacity(0.9), lineWidth: max(1.5, q * 0.045))
+                                    RadialGradient(colors: [Palette.lastMove.opacity(0.45), .clear],
+                                                   center: UnitPoint(x: 0.5, y: 0.65), startRadius: 0, endRadius: q * 0.55)
                                 }
                             }
                             if sq == check {
@@ -307,6 +319,36 @@ private struct PiecesLayer: View {
         .frame(width: size, height: size)
         .allowsHitTesting(false)
         .animation(.spring(response: 0.42, dampingFraction: 0.72), value: model.moveSerial)
+    }
+}
+
+/// The verdict on the last move, as a small badge on the piece that made it.
+/// It pops in once and stays put until the next move.
+private struct MarkLayer: View {
+    let model: GameModel
+    let size: CGFloat
+
+    var body: some View {
+        let q = size / 8
+        ZStack {
+            if let m = model.shownMark, let symbol = m.entry.card.kind.symbol {
+                let c = center(m.square, size)
+                Image(systemName: symbol)
+                    .font(.system(size: q * 0.19, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: q * 0.4, height: q * 0.4)
+                    .background(verdictColor(m.entry.card.kind), in: .circle)
+                    .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: max(1, q * 0.03)))
+                    .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+                    .position(x: c.x + q * 0.33, y: c.y - q * 0.33)
+                    .transition(.scale(scale: 0.2).combined(with: .opacity))
+                    .id(m.entry.id)
+            }
+        }
+        .frame(width: size, height: size)
+        .allowsHitTesting(false)
+        .animation(.spring(response: 0.35, dampingFraction: 0.55), value: model.shownMark?.entry.id)
+        .accessibilityHidden(true)
     }
 }
 
