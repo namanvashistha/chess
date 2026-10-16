@@ -283,6 +283,8 @@ final class GameModel {
 
     @ObservationIgnored private var game: ChesscoreGame
     @ObservationIgnored private var beforeInspect: CoachCard?
+    /// Opponent turns with nothing to point out, for spacing out tips.
+    @ObservationIgnored private var quietTurns = 0
     /// When the verdict on the player's last move appeared.
     @ObservationIgnored private var verdictShownAt: Date?
     /// The verdict on the last move, pinned to the piece that made it until the
@@ -631,7 +633,9 @@ final class GameModel {
         if let sq = squares(game.loose(them)).first {
             return ("A chance", "Their \(name(sq)) is under attack and unguarded.", false)
         }
-        return (["Your move", "Your turn", "Over to you"][moves.count / 2 % 3], tip(), false)
+        // Nothing pressing: a quiet "Your move", with a tip only now and then.
+        quietTurns += 1
+        return ("Your move", quietTurns % 3 == 0 ? tip() : "", false)
     }
 
     /// A tip that fits the position, or one of the app's gestures, each shown once.
@@ -647,7 +651,7 @@ final class GameModel {
         }
         let gestures = [("tip.hold", "Hold any piece to see what guards it and what attacks it."),
                         ("tip.drag", "You can drag pieces as well as tap them."),
-                        ("tip.line", "Drag along the line under the board to look back at your moves.")]
+                        ("tip.swipe", "Swipe this card to look back at your earlier moves.")]
         if let (key, text) = gestures.first(where: { !UserDefaults.standard.bool(forKey: $0.0) }) {
             UserDefaults.standard.set(true, forKey: key)
             return text
@@ -869,10 +873,13 @@ final class GameModel {
         if kind == .blunder { blunders += 1 }
         let words = kind.verdict ?? ("Good move", "✓")
         let nudge = kind == .blunder ? " Undo and try again." : ""
-        say(kind, words.badge, words.title, v.text + nudge)
+        // A calm coach: a good move is the norm, so it gets the badge and a
+        // word, no explanation and no pause. Great moves and slips are worth
+        // a sentence and the time to read it.
+        say(kind, words.badge, words.title, kind == .good ? "" : v.text + nudge)
         // The trail keeps the verdict without "Undo and try again", which only
         // makes sense right after the move.
-        verdictShownAt = .now
+        verdictShownAt = kind == .good ? nil : .now
         if let card = coach {
             let kept = CoachCard(id: card.id, kind: card.kind, badge: card.badge, title: card.title, text: v.text)
             let entry = TrailEntry(id: bump(), ply: ply, san: san, card: kept)
