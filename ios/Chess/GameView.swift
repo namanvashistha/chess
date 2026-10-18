@@ -33,7 +33,8 @@ struct RootView: View {
     @State private var homeID = 0 // refreshes home's saved-game and history views on return
     /// The first-open welcome has been played (or skipped). Settings can reset it.
     @AppStorage("welcome.seen") private var welcomed = false
-    @State private var welcoming = false
+    /// Decided before the first frame, so a first run never glimpses home.
+    @State private var welcoming = RootView.firstRun()
     @State private var learnAfterWelcome = false
 
     /// The board carrying across between home and a game.
@@ -44,6 +45,16 @@ struct RootView: View {
     /// The arriving side changes nothing but must not be .identity, which
     /// would drop the board before it can carry across.
     static let screen = AnyTransition.asymmetric(insertion: .scale(scale: 0.999), removal: .opacity)
+
+    /// A true first run (or the -welcome launch argument). Someone who has
+    /// already played doesn't need the welcome and is marked as having seen it.
+    private static func firstRun() -> Bool {
+        let d = UserDefaults.standard
+        if !d.bool(forKey: "welcome.seen") && (!Stats.recent.isEmpty || SavedGame.load() != nil) {
+            d.set(true, forKey: "welcome.seen")
+        }
+        return !d.bool(forKey: "welcome.seen") || ProcessInfo.processInfo.arguments.contains("-welcome")
+    }
 
     var body: some View {
         ZStack {
@@ -67,31 +78,30 @@ struct RootView: View {
                 .id(homeID)
                 .transition(Self.screen)
             }
+            // The welcome sits on top from the first frame, rather than being
+            // presented once home is already showing.
+            if welcoming {
+                WelcomeView(enter: {
+                    // It has already dropped or faded away; nothing more moves.
+                    var t = Transaction()
+                    t.disablesAnimations = true
+                    withTransaction(t) { welcoming = false }
+                    welcomed = true
+                }, learn: { learnAfterWelcome = true })
+                .zIndex(10)
+            }
         }
         .environment(\.boardSpace, boardSpace)
-        .fullScreenCover(isPresented: $welcoming, onDismiss: { welcomed = true }) {
-            WelcomeView(enter: {
-                // The welcome has already dropped away, so the cover itself
-                // must not animate: the curtain is the only movement.
-                var t = Transaction()
-                t.disablesAnimations = true
-                withTransaction(t) { welcoming = false }
-            }, learn: { learnAfterWelcome = true })
-            .presentationBackground(.clear)
-        }
         .fullScreenCover(isPresented: $learnAfterWelcome) {
             LearnView {
                 model.start(.engine, opponent: .easy)
                 withAnimation(Self.carry) { playing = true }
             }
         }
-        .onAppear {
-            // Only a true first run; someone who has already played doesn't need it.
-            if !welcomed && (!Stats.recent.isEmpty || SavedGame.load() != nil) { welcomed = true }
-            welcoming = !welcomed || ProcessInfo.processInfo.arguments.contains("-welcome")
-        }
         // Settings' "How it works" clears the flag to play it again.
-        .onChange(of: welcomed) { _, seen in if !seen { welcoming = true } }
+        .onChange(of: welcomed) { _, seen in
+            if !seen { withAnimation(.easeOut(duration: 0.35)) { welcoming = true } }
+        }
         .sensoryFeedback(trigger: model.feedback) { _, new in Sound.hapticsOn ? new?.kind.haptic : nil }
         .task {
             GameCenter.shared.model = model
@@ -461,7 +471,8 @@ private struct HomeScreen: View {
 
     @ViewBuilder
     private var historyLine: some View {
-        if !recent.isEmpty {
+        // The same games the sheet lists: one abandoned on the first move doesn't count.
+        if recent.contains(where: { $0.moves >= 2 }) {
             // A quiet line, not a card: your games are there when you want them.
             Button { Haptics.tap(); history = true } label: {
                 // How it's going as a shape, not a number: the same line the

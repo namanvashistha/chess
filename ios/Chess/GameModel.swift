@@ -1075,9 +1075,12 @@ final class GameModel {
         }
         // Drop the verdicts on the moves taken back; one still being judged
         // has none yet, and nothing earlier is touched.
-        let dropped = trail.filter { $0.ply >= moves.count }.count
+        let taken = trail.filter { $0.ply >= moves.count }
         trail.removeAll { $0.ply >= moves.count }
-        losses.removeLast(min(dropped, losses.count))
+        losses.removeLast(min(taken.count, losses.count))
+        // A great move or a blunder taken back no longer counts.
+        great = max(0, great - taken.filter { $0.card.kind == .great }.count)
+        blunders = max(0, blunders - taken.filter { $0.card.kind == .blunder }.count)
         evals = Array(evals.prefix(moves.count))
         hintShown = nil
         reviewing = nil

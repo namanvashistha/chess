@@ -26,7 +26,8 @@ struct WelcomeView: View {
     let enter: () -> Void
     /// Done, but new to chess: learn the moves first.
     let learn: () -> Void
-    @Environment(\.dismiss) private var dismiss
+    /// Fading away (Skip, or off to Learn).
+    @State private var fading = false
 
     enum Stage: Int { case calm, noise, hush, coach, pick, verdict, settle }
     @State private var stage = Stage.calm
@@ -162,6 +163,7 @@ struct WelcomeView: View {
         }
         // The curtain: it falls away, gathering speed, and home is behind it.
         .offset(y: leaving ? drop : 0)
+        .opacity(fading ? 0 : 1)
         .animation(.spring(response: 0.5, dampingFraction: 0.85), value: stage)
         .task { await tell() }
     }
@@ -272,12 +274,11 @@ struct WelcomeView: View {
 
     private func finish(then next: (() -> Void)? = nil) {
         UserDefaults.standard.set(true, forKey: "welcome.seen")
-        dismiss()
-        if let next {
-            Task {
-                try? await Task.sleep(for: .seconds(0.45))
-                next()
-            }
+        withAnimation(.easeOut(duration: 0.3)) { fading = true }
+        Task {
+            try? await Task.sleep(for: .seconds(0.3))
+            enter()
+            next?()
         }
     }
 }
@@ -678,6 +679,9 @@ final class WelcomeModel: BoardSource {
 
     func tap(_ square: Square) {
         guard canPlay else { return }
+        // Before the first touch, a lifted pawn is only the board's demo:
+        // the first tap picks up what you tapped, never puts the demo down.
+        if !touched { selected = nil; rays = nil }
         touched = true
         if let selected, rays?.moves.contains(where: { $0.to == square }) == true {
             play(selected, square)
@@ -696,6 +700,7 @@ final class WelcomeModel: BoardSource {
     }
 
     func pickUp(_ square: Square) -> Bool {
+        if !touched { selected = nil; rays = nil }
         touched = true
         guard canPlay, shownPieces.contains(where: { $0.square == square && $0.code.isUppercase }),
               !targets(square).isEmpty else { return false }
