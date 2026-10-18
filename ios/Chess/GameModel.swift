@@ -1002,6 +1002,9 @@ final class GameModel {
 
     /// True when "Hint" would repeat a hint already used in this position.
     var hintIsFree: Bool { hintShown?.ply == moves.count }
+    /// The engine is looking for a hint. The game is busy meanwhile, but the
+    /// Hint button stays as it is, so it doesn't flash grey and back.
+    private(set) var findingHint = false
 
     /// Hints come in two steps. The first points at the piece to move; asking
     /// again in the same position shows the move and why, at no extra cost.
@@ -1021,12 +1024,14 @@ final class GameModel {
         save()
         rays = nil
         busy = true
+        findingHint = true
         let game = snapshot(), ply = moves.count, token = epoch
         Task.detached(priority: .userInitiated) {
             let best = game.search(3, moveTimeMs: 0)?.bestMove ?? ""
             let san = best.isEmpty ? "" : game.san(best)
             let why = best.isEmpty ? "" : EngineText.localize(game.explain(best))
             await MainActor.run {
+                self.findingHint = false
                 guard token == self.epoch else { return }
                 self.busy = false
                 guard !best.isEmpty, let m = BoardMove(uci: best, board: self.board) else { return }

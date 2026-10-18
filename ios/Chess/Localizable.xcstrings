@@ -455,6 +455,22 @@
         }
       }
     },
+    "A friend at your side." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un amigo a tu lado."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपके साथ एक दोस्त।"
+          }
+        }
+      }
+    },
     "A full chess board, set up" : {
       "localizations" : {
         "es" : {
@@ -1756,11 +1772,24 @@
         }
       }
     },
-    "I think out loud. Never a score." : {
-
-    },
     "I'll follow along." : {
 
+    },
+    "I'll tell you what I see." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te diré lo que veo."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "जो दिखेगा, बताऊँगा।"
+          }
+        }
+      }
     },
     "Intermediate" : {
       "localizations" : {
@@ -2376,6 +2405,7 @@
       }
     },
     "Not here." : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -2472,6 +2502,7 @@
       }
     },
     "One calm move at a time." : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -2955,7 +2986,7 @@
         }
       }
     },
-    "Show me the game" : {
+    "Show me" : {
 
     },
     "Show the move" : {
@@ -2989,9 +3020,6 @@
           }
         }
       }
-    },
-    "Someone looks with you." : {
-
     },
     "Sound" : {
       "localizations" : {
@@ -3457,6 +3485,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "सोच रहा है"
+          }
+        }
+      }
+    },
+    "This table is calm." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta mesa está en calma."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "यह मेज़ शांत है।"
           }
         }
       }

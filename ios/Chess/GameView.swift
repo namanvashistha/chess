@@ -1228,7 +1228,9 @@ private struct Dock: View {
         var message: String { self == .newGame ? "This game will be lost." : "It counts as a loss in your recent games." }
     }
 
-    private var canHint: Bool { model.playerToMove && (model.hintsLeft > 0 || model.hintIsFree) }
+    private var canHint: Bool {
+        model.findingHint || (model.playerToMove && (model.hintsLeft > 0 || model.hintIsFree))
+    }
 
     private var confirming: Binding<Bool> {
         Binding(get: { confirm != nil }, set: { if !$0 { confirm = nil } })
@@ -1281,14 +1283,16 @@ private struct Dock: View {
                     Spacer()
                 } else {
                 Button {
+                    guard !model.findingHint else { return }
                     Haptics.tap()
                     hints += 1
                     model.hint()
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles").symbolEffect(.bounce, value: hints)
-                        Text(model.hintIsFree && !model.hintRevealed ? "Show the move" : model.hintsLeft > 0 ? "Hint" : "No hints")
-                        if model.hintsLeft > 0 && !(model.hintIsFree && !model.hintRevealed) {
+                        Text(model.hintIsFree && !model.hintRevealed ? "Show the move" : model.hintsLeft > 0 || model.findingHint ? "Hint" : "No hints")
+                            .contentTransition(.opacity)
+                        if model.hintsLeft > 0 && !(model.hintIsFree && !model.hintRevealed) && !model.findingHint {
                             Text("\(model.hintsLeft)").font(.system(size: 12, weight: .bold)).monospacedDigit()
                                 .contentTransition(.numericText())
                                 .animation(.snappy, value: model.hintsLeft)
@@ -1305,6 +1309,7 @@ private struct Dock: View {
                 .buttonBorderShape(.capsule)
                 .tint(canHint ? Palette.accent : nil)
                 .disabled(!canHint)
+                .animation(.easeInOut(duration: 0.25), value: model.hintIsFree)
                 }
             }
             .font(Typeface.display(14, .bold))

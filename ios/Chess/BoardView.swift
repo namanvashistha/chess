@@ -35,10 +35,29 @@ protocol BoardSource: AnyObject, Observable {
     /// The square a carried piece is over, as the finger moves; nil when it's
     /// put down. A game ignores it; the welcome's coach thinks out loud.
     func hover(_ square: Square?)
+    /// Pieces arriving on the board are set down by hand (from just above,
+    /// settling with a small bounce) rather than fading in. The welcome
+    /// lays its table this way; a game doesn't.
+    var placesPieces: Bool { get }
 }
 
 extension BoardSource {
     func hover(_ square: Square?) {}
+    var placesPieces: Bool { false }
+}
+
+/// A piece set down by hand: it starts just above its square, a little large
+/// and clear, and comes down into place.
+private struct Placed: ViewModifier {
+    let lift: CGFloat
+    let active: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(active ? 1.18 : 1, anchor: .bottom)
+            .offset(y: active ? -lift : 0)
+            .opacity(active ? 0 : 1)
+    }
 }
 
 extension GameModel: BoardSource {}
@@ -377,7 +396,12 @@ private struct PiecesLayer<Model: BoardSource>: View {
                                       : center(piece.square, size, flipped: model.flipped))
                     .zIndex(dragged ? 30 : piece.id == model.movingPiece ? 20
                             : Double(model.flipped ? 7 - Squares.row(piece.square) : Squares.row(piece.square)))
-                    .transition(.opacity.animation(.easeOut(duration: 0.12)))
+                    .transition(model.placesPieces
+                        ? .asymmetric(insertion: .modifier(active: Placed(lift: q * 0.5, active: true),
+                                                           identity: Placed(lift: q * 0.5, active: false))
+                                          .animation(.spring(response: 0.42, dampingFraction: 0.62)),
+                                      removal: .opacity.animation(.easeOut(duration: 0.12)))
+                        : .opacity.animation(.easeOut(duration: 0.12)))
             }
         }
         .frame(width: size, height: size)

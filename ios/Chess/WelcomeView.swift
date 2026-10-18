@@ -4,17 +4,16 @@ import SwiftUI
 /// The first time the app opens: a short story, then you play it out.
 ///
 /// The lore, in one sentence: chess is something you look at, most apps made it
-/// something you're scored on, and here someone looks at it with you. Every beat
-/// is one move of that sentence, and the board does the acting. "Someone looks
-/// with you" plants the seeing, so "See the game" at the end pays it off and the
-/// button asks for the very thing that beat promised.
+/// something you're scored on, and this table is calm, with a friend at your
+/// side. Every beat is one move of that sentence, and the board does the acting,
+/// so "See the game" at the end pays it off.
 ///
 /// It opens calm: the table laying itself, piece by piece. Then, briefly, the
 /// reason it exists: the noise chess usually comes with (a clock, a rating,
 /// a verdict) drifts over the board and fades, and the quiet comes back for
 /// good. Then you meet the coach, before anything is asked of you. Then it's
 /// yours: pick up a piece and hold it as long as you like while the coach
-/// thinks out loud about each square, and put it down. It ends on the promise
+/// says what it sees on each square, and put it down. It ends on the promise
 /// the app keeps, and you ask for it yourself: see the game, one calm move at
 /// a time.
 ///
@@ -70,9 +69,10 @@ struct WelcomeView: View {
                 // The noise drifts over the board, which dims and softens under
                 // it, then clears; the board itself never leaves.
                 ZStack {
+                    // Only dimmed: blurring the whole glass board, frame by
+                    // frame, is what made this beat stutter.
                     BoardView(model: board)
-                        .opacity(stage == .noise ? 0.3 : 1)
-                        .blur(radius: stage == .noise ? 3 : 0)
+                        .opacity(stage == .noise ? 0.25 : 1)
                     if stage == .noise {
                         Noise().transition(.opacity.animation(.easeInOut(duration: 0.9)))
                     }
@@ -103,15 +103,15 @@ struct WelcomeView: View {
                                         Text("Next")
                                         Image(systemName: "chevron.right")
                                             .font(.system(size: 12, weight: .bold))
+                                            .symbolEffect(.wiggle.right, options: .speed(1.6), value: stage)
                                     }
                                     .font(.system(size: 15, weight: .semibold))
                                     .foregroundStyle(Palette.ink)
                                     .padding(.horizontal, 18)
                                     .padding(.vertical, 11)
-                                    .background(Palette.ink.opacity(0.07), in: .capsule)
                                     .contentShape(.capsule)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(NextButtonStyle())
                             }
                             .frame(minHeight: 44)
                             .transition(.opacity)
@@ -181,8 +181,8 @@ struct WelcomeView: View {
         switch stage {
         case .calm: L("Take a seat.")
         case .noise: L("Most chess is loud.")
-        case .hush: L("We left it out.")
-        case .coach: L("Someone looks with you.")
+        case .hush: L("This table is calm.")
+        case .coach: L("A friend at your side.")
         case .pick, .verdict: nil
         case .settle: L("See the game.")
         }
@@ -204,7 +204,9 @@ struct WelcomeView: View {
         let now = Date()
         guard now.timeIntervalSince(asked) > 0.2 else { return }
         asked = now
-        Haptics.tap(.soft, intensity: 0.4)
+        Haptics.tap(.light, intensity: 0.6)
+        // The board's own soft click, so Next feels like part of the table.
+        Sound.shared.play(.select)
         switch stage {
         case .calm:
             board.showAll()
@@ -277,6 +279,7 @@ private struct Noise: View {
             let w = geo.size.width, h = geo.size.height
             ZStack {
                 fragment(String(format: "0:%02d", seconds), size: 46, mono: true, color: Palette.danger, blur: 0.6)
+                    .contentTransition(.numericText(countsDown: true))
                     .position(x: w * 0.3, y: h * 0.3)
                 fragment("1452  ▾ −12", size: 24, mono: true, color: Palette.mist, blur: 1.2)
                     .position(x: w * 0.68, y: h * 0.52)
@@ -295,6 +298,8 @@ private struct Noise: View {
             .phaseAnimator([6.0, -10.0]) { v, y in v.offset(y: y) } animation: { _ in
                 .easeInOut(duration: 3)
             }
+            // Drawn as one layer, so the blurred text isn't recomputed per frame.
+            .drawingGroup()
         }
         .aspectRatio(1, contentMode: .fit)
         .allowsHitTesting(false)
@@ -304,7 +309,7 @@ private struct Noise: View {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(0.45))
                 if Task.isCancelled { break }
-                seconds = seconds > 0 ? seconds - 1 : 12
+                withAnimation(.snappy(duration: 0.25)) { seconds = seconds > 0 ? seconds - 1 : 12 }
             }
         }
     }
@@ -315,6 +320,29 @@ private struct Noise: View {
             .monospacedDigit()
             .foregroundStyle(color.opacity(0.75))
             .blur(radius: blur)
+    }
+}
+
+/// Next: a soft capsule that breathes slowly, its fill and shadow rising and
+/// falling, so it reads as the thing to press without calling out. It presses
+/// in a little and darkens under the finger.
+private struct NextButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
+        configuration.label
+            .background {
+                // A raised capsule: an opaque surface whose shadow lifts and
+                // settles as it breathes, with a faint tint that deepens with it.
+                Capsule().fill(Palette.surface)
+                    .overlay(Capsule().strokeBorder(Palette.hairline, lineWidth: 1))
+                    .phaseAnimator([0.0, 1.0]) { cap, t in
+                        cap.overlay(Capsule().fill(Palette.ink.opacity(pressed ? 0.14 : 0.03 + t * 0.07)))
+                            .shadow(color: .black.opacity(pressed ? 0.08 : 0.10 + t * 0.14),
+                                    radius: pressed ? 3 : 5 + t * 9, y: pressed ? 1 : 2 + t * 5)
+                    } animation: { _ in .easeInOut(duration: 1.6) }
+            }
+            .scaleEffect(pressed ? 0.95 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.6), value: pressed)
     }
 }
 
@@ -409,7 +437,17 @@ final class WelcomeModel: BoardSource {
     /// The board is handed over: pieces can be picked up.
     var open = false
     /// Back rank out, then pawns, then theirs: the order the table is laid in.
-    private static let setUpOrder = (56..<64).map { $0 } + (48..<56).map { $0 } + (0..<8).map { $0 } + (8..<16).map { $0 }
+    /// The order a board is set by hand: every rank from the middle out (king
+    /// and queen, then bishops, knights and rooks; the pawns the same way), so
+    /// each row ripples outward from the centre. White, then Black.
+    private static let setUpOrder: [Square] = {
+        let out = [4, 3, 5, 2, 6, 1, 7, 0] // e d f c g b h a
+        let white = out.map { 56 + $0 } + out.map { 48 + $0 }
+        let black = out.map { $0 } + out.map { 8 + $0 }
+        return white + black
+    }()
+    /// Set down by hand, not faded in.
+    let placesPieces = true
     /// You moved on, so the slow laying stands down.
     @ObservationIgnored private var hurried = false
     /// Still waiting for a first touch: the board invites one.
@@ -453,12 +491,19 @@ final class WelcomeModel: BoardSource {
     /// on its own, and it is the screen arriving rather than the story running.
     func setUp() async {
         let board = Array(game.board())
-        for sq in Self.setUpOrder where board[sq] != "." && !shownPieces.contains(where: { $0.id == sq }) {
+        // Wait for the screen to finish arriving: pieces set on a board that
+        // is still sliding into place look like they fly in from the side.
+        if shownPieces.isEmpty { try? await Task.sleep(for: .seconds(0.7)) }
+        for (k, sq) in Self.setUpOrder.enumerated() where board[sq] != "." && !shownPieces.contains(where: { $0.id == sq }) {
             if Task.isCancelled || hurried { return }
-            withAnimation(.easeOut(duration: 0.25)) {
+            // Each piece comes down onto its square and settles.
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.62)) {
                 shownPieces.append(PieceItem(id: sq, code: board[sq], square: sq))
             }
-            try? await Task.sleep(for: .milliseconds(45))
+            // One soft tick as each rank begins.
+            if k % 8 == 0 { Haptics.tap(.soft, intensity: 0.35) }
+            // The back rank is placed with care, the pawns go down quicker.
+            try? await Task.sleep(for: .milliseconds(k % 16 < 8 ? 70 : 38))
         }
     }
 
@@ -479,7 +524,7 @@ final class WelcomeModel: BoardSource {
     /// any classroom in it, and the line below defines it by use.
     func greet() {
         guard coach == nil else { return }
-        say(.coach, L("Your second"), L("I think out loud. Never a score."))
+        say(.coach, L("Your second"), L("I'll tell you what I see."))
     }
 
     /// The board is yours: the one thing to do, and who is waiting while you
