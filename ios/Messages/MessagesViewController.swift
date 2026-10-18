@@ -2,7 +2,7 @@ import Chesscore
 import Messages
 import SwiftUI
 
-/// Cozy Chess inside Messages. Each move is a message bubble with a picture of
+/// Calm Chess inside Messages. Each move is a message bubble with a picture of
 /// the board; the game itself travels in the bubble's link, so there's no
 /// server and nothing leaves the conversation.
 final class MessagesViewController: MSMessagesAppViewController {
@@ -119,11 +119,11 @@ final class MessageLink: MatchLink {
         else if model.isOver { title = model.status == ChesscoreStatusCheckmate ? L("Checkmate!") : L("It's a draw") }
         else { title = L("Your move") }
         if let data = ShareMoment(board: model.board, move: model.lastMove, title: title,
-                                  detail: san, footer: "Cozy Chess").boardPNG() {
+                                  detail: san, footer: "Calm Chess").boardPNG() {
             layout.image = UIImage(data: data)
         }
         layout.caption = title
-        layout.subcaption = san.isEmpty ? "Cozy Chess" : L("\(san) · Cozy Chess")
+        layout.subcaption = san.isEmpty ? "Calm Chess" : L("\(san) · Calm Chess")
         message.layout = layout
         message.summaryText = L("Played \(san)")
 
@@ -164,7 +164,7 @@ struct MessagesRoot: View {
                 GameScreen(model: model) { link.collapse() }
             } else {
                 VStack(spacing: 14) {
-                    Text("Cozy Chess").font(Typeface.display(22))
+                    Text("Calm Chess").font(Typeface.display(22))
                     Text("A calm game of chess, one move at a time.")
                         .font(.system(size: 14)).foregroundStyle(Palette.mist)
                     Button("Start a game") { Haptics.tap(); link.newGame() }

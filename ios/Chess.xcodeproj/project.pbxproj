@@ -335,7 +335,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Chess-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Cozy Chess";
+				INFOPLIST_KEY_CFBundleDisplayName = "Calm Chess";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.board-games";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -368,7 +368,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Chess-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Cozy Chess";
+				INFOPLIST_KEY_CFBundleDisplayName = "Calm Chess";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.board-games";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -399,7 +399,7 @@
 				DEVELOPMENT_TEAM = 3JMXH4DHLA;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Messages-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Cozy Chess";
+				INFOPLIST_KEY_CFBundleDisplayName = "Calm Chess";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -427,7 +427,7 @@
 				DEVELOPMENT_TEAM = 3JMXH4DHLA;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Messages-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Cozy Chess";
+				INFOPLIST_KEY_CFBundleDisplayName = "Calm Chess";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

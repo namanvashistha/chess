@@ -36,18 +36,18 @@
         }
       }
     },
-    "%@ · Cozy Chess" : {
+    "%@ · Calm Chess" : {
       "localizations" : {
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ · Cozy Chess"
+            "value" : "%@ · Calm Chess"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ · Cozy Chess"
+            "value" : "%@ · Calm Chess"
           }
         }
       }
@@ -1108,18 +1108,18 @@
         }
       }
     },
-    "Cozy Chess" : {
+    "Calm Chess" : {
       "localizations" : {
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cozy Chess"
+            "value" : "Calm Chess"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cozy Chess"
+            "value" : "Calm Chess"
           }
         }
       }
@@ -1252,18 +1252,18 @@
         }
       }
     },
-    "Found with Cozy Chess" : {
+    "Found with Calm Chess" : {
       "localizations" : {
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Encontrada con Cozy Chess"
+            "value" : "Encontrada con Calm Chess"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cozy Chess पर मिली"
+            "value" : "Calm Chess पर मिली"
           }
         }
       }
@@ -1828,18 +1828,18 @@
         }
       }
     },
-    "Learning with Cozy Chess" : {
+    "Learning with Calm Chess" : {
       "localizations" : {
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aprendiendo con Cozy Chess"
+            "value" : "Aprendiendo con Calm Chess"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cozy Chess के साथ सीख रहे हैं"
+            "value" : "Calm Chess के साथ सीख रहे हैं"
           }
         }
       }
@@ -2486,18 +2486,18 @@
         }
       }
     },
-    "Played on Cozy Chess" : {
+    "Played on Calm Chess" : {
       "localizations" : {
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jugado en Cozy Chess"
+            "value" : "Jugado en Calm Chess"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cozy Chess पर खेला"
+            "value" : "Calm Chess पर खेला"
           }
         }
       }

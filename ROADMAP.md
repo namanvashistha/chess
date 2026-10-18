@@ -1,16 +1,16 @@
 # Roadmap
 
-What comes after Cozy Chess 1.1. Written 2026-10-18, while 1.0 is in App Store
+What comes after Calm Chess 1.1. Written 2026-10-18, while 1.0 is in App Store
 review. Like the rest of this repository's planning docs, it records reasoning
 rather than commitments.
 
 ## Next: puzzle mode
 
-Cozy Chess teaches while you play. Puzzle mode teaches without the game around
+Calm Chess teaches while you play. Puzzle mode teaches without the game around
 it: one position, one idea, the coach naming the pattern instead of only scoring
 the move.
 
-It ships **inside Cozy Chess**, not as a second app. One listing accumulates
+It ships **inside Calm Chess**, not as a second app. One listing accumulates
 ratings, there is no second keyword fight, and every piece of the pipeline is
 already built.
 
@@ -123,11 +123,11 @@ StoreKit 2, checked on the device. Still no backend, no accounts, no analytics.
 ## Later
 
 - More unlock content for the main game: openings, endgames, a kids mode.
-- A second listing once Cozy Chess has conversion data worth copying.
+- A second listing once Calm Chess has conversion data worth copying.
 
 ## Before any of it
 
-Cozy Chess has shipped nothing and measured nothing yet. The first real numbers
+Calm Chess has shipped nothing and measured nothing yet. The first real numbers
 — review outcome, downloads, retention, conversion — should land before this
 roadmap is treated as settled. The bottleneck identified so far is distribution,
 not product, and no amount of puzzle mode fixes that.

@@ -1,11 +1,11 @@
 import GroupActivities
 import SwiftUI
 
-/// A game of Cozy Chess on a FaceTime call.
+/// A game of Calm Chess on a FaceTime call.
 struct ChessActivity: GroupActivity {
     var metadata: GroupActivityMetadata {
         var m = GroupActivityMetadata()
-        m.title = L("Cozy Chess")
+        m.title = L("Calm Chess")
         m.subtitle = L("A calm game of chess")
         m.type = .generic
         return m

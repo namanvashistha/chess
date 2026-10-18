@@ -1,11 +1,11 @@
-# Cozy Chess · App Store
+# Calm Chess · App Store
 
 Everything needed to publish: the steps, the listing text and the screenshots.
 
 ## Steps
 
 1. **Create the app.** In App Store Connect choose Apps → + → New App. Pick iOS, name it
-   Cozy Chess, choose English (U.S.) as the primary language, bundle ID
+   Calm Chess, choose English (U.S.) as the primary language, bundle ID
    `com.namanvashistha.cozychess`, and SKU `cozychess-ios`.
 2. **Upload a build.** Run `make ios-upload` from the repo root, or in Xcode use
    Product → Archive → Distribute App → App Store Connect. Processing takes 5–30 minutes.
@@ -32,27 +32,27 @@ For each new App Store version, raise `MARKETING_VERSION` as well.
 
 ## App information
 
-- **Name** (30): Cozy Chess
-- **Subtitle** (30): Calm chess with a kind coach
+- **Name** (30): Calm Chess
+- **Subtitle** (30): A kind coach beside you
 - **Bundle ID:** com.namanvashistha.cozychess
 - **SKU:** cozychess-ios
 - **Primary category:** Games → Board · **Secondary:** Education
 - **Age rating:** 4+ (answer "None" to every question)
 - **Price:** Free
-- **Support URL:** https://namanvashistha.com/chess/cozychess/
+- **Support URL:** https://namanvashistha.com/chess/cozychess/ (the path keeps the old name so existing links work)
 - **Privacy policy URL:** https://namanvashistha.com/chess/cozychess/privacy.html
 - **App privacy:** Data Not Collected
 - **Copyright:** 2026 Naman Vashistha
 
 ## Promotional text (170)
 
-Learn chess the cozy way. A coach explains every move in plain words, lines of light show what each piece can do, and nothing ever rushes you.
+Learn chess without the noise. A coach explains every move in plain words, lines of light show what each piece can do, and nothing ever rushes you.
 
 ## Description (4000)
 
-Cozy Chess is chess without the pressure.
+Calm Chess is chess without the pressure.
 
-Start against the Rookie, a true beginner you can beat from your very first game. Win three to face the Master, then the Grandmaster — or pass the phone to a friend. After every move a calm coach tells you, in plain words, whether it was great, good or a slip, and why.
+Start against the Rookie, a true beginner you can beat from your very first game. Win three to face the Master, then the Grandmaster — or pass the phone to a friend. After every move a kind coach tells you, in plain words, whether it was great, good or a slip, and why.
 
 SEE THE GAME
 • Lines of light show where a piece can go
@@ -84,7 +84,7 @@ chess,learn,coach,beginner,board,strategy,offline,relaxing,tutor,engine,training
 
 ## What's new (version 1.0)
 
-The first version of Cozy Chess.
+The first version of Calm Chess.
 
 ## Notes for App Review
 

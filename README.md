@@ -31,7 +31,7 @@ See [docs/architecture.md](docs/architecture.md) for the details and
 [docs/protocol.md](docs/protocol.md) for the API and WebSocket messages.
 
 See [ROADMAP.md](ROADMAP.md) for what is planned next, starting with puzzle
-mode in Cozy Chess.
+mode in Calm Chess.
 
 ## Running it
 

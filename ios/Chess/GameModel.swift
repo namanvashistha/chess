@@ -797,7 +797,7 @@ final class GameModel {
         let number = entry.ply / 2 + 1
         let label = entry.ply % 2 == 0 ? "\(number). \(entry.san)" : "\(number)… \(entry.san)"
         return ShareMoment(board: p?.board ?? board, move: p?.move, title: "\(label) · Great move",
-                           detail: entry.card.text, footer: L("Found with Cozy Chess"))
+                           detail: entry.card.text, footer: L("Found with Calm Chess"))
     }
 
     /// A win against the engine, ready to share.
@@ -809,18 +809,18 @@ final class GameModel {
             let accuracy = finish.accuracy.map { " · \($0)% accuracy" } ?? ""
             let who = mode == .friend ? friendName : "the \(opponent.name)"
             return ShareMoment(board: board, move: lastMove, title: "I beat \(who)",
-                               detail: finish.text + accuracy, footer: L("Played on Cozy Chess"))
+                               detail: finish.text + accuracy, footer: L("Played on Calm Chess"))
         }
         // Not a win: share warmly, about what went well, never the loss.
         let against = mode == .engine ? " against the \(opponent.name)" : mode == .friend ? " against \(friendName)" : ""
         guard let best = finish.best else {
             let title = mode == .engine ? "I played the \(opponent.name)" : mode == .friend ? "I played \(friendName)" : finish.title
             return ShareMoment(board: board, move: lastMove, title: title,
-                               detail: L("Every game teaches me something."), footer: L("Learning with Cozy Chess"))
+                               detail: L("Every game teaches me something."), footer: L("Learning with Calm Chess"))
         }
         let title = best.side.map { "\($0)'s best move" } ?? "A move I'm proud of"
         return ShareMoment(board: best.after, move: best.move, title: title,
-                           detail: L("Move \(best.moveNumber)\(against) · \(best.text)"), footer: L("Learning with Cozy Chess"))
+                           detail: L("Move \(best.moveNumber)\(against) · \(best.text)"), footer: L("Learning with Calm Chess"))
     }
 
     /// When the player is clearly behind and nearly out of hints, gives one

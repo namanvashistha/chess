@@ -1,4 +1,4 @@
-# Cozy Chess
+# Calm Chess
 
 *See the game, one calm move at a time.*
 

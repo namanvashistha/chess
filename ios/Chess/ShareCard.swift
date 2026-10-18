@@ -16,7 +16,7 @@ struct ShareMoment: Transferable, Equatable, Sendable {
             guard let data = await moment.png() else { throw CocoaError(.fileWriteUnknown) }
             return data
         }
-        .suggestedFileName("Cozy Chess.png")
+        .suggestedFileName("Calm Chess.png")
     }
 
     /// Just the board, square, for a Messages bubble.

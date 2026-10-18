@@ -73,10 +73,10 @@ ios-engine:
 	cd mobile && CGO_ENABLED=0 go test ./... && CGO_ENABLED=1 gomobile bind -target=ios,iossimulator -iosversion=26.0 \
 		-o ../ios/Frameworks/Chesscore.xcframework ./chesscore
 
-# Archives Cozy Chess and uploads it to App Store Connect, where it shows up
+# Archives Calm Chess and uploads it to App Store Connect, where it shows up
 # in TestFlight. Bump CURRENT_PROJECT_VERSION in the project before each upload.
 ios-upload: ios-engine
 	cd ios && xcodebuild -project Chess.xcodeproj -scheme Chess -configuration Release \
-		-destination 'generic/platform=iOS' -archivePath build/CozyChess.xcarchive -allowProvisioningUpdates archive
-	cd ios && xcodebuild -exportArchive -archivePath build/CozyChess.xcarchive \
+		-destination 'generic/platform=iOS' -archivePath build/CalmChess.xcarchive -allowProvisioningUpdates archive
+	cd ios && xcodebuild -exportArchive -archivePath build/CalmChess.xcarchive \
 		-exportOptionsPlist ExportOptions.plist -exportPath build/export -allowProvisioningUpdates
