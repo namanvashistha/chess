@@ -6,10 +6,10 @@ import UIKit
 /// glass.
 enum Palette {
     // board
-    // A step further apart than the first cut, so pieces of either colour
-    // separate from both squares.
+    // The slate sits a shade lighter than the first cut, so the smoked Black
+    // pieces stand off it; White carries an ink contour for the limestone.
     static let squareLight = Color.dynamic(light: 0xDDD8CB, dark: 0xC1BBAE)
-    static let squareDark = Color.dynamic(light: 0x84918A, dark: 0x67736B)
+    static let squareDark = Color.dynamic(light: 0x8E9B94, dark: 0x76827A)
     static let coordinate = Color.dynamic(light: 0x6F7A70, dark: 0x4F5A52)
     /// A soft honey that reads on both limestone and slate.
     static let lastMove = Color.dynamic(light: 0xE8C468, dark: 0xD9B556)
@@ -34,6 +34,10 @@ enum Palette {
     static let backgroundBottom = Color.dynamic(light: 0xE6E3DC, dark: 0x0F1114)
     static let glow = Color.dynamic(light: 0xFFFAF0, dark: 0x262A2F)
     static let statFill = Color.dynamic(light: 0x22272C, dark: 0xFFFFFF).opacity(0.06)
+    /// Cards that float over everything else, like the finish card.
+    static let surface = Color.dynamic(light: 0xFBFAF7, dark: 0x1C2025)
+    /// The hairline that edges a surface or a quiet button.
+    static let hairline = Color.dynamic(light: 0x22272C, dark: 0xFFFFFF).opacity(0.09)
 
     // coach verdicts: a text colour and a badge fill each
     static let great = Color.dynamic(light: 0x2F9E5C, dark: 0x6FD69A)

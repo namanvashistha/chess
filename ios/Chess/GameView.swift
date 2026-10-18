@@ -1,11 +1,49 @@
 import Chesscore
 import SwiftUI
 
+extension EnvironmentValues {
+    /// Shared by the home board and the game board, so going into a game the
+    /// board itself moves into place instead of the page sliding.
+    @Entry var boardSpace: Namespace.ID?
+}
+
+extension View {
+    /// Everything but the board on a screen that is arriving: it gathers
+    /// around the board, which carries across fully drawn. Things above the
+    /// board drift down into place, things below rise, each a beat apart.
+    func chrome(_ shown: Bool, from edge: VerticalEdge = .bottom, delay: Double = 0.14) -> some View {
+        opacity(shown ? 1 : 0)
+            .offset(y: shown ? 0 : (edge == .top ? -10 : 14))
+            .animation(.spring(response: 0.5, dampingFraction: 0.85).delay(delay), value: shown)
+    }
+
+    /// Marks the board that carries across between home and the game. Only
+    /// its position travels: animating its size would redraw every glass
+    /// piece on every frame, and the two boards are nearly the same width.
+    @ViewBuilder func heroBoard(_ space: Namespace.ID?) -> some View {
+        if let space { matchedGeometryEffect(id: "board", in: space, properties: .position) } else { self }
+    }
+}
+
 /// The app: home, and the game it starts or resumes.
 struct RootView: View {
     @State private var model = GameModel()
+    @Namespace private var boardSpace
     @State private var playing = false
     @State private var homeID = 0 // refreshes home's saved-game and history views on return
+    /// The first-open welcome has been played (or skipped). Settings can reset it.
+    @AppStorage("welcome.seen") private var welcomed = false
+    @State private var welcoming = false
+    @State private var learnAfterWelcome = false
+
+    /// The board carrying across between home and a game.
+    /// One smooth glide, no bounce: just the board changing place.
+    static let carry = Animation.smooth(duration: 0.45)
+    /// A screen arrives without fading (its board must stay fully drawn while
+    /// it carries across; the rest fades in on its own) and leaves by fading.
+    /// The arriving side changes nothing but must not be .identity, which
+    /// would drop the board before it can carry across.
+    static let screen = AnyTransition.asymmetric(insertion: .scale(scale: 0.999), removal: .opacity)
 
     var body: some View {
         ZStack {
@@ -13,30 +51,54 @@ struct RootView: View {
             if playing {
                 GameScreen(model: model) {
                     homeID += 1
-                    withAnimation(.smooth(duration: 0.4)) { playing = false }
+                    withAnimation(Self.carry) { playing = false }
                 }
-                .transition(.move(edge: .trailing).combined(with: .opacity))
+                .transition(Self.screen)
             } else {
                 HomeScreen(
                     start: { mode, opponent in
                         model.start(mode, opponent: opponent)
-                        withAnimation(.smooth(duration: 0.4)) { playing = true }
+                        withAnimation(Self.carry) { playing = true }
                     },
                     resume: {
-                        if model.resume() { withAnimation(.smooth(duration: 0.4)) { playing = true } }
+                        if model.resume() { withAnimation(Self.carry) { playing = true } }
                     }
                 )
                 .id(homeID)
-                .transition(.move(edge: .leading).combined(with: .opacity))
+                .transition(Self.screen)
             }
         }
+        .environment(\.boardSpace, boardSpace)
+        .fullScreenCover(isPresented: $welcoming, onDismiss: { welcomed = true }) {
+            WelcomeView(enter: {
+                // The welcome has already dropped away, so the cover itself
+                // must not animate: the curtain is the only movement.
+                var t = Transaction()
+                t.disablesAnimations = true
+                withTransaction(t) { welcoming = false }
+            }, learn: { learnAfterWelcome = true })
+            .presentationBackground(.clear)
+        }
+        .fullScreenCover(isPresented: $learnAfterWelcome) {
+            LearnView {
+                model.start(.engine, opponent: .easy)
+                withAnimation(Self.carry) { playing = true }
+            }
+        }
+        .onAppear {
+            // Only a true first run; someone who has already played doesn't need it.
+            if !welcomed && (!Stats.recent.isEmpty || SavedGame.load() != nil) { welcomed = true }
+            welcoming = !welcomed || ProcessInfo.processInfo.arguments.contains("-welcome")
+        }
+        // Settings' "How it works" clears the flag to play it again.
+        .onChange(of: welcomed) { _, seen in if !seen { welcoming = true } }
         .sensoryFeedback(trigger: model.feedback) { _, new in Sound.hapticsOn ? new?.kind.haptic : nil }
         .task {
             GameCenter.shared.model = model
-            GameCenter.shared.showGame = { withAnimation(.smooth(duration: 0.4)) { playing = true } }
+            GameCenter.shared.showGame = { withAnimation(Self.carry) { playing = true } }
             GameCenter.shared.authenticate()
             SharePlay.shared.model = model
-            SharePlay.shared.showGame = { withAnimation(.smooth(duration: 0.4)) { playing = true } }
+            SharePlay.shared.showGame = { withAnimation(Self.carry) { playing = true } }
             SharePlay.shared.listen()
         }
         #if DEBUG
@@ -44,6 +106,12 @@ struct RootView: View {
             if ProcessInfo.processInfo.arguments.contains("-friendTest") {
                 DebugLink.shared.start(model)
                 playing = true
+            }
+            let args = ProcessInfo.processInfo.arguments
+            if let i = args.firstIndex(of: "-finish"), i + 1 < args.count,
+               let outcome = ["won": Finish.Outcome.won, "lost": .lost, "draw": .draw][args[i + 1]] {
+                playing = true
+                model.previewFinish(outcome)
             }
         }
         #endif
@@ -72,6 +140,9 @@ private extension Feedback.Kind {
 private struct HomeScreen: View {
     let start: (Mode, Opponent) -> Void
     let resume: () -> Void
+    @Environment(\.boardSpace) private var boardSpace
+    /// Fades in everything around the board as home arrives.
+    @State private var shown = false
     @AppStorage("opponent") private var opponentRaw = Opponent.easy.rawValue
     @State private var settings = false
     @State private var history = false
@@ -80,6 +151,10 @@ private struct HomeScreen: View {
     @AppStorage("learn.cardClosed") private var cardClosed = false
     @State private var seat: Opponent = .easy
     @State private var swipe: CGFloat = 0
+    /// The swipe hint shows until the first swipe, then never again.
+    @AppStorage("home.swiped") private var swiped = false
+    /// How many times the board has peeked to show it can be swiped.
+    @AppStorage("home.peeks") private var peeks = 0
     private let saved = SavedGame.load()
     private let recent = Stats.recent
 
@@ -94,19 +169,17 @@ private struct HomeScreen: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                bar
-                Text(greeting)
-                    .font(Typeface.display(26)).tracking(-0.4)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 18)
+                bar.chrome(shown, from: .top, delay: 0.1)
                 if !learned && !cardClosed && saved == nil {
                     learnCard
                         .padding(.top, 16)
+                        .chrome(shown, from: .top, delay: 0.12)
                 }
                 table
-                    .padding(.top, 20)
+                    .padding(.top, 24)
                 cta
-                    .padding(.top, 22)
+                    .padding(.top, 24)
+                    .chrome(shown, delay: 0.18)
                 if let saved, saved.passAndPlay {
                     Button { Haptics.tap(); resume() } label: {
                         Label("Continue your game on this phone", systemImage: "iphone")
@@ -117,9 +190,11 @@ private struct HomeScreen: View {
                     .padding(.top, 10)
                 }
                 FriendGames()
-                    .padding(.top, 22)
+                    .padding(.top, 24)
+                    .chrome(shown, delay: 0.22)
                 historyLine
-                    .padding(.top, 22)
+                    .padding(.top, 16)
+                    .chrome(shown, delay: 0.26)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
@@ -132,18 +207,25 @@ private struct HomeScreen: View {
             if let saved, !saved.passAndPlay, let o = Opponent(rawValue: saved.opponent) { seat = o }
             else { seat = Opponent(rawValue: opponentRaw).flatMap { $0.isUnlocked ? $0 : nil } ?? .easy }
         }
+        .task { await peek() }
+        .onAppear { shown = true }
         .sheet(isPresented: $settings) {
             SettingsSheet(learn: {
                 settings = false
                 Task { try? await Task.sleep(for: .seconds(0.4)); learn = true }
+            }, welcome: {
+                settings = false
+                // After the sheet has fully gone, so the cover appears once.
+                Task { try? await Task.sleep(for: .seconds(0.7)); UserDefaults.standard.set(false, forKey: "welcome.seen") }
             })
-            .presentationDetents([.height(340)])
+            .presentationDetents([.height(390)])
         }
         .fullScreenCover(isPresented: $learn) { LearnView { start(.engine, .easy) } }
         .sheet(isPresented: $history) {
-            ScrollView { RecentGames(records: recent, limit: 20).padding(20) }
+            ScrollView { RecentGames(records: recent, limit: 20).padding(24) }
                 .presentationDetents([.medium, .large])
-                .presentationBackground(.regularMaterial)
+                .presentationBackground(Palette.surface)
+                .presentationDragIndicator(.visible)
         }
     }
 
@@ -173,19 +255,22 @@ private struct HomeScreen: View {
 
     // MARK: Bar
 
+    /// The greeting, with settings tucked beside it: one line above the board.
     private var bar: some View {
-        HStack(spacing: 8) {
-            BrandMark()
-            Text("Cozy Chess").font(Typeface.display(16, .bold))
+        HStack(alignment: .firstTextBaseline) {
+            Text(greeting)
+                .font(Typeface.display(26)).tracking(-0.4)
             Spacer()
             Button { Haptics.tap(); settings = true } label: {
-                Image(systemName: "gearshape").font(.system(size: 15, weight: .medium)).frame(width: 30, height: 30)
+                Image(systemName: "gearshape").font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(Palette.mist)
+                    .frame(width: 44, height: 44)
+                    .contentShape(.rect)
             }
-            .buttonStyle(.glass)
-            .buttonBorderShape(.circle)
+            .buttonStyle(.plain)
             .accessibilityLabel("Settings")
         }
-        .padding(.top, 4)
+        .padding(.top, 8)
     }
 
     // MARK: The table
@@ -196,37 +281,56 @@ private struct HomeScreen: View {
             HStack(spacing: 12) {
                 OpponentAvatar(opponent: seat, size: 42)
                     .opacity(seat.isUnlocked ? 1 : 0.5)
-                VStack(alignment: .leading, spacing: 1) {
-                    // Labelled, so the name never reads as a greeting to the player.
-                    Text("Your opponent").font(.system(size: 10.5, weight: .bold)).tracking(1).textCase(.uppercase)
-                        .foregroundStyle(Palette.mist)
+                // "vs", so the name never reads as a greeting under "Good
+                // evening"; the title itself says how strong they are.
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("vs").font(.system(size: 15, weight: .medium)).foregroundStyle(Palette.mist)
                     Text(seat.name).font(Typeface.display(19))
-                    Text(seatLine).font(.system(size: 13)).foregroundStyle(Palette.mist)
                 }
                 Spacer()
-                HStack(spacing: 5) {
-                    ForEach(Opponent.allCases) { o in
-                        Capsule().fill(o == seat ? Palette.accent : Palette.mist.opacity(0.3))
-                            .frame(width: o == seat ? 14 : 6, height: 6)
+                // One dot per opponent. A tap anywhere on them moves on to the
+                // next, like a swipe, and wraps back to the first.
+                Button { Task { await slideToNext() } } label: {
+                    HStack(spacing: 5) {
+                        ForEach(Opponent.allCases) { o in
+                            Capsule().fill(o == seat ? Palette.accent : Palette.mist.opacity(0.3))
+                                .frame(width: o == seat ? 14 : 6, height: 6)
+                        }
                     }
+                    .padding(.horizontal, 8).padding(.vertical, 13)
+                    .contentShape(.rect)
                 }
+                .buttonStyle(.plain)
+                .padding(.trailing, -8)
                 .accessibilityHidden(true)
             }
             .id(seat)
             .transition(.opacity)
+            .chrome(shown, from: .top, delay: 0.14)
 
             ZStack {
                 StaticBoard(fen: String((savedHere?.fen ?? Self.setup).split(separator: " ").first ?? ""))
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .heroBoard(boardSpace)
                     .shadow(color: .black.opacity(0.22), radius: 16, y: 12)
                     .saturation(seat.isUnlocked ? 1 : 0.2)
                     .opacity(seat.isUnlocked ? 1 : 0.55)
                 if !seat.isUnlocked, let prev = seat.previous {
-                    VStack(spacing: 6) {
+                    // One line that counts down, and the wins so far as a bar.
+                    VStack(spacing: 8) {
                         Image(systemName: "lock.fill").font(.system(size: 22, weight: .semibold))
-                        Text("Beat the \(prev.name) \(Opponent.winsToUnlock) times")
+                        Text(winsLeft == Opponent.winsToUnlock ? L("Beat the \(prev.name) \(winsLeft) times")
+                             : winsLeft == 1 ? L("Beat the \(prev.name) once more")
+                             : L("Beat the \(prev.name) \(winsLeft) more times"))
                             .font(Typeface.display(16))
-                        Text("\(winsLeft) to go").font(.system(size: 13)).foregroundStyle(Palette.mist)
+                        // A short bar in three parts: progress, not pages.
+                        HStack(spacing: 3) {
+                            ForEach(0..<Opponent.winsToUnlock, id: \.self) { k in
+                                Capsule().fill(k < Opponent.winsToUnlock - winsLeft ? Palette.accent : Palette.mist.opacity(0.3))
+                                    .frame(width: 22, height: 4)
+                            }
+                        }
+                        .accessibilityHidden(true)
                     }
                     .padding(.horizontal, 20).padding(.vertical, 16)
                     .glassEffect(.regular, in: .rect(cornerRadius: 20))
@@ -241,14 +345,8 @@ private struct HomeScreen: View {
                     let i = all.firstIndex(of: seat) ?? 0
                     let next = v.translation.width < -50 ? min(i + 1, all.count - 1)
                              : v.translation.width > 50 ? max(i - 1, 0) : i
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        swipe = 0
-                        if next != i { seat = all[next] }
-                    }
-                    if next != i {
-                        Sound.shared.play(.select)
-                        if all[next].isUnlocked { opponentRaw = all[next].rawValue }
-                    }
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { swipe = 0 }
+                    choose(all[next])
                 })
             .onTapGesture { if seat.isUnlocked { go() } }
             .accessibilityElement()
@@ -259,24 +357,49 @@ private struct HomeScreen: View {
                 seat = all[dir == .increment ? min(i + 1, all.count - 1) : max(i - 1, 0)]
             }
 
-            // Your side of the table.
-            HStack(spacing: 6) {
-                Circle().fill(Palette.squareLight).frame(width: 8, height: 8)
-                    .overlay(Circle().strokeBorder(Palette.mist.opacity(0.5), lineWidth: 0.5))
-                Text("You, playing White").font(.system(size: 13)).foregroundStyle(Palette.mist)
-                Spacer()
-                if savedHere == nil && seat.isUnlocked {
-                    Text("Swipe for another opponent").font(.system(size: 12)).foregroundStyle(Palette.mist.opacity(0.8))
-                }
+            // Until the first swipe, a quiet word on how to change opponents.
+            if !swiped && seat.isUnlocked {
+                Text("Swipe for another opponent").font(.system(size: 12)).foregroundStyle(Palette.mist.opacity(0.8))
+                    .transition(.opacity)
+                    .chrome(shown, delay: 0.2)
             }
         }
         .animation(.easeInOut(duration: 0.25), value: seat)
     }
 
-    private var seatLine: String {
-        if !seat.isUnlocked { return L("\(seat.subtitle) · locked") }
-        if let s = savedHere { return L("Your game · move \(s.moves.count / 2 + 1)") }
-        return seat.subtitle
+    /// Sits across from another opponent, by swipe or by tapping the dots.
+    private func choose(_ o: Opponent) {
+        guard o != seat else { return }
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { seat = o }
+        swiped = true
+        Sound.shared.play(.select)
+        if o.isUnlocked { opponentRaw = o.rawValue }
+    }
+
+    /// The dots' tap, played as a swipe: the board slides out to the left and
+    /// the next opponent's slides in from the right.
+    private func slideToNext() async {
+        let all = Opponent.allCases
+        let next = all[((all.firstIndex(of: seat) ?? 0) + 1) % all.count]
+        withAnimation(.easeIn(duration: 0.14)) { swipe = -48 }
+        try? await Task.sleep(for: .seconds(0.14))
+        choose(next)
+        var t = Transaction(); t.disablesAnimations = true
+        withTransaction(t) { swipe = 48 }
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.8)) { swipe = 0 }
+    }
+
+    /// On the first few visits, until the first swipe, the board slides a
+    /// little toward the next opponent and springs back: it can be swiped.
+    private func peek() async {
+        guard !swiped, peeks < 3 else { return }
+        try? await Task.sleep(for: .seconds(0.9))
+        guard !swiped, swipe == 0 else { return }
+        let last = seat == Opponent.allCases.last
+        withAnimation(.easeInOut(duration: 0.32)) { swipe = last ? 26 : -26 }
+        try? await Task.sleep(for: .seconds(0.32))
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.55)) { swipe = 0 }
+        peeks += 1
     }
 
     private var winsLeft: Int {
@@ -294,29 +417,21 @@ private struct HomeScreen: View {
                     Text(savedHere == nil ? "Begin" : "Continue")
                 }
                 .buttonStyle(PrimaryButtonStyle())
-            } else {
-                Text("Win \(winsLeft) more against the \(seat.previous?.name ?? "") to sit down here")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Palette.mist)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity, minHeight: 56)
             }
-            // The quieter ways in, side by side in one pill, each a full-size target.
+            // The quieter ways in: plain words side by side, each a full-size target.
             HStack(spacing: 0) {
                 if savedHere != nil {
                     Button { Haptics.tap(); start(.engine, seat) } label: {
                         Label("New game", systemImage: "plus")
-                            .frame(maxWidth: .infinity, minHeight: 48)
+                            .frame(maxWidth: .infinity, minHeight: 44)
                             .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
-                    Rectangle().fill(Palette.mist.opacity(0.3)).frame(width: 0.5, height: 22)
                 }
                 friendLink
             }
             .font(.system(size: 15, weight: .semibold))
             .foregroundStyle(Palette.ink)
-            .glassEffect(.regular.interactive(), in: .capsule)
         }
     }
 
@@ -346,28 +461,24 @@ private struct HomeScreen: View {
     @ViewBuilder
     private var historyLine: some View {
         if !recent.isEmpty {
+            // A quiet line, not a card: your games are there when you want them.
             Button { Haptics.tap(); history = true } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "clock.arrow.circlepath").foregroundStyle(Palette.mist)
-                    Text("Your games").font(.system(size: 14.5, weight: .semibold))
-                    if let s = historySummary {
-                        Text(s).font(.system(size: 13.5)).foregroundStyle(Palette.mist)
+                // How it's going as a shape, not a number: the same line the
+                // sheet opens with.
+                HStack(spacing: 10) {
+                    let trend = recent.accuracyTrend
+                    if trend.count >= 3 {
+                        AccuracyTrend(values: trend, compact: true).frame(width: 36, height: 14)
                     }
-                    Spacer()
-                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(Palette.mist)
+                    Text("Your games").font(.system(size: 14, weight: .semibold)).foregroundStyle(Palette.ink)
+                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Palette.mist)
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .frame(minHeight: 44)
                 .contentShape(.rect)
             }
             .buttonStyle(PressableStyle(scale: 0.98))
-            .glassEffect(.regular.interactive(), in: .capsule)
         }
-    }
-
-    private var historySummary: String? {
-        let a = recent.filter { $0.opponent != "Pass & play" }.compactMap(\.accuracy).prefix(10)
-        guard a.count >= 2 else { return L("\(recent.count) played") }
-        return L("\(a.reduce(0, +) / a.count)% lately")
     }
 
     private var greeting: String {
@@ -391,22 +502,6 @@ private struct SectionLabel: View {
 private struct TrailingIcon: LabelStyle {
     func makeBody(configuration: Configuration) -> some View {
         HStack(spacing: 10) { configuration.title; configuration.icon }
-    }
-}
-
-/// The app's mark: the glass knight on a corner of the stone board.
-private struct BrandMark: View {
-    var body: some View {
-        ZStack {
-            VStack(spacing: 0) {
-                HStack(spacing: 0) { Palette.squareLight; Palette.squareDark }
-                HStack(spacing: 0) { Palette.squareDark; Palette.squareLight }
-            }
-            GlassPiece(code: "N").padding(3)
-        }
-        .frame(width: 26, height: 26)
-        .clipShape(.rect(cornerRadius: 7, style: .continuous))
-        .accessibilityHidden(true)
     }
 }
 
@@ -602,78 +697,163 @@ private struct FriendGames: View {
     }
 }
 
+/// Your games as a quiet journal: how your accuracy is trending, then each
+/// game by day, with a small mark for how it ended.
 private struct RecentGames: View {
     let records: [GameRecord]
-
     var limit = 3
-    /// The last few games: enough to remember, not a ledger.
-    private var shown: [GameRecord] { Array(records.prefix(limit)) }
 
-    /// One quiet line in place of a chart: how it's going lately.
-    private var summary: String? {
-        let recent = records.filter { $0.opponent != "Pass & play" }.compactMap(\.accuracy).prefix(10)
-        guard recent.count >= 2 else { return nil }
-        let avg = recent.reduce(0, +) / recent.count
-        let great = Stats.greatMoves
-        return great > 0 ? L("\(avg)% lately · \(great) great moves") : L("\(avg)% lately")
+    /// Games that were played, not abandoned on the first move.
+    private var shown: [GameRecord] { Array(records.filter { $0.moves >= 2 }.prefix(limit)) }
+
+    private var trend: [Int] { records.accuracyTrend }
+
+
+    /// The games grouped by the day they were played, newest first.
+    private var days: [(day: Date, games: [GameRecord])] {
+        let cal = Calendar.current
+        var out: [(day: Date, games: [GameRecord])] = []
+        for r in shown {
+            let d = cal.startOfDay(for: r.date)
+            if out.last?.day == d { out[out.count - 1].games.append(r) } else { out.append((d, [r])) }
+        }
+        return out
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                SectionLabel(text: "Your games")
-                Spacer()
-                if let summary { Text(summary).font(.system(size: 12.5)).foregroundStyle(Palette.mist) }
-            }
-            if records.isEmpty {
-                Text("Your finished games will show up here, with how accurately you played.")
-                    .font(.system(size: 14)).foregroundStyle(Palette.mist)
-                    .padding(.vertical, 6)
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(shown.enumerated()), id: \.element.id) { k, r in
-                        HStack(spacing: 12) {
-                            Group {
-                                if let o = r.resolvedLevel.flatMap(Opponent.init) {
-                                    OpponentAvatar(opponent: o, size: 30)
-                                } else {
-                                    Image(systemName: "person.2.fill").font(.system(size: 13)).foregroundStyle(Palette.mist)
-                                }
-                            }
-                            .frame(width: 32)
-                            VStack(alignment: .leading, spacing: 1) {
-                                // Neutral: the opponent, not the score. Only a win gets a word.
-                                HStack(spacing: 6) {
-                                    Text(r.opponent == "Pass & play" ? "Pass & play" : "vs \(r.opponentName)")
-                                        .font(.system(size: 15, weight: .semibold))
-                                    if r.outcome == "won" {
-                                        Text("Won").font(.system(size: 11, weight: .bold))
-                                            .foregroundStyle(Palette.great)
-                                            .padding(.horizontal, 6).padding(.vertical, 1)
-                                            .background(Palette.greatFill, in: .capsule)
-                                    }
-                                }
-                                Text("\(r.moves) moves · \(r.date.formatted(.relative(presentation: .named)))")
-                                    .font(.system(size: 12.5)).foregroundStyle(Palette.mist)
-                            }
-                            Spacer()
-                            if r.opponent != "Pass & play", let a = r.accuracy {
-                                Text("\(a)%").font(Typeface.display(17)).monospacedDigit()
-                            }
-                        }
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 12)
-                        if k < shown.count - 1 { Divider().padding(.leading, 56) }
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Your games").font(Typeface.display(24)).tracking(-0.4)
+            // Two figures, each with what it means, then the line they come from.
+            if trend.count >= 2 {
+                HStack(alignment: .firstTextBaseline) {
+                    figure("\(trend.reduce(0, +) / trend.count)%", L("Accuracy · last \(trend.count) games"))
+                    Spacer()
+                    if Stats.greatMoves > 0 {
+                        figure("\(Stats.greatMoves)", L("Great moves"), trailing: true)
                     }
                 }
-                .glassEffect(.regular, in: .rect(cornerRadius: 18))
+                .padding(.top, 16)
+            }
+            if trend.count >= 3 {
+                AccuracyTrend(values: trend)
+                    .frame(height: 44)
+                    .padding(.top, 16)
+            }
+            if shown.isEmpty {
+                Text("Your finished games will show up here, with how accurately you played.")
+                    .font(.system(size: 14)).foregroundStyle(Palette.mist)
+                    .padding(.top, 16)
+            }
+            ForEach(days, id: \.day) { group in
+                Text(dayLabel(group.day))
+                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(Palette.mist)
+                    .padding(.top, 24).padding(.bottom, 4)
+                ForEach(group.games) { r in row(r) }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func figure(_ value: String, _ label: String, trailing: Bool = false) -> some View {
+        VStack(alignment: trailing ? .trailing : .leading, spacing: 2) {
+            Text(value).font(Typeface.display(28, .bold)).monospacedDigit()
+            Text(label).font(.system(size: 12.5)).foregroundStyle(Palette.mist)
+        }
+    }
+
+    private func row(_ r: GameRecord) -> some View {
+        let twoPlayers = r.opponent == "Pass & play"
+        return HStack(spacing: 14) {
+            ResultMark(outcome: twoPlayers ? nil : r.outcome)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(twoPlayers ? L("Pass & play") : r.opponentName)
+                    .font(.system(size: 16, weight: .semibold))
+                Text(detail(r, twoPlayers: twoPlayers))
+                    .font(.system(size: 13)).foregroundStyle(Palette.mist)
+            }
+            Spacer()
+            if !twoPlayers, let a = r.accuracy {
+                Text("\(a)%").font(Typeface.display(17)).monospacedDigit()
+            }
+        }
+        .padding(.vertical, 10)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func detail(_ r: GameRecord, twoPlayers: Bool) -> String {
+        let moves = r.moves == 1 ? L("1 move") : L("\(r.moves) moves")
+        guard !twoPlayers else { return moves }
+        let result = ["won": L("Won"), "lost": L("Lost"), "draw": L("Draw")][r.outcome] ?? ""
+        return result.isEmpty ? moves : "\(result) · \(moves)"
+    }
+
+    private func dayLabel(_ day: Date) -> String {
+        let cal = Calendar.current
+        if cal.isDateInToday(day) { return L("Today") }
+        if cal.isDateInYesterday(day) { return L("Yesterday") }
+        return day.formatted(.dateTime.weekday(.wide).day().month(.abbreviated))
+    }
+}
+
+/// How a game ended, as a small mark: filled green for a win, a ring for a
+/// loss, a quiet dot for a draw, a hollow pair for a game for two.
+private struct ResultMark: View {
+    let outcome: String?
+
+    var body: some View {
+        Group {
+            switch outcome {
+            case "won": Circle().fill(Palette.great)
+            case "lost": Circle().strokeBorder(Palette.mist.opacity(0.7), lineWidth: 1.5)
+            case "draw": Circle().fill(Palette.mist.opacity(0.5))
+            default: Circle().strokeBorder(Palette.mist.opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [2, 2]))
+            }
+        }
+        .frame(width: 10, height: 10)
+        .accessibilityHidden(true)
+    }
+}
+
+extension [GameRecord] {
+    /// Accuracy in the last ten games against an opponent, oldest first.
+    var accuracyTrend: [Int] {
+        [Int](filter { $0.opponent != "Pass & play" }.compactMap(\.accuracy).prefix(10).reversed())
+    }
+}
+
+/// Accuracy over the last games as one soft line, the latest marked: the same
+/// hand as the game's arc on the finish card.
+private struct AccuracyTrend: View {
+    let values: [Int]
+    /// Small, inline: a thinner line and no marker.
+    var compact = false
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width, h = geo.size.height
+            let lo = Double(max(0, (values.min() ?? 0) - 8)), hi = Double(min(100, (values.max() ?? 100) + 8))
+            let pts = values.indices.map { i in
+                CGPoint(x: w * CGFloat(i) / CGFloat(max(1, values.count - 1)),
+                        y: h * (1 - CGFloat((Double(values[i]) - lo) / max(1, hi - lo))))
+            }
+            ZStack(alignment: .topLeading) {
+                GameArc.smooth(pts)
+                    .stroke(Palette.accent, style: StrokeStyle(lineWidth: compact ? 1.5 : 1.75, lineCap: .round, lineJoin: .round))
+                if !compact, let last = pts.last {
+                    Circle().fill(Palette.accent)
+                        .frame(width: 8, height: 8)
+                        .overlay(Circle().strokeBorder(Palette.surface, lineWidth: 2))
+                        .position(last)
+                }
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
 
 private struct SettingsSheet: View {
     var learn: () -> Void = {}
+    var welcome: () -> Void = {}
     @AppStorage("sound") private var sound = true
     @AppStorage("haptics") private var haptics = true
     @Environment(\.openURL) private var openURL
@@ -686,6 +866,15 @@ private struct SettingsSheet: View {
             Button { learn() } label: {
                 HStack {
                     Label("Learn the moves", systemImage: "graduationcap")
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Palette.mist)
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            Button { welcome() } label: {
+                HStack {
+                    Label("How it works", systemImage: "sparkles")
                     Spacer()
                     Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Palette.mist)
                 }
@@ -761,6 +950,9 @@ struct StaticBoard: View {
 struct GameScreen: View {
     let model: GameModel
     let back: () -> Void
+    @Environment(\.boardSpace) private var boardSpace
+    /// Fades in everything around the board as the game arrives.
+    @State private var shown = false
     /// How far the screen has been pulled from the left edge, on the way home.
     @State private var pull: CGFloat = 0
 
@@ -797,9 +989,9 @@ struct GameScreen: View {
                 if geo.size.width > 700 && geo.size.width > geo.size.height {
                     HStack(alignment: .center, spacing: 28) {
                         VStack(spacing: 6) {
-                            CapturedRow(pieces: model.captured(by: "b"), lead: model.materialLead(for: "b"))
-                            BoardView(model: model)
-                            CapturedRow(pieces: model.captured(by: "w"), lead: model.materialLead(for: "w"))
+                            CapturedRow(pieces: model.captured(by: "b"), lead: model.materialLead(for: "b")).chrome(shown, from: .top, delay: 0.16)
+                            BoardView(model: model).heroBoard(boardSpace)
+                            CapturedRow(pieces: model.captured(by: "w"), lead: model.materialLead(for: "w")).chrome(shown, delay: 0.18)
                         }
                         .frame(width: min(geo.size.height - 70, geo.size.width - 420))
                         VStack(spacing: 10) {
@@ -808,19 +1000,20 @@ struct GameScreen: View {
                             Spacer(minLength: 0)
                             Dock(model: model)
                         }
+                        .chrome(shown, delay: 0.2)
                         .frame(width: 360)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(.vertical, 12)
                 } else {
                     VStack(spacing: 6) {
-                        TopBar(model: model, back: back)
-                        CapturedRow(pieces: model.captured(by: "b"), lead: model.materialLead(for: "b"))
-                        BoardView(model: model)
-                        CapturedRow(pieces: model.captured(by: "w"), lead: model.materialLead(for: "w"))
-                        coach
+                        TopBar(model: model, back: back).chrome(shown, from: .top, delay: 0.12)
+                        CapturedRow(pieces: model.captured(by: "b"), lead: model.materialLead(for: "b")).chrome(shown, from: .top, delay: 0.16)
+                        BoardView(model: model).heroBoard(boardSpace)
+                        CapturedRow(pieces: model.captured(by: "w"), lead: model.materialLead(for: "w")).chrome(shown, delay: 0.18)
+                        coach.chrome(shown, delay: 0.22)
                         Spacer(minLength: 0)
-                        Dock(model: model)
+                        Dock(model: model).chrome(shown, delay: 0.28)
                     }
                     .frame(maxWidth: min(760, geo.size.height * 0.6))
                     .frame(maxWidth: .infinity)
@@ -831,7 +1024,7 @@ struct GameScreen: View {
             .foregroundStyle(Palette.ink)
 
             if let finish = model.finish {
-                FinishCard(finish: finish, share: model.finishMoment,
+                FinishCard(finish: finish, king: model.myColor == "b" ? "k" : "K", share: model.finishMoment,
                            again: { model.mode == .friend ? model.rematch() : model.start(model.mode, opponent: model.opponent) },
                            tryNext: finish.unlocked.map { next in {
                                UserDefaults.standard.set(next.rawValue, forKey: "opponent")
@@ -844,6 +1037,7 @@ struct GameScreen: View {
         .animation(.spring(response: 0.5, dampingFraction: 0.75), value: model.finish)
         .animation(.smooth(duration: 0.25), value: model.reviewing)
         .offset(x: pull)
+        .onAppear { shown = true }
         // The iOS back gesture: pull from the left edge to go home.
         .overlay(alignment: .leading) {
             Color.clear
@@ -882,28 +1076,22 @@ private struct TopBar: View {
             } else if model.mode == .friend {
                 FriendAvatar(name: model.friendName, size: 36)
             }
-            VStack(alignment: .leading, spacing: 1) {
+            // Just the name, with dots beside it while they think: the board's
+            // light and the coach already say when it's your move.
+            HStack(spacing: 8) {
                 Text(model.mode == .engine ? model.opponent.name : model.mode == .friend ? model.friendName : "Pass & play")
                     .font(Typeface.display(17, .bold))
-                HStack(spacing: 6) {
-                    if model.playerToMove { Circle().fill(Palette.great).frame(width: 6, height: 6) }
-                    Text(stateText).font(.system(size: 12.5)).foregroundStyle(Palette.mist)
-                    if model.thinking { ThinkingDots() }
+                if model.thinking || (model.mode == .friend && !model.isOver && model.turn != model.myColor) {
+                    ThinkingDots().transition(.opacity)
                 }
             }
+            .animation(.easeOut(duration: 0.2), value: model.thinking)
             Spacer()
             // No live score: accuracy waits for the game-over card, so play feels unjudged.
         }
         .padding(.top, 4)
     }
 
-    private var stateText: String {
-        if model.isOver { return L("Game over") }
-        if model.thinking { return L("Thinking") }
-        if model.mode == .passAndPlay { return model.turn == "w" ? L("White to move") : L("Black to move") }
-        if model.mode == .friend { return model.turn == model.myColor ? L("Your move") : L("Their move") }
-        return model.turn == "w" ? L("Your move") : ""
-    }
 }
 
 private struct ThinkingDots: View {
@@ -941,24 +1129,29 @@ private struct CapturedRow: View {
 
 /// The coach's card: a verdict badge, a title in the verdict's colour, and one
 /// sentence. The opponent's moves are narrated here too, with its avatar.
-private struct CoachView: View {
+struct CoachView: View {
     let card: CoachCard?
     let opponent: Opponent
     var friend: String?
+    /// The intro keeps its second lines quiet, under a much larger heading.
+    var compact = false
 
     var body: some View {
         ZStack {
             if let card {
                 HStack(spacing: 12) {
                     badge(card)
+                    // Claims the full width, so a line only wraps when it reaches
+                    // the card's edge (a Spacer beside it made the layout split
+                    // the room and wrap the sentence early).
                     VStack(alignment: .leading, spacing: 2) {
                         Text(card.title).font(Typeface.display(17)).foregroundStyle(titleColor(card.kind))
                         if !card.text.isEmpty {
-                            Text(card.text).font(.system(size: 13.5)).foregroundStyle(Palette.mist)
+                            Text(card.text).font(.system(size: compact ? 12 : 13.5)).foregroundStyle(Palette.mist)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
-                    Spacer(minLength: 0)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(12)
                 .glassEffect(.regular, in: .rect(cornerRadius: 20))
@@ -1056,7 +1249,7 @@ private struct Dock: View {
                 }
                     .buttonStyle(.glass)
                     .buttonBorderShape(.capsule)
-                    .disabled(model.busy || model.trail.isEmpty)
+                    .disabled(model.moves.isEmpty)
                     .accessibilityLabel("Undo")
                 }
                 Menu {
@@ -1083,12 +1276,9 @@ private struct Dock: View {
                     Text(c.message)
                 }
                 if model.mode == .friend {
-                    // Against a friend there are no hints: just whose turn it is.
-                    Text(model.isOver ? "Game over" : model.turn == model.myColor ? "Your move" : "Waiting for \(model.friendInSentence)")
-                        .foregroundStyle(Palette.ink)
-                        .frame(maxWidth: .infinity, minHeight: Self.height, maxHeight: Self.height)
-                        .padding(.vertical, 7)
-                        .glassEffect(.regular, in: .capsule)
+                    // Against a friend there are no hints, and the top bar says
+                    // whose turn it is: the dock keeps only its menu.
+                    Spacer()
                 } else {
                 Button {
                     Haptics.tap()
@@ -1097,7 +1287,7 @@ private struct Dock: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles").symbolEffect(.bounce, value: hints)
-                        Text(model.hintIsFree && !model.hintRevealed ? "Show the move" : model.hintsLeft > 0 ? "Show me" : "No hints")
+                        Text(model.hintIsFree && !model.hintRevealed ? "Show the move" : model.hintsLeft > 0 ? "Hint" : "No hints")
                         if model.hintsLeft > 0 && !(model.hintIsFree && !model.hintRevealed) {
                             Text("\(model.hintsLeft)").font(.system(size: 12, weight: .bold)).monospacedDigit()
                                 .contentTransition(.numericText())
@@ -1130,6 +1320,8 @@ private struct Dock: View {
 /// again, one line of numbers, what's next, and the way on.
 private struct FinishCard: View {
     let finish: Finish
+    /// The player's own king, for the emblem.
+    let king: Character
     let share: ShareMoment?
     let again: () -> Void
     /// Starts a game against the opponent this win just opened.
@@ -1138,40 +1330,77 @@ private struct FinishCard: View {
 
     var body: some View {
         ZStack {
-            Rectangle().fill(.ultraThinMaterial).ignoresSafeArea()
-            VStack(spacing: 20) {
-                // What happened.
-                VStack(spacing: 4) {
-                    Text(finish.title).font(Typeface.display(28)).tracking(-0.5)
-                        .multilineTextAlignment(.center)
-                    Text(finish.firstWin ? "Your first win · \(finish.text)" : finish.text)
-                        .font(.system(size: 14.5)).foregroundStyle(Palette.mist)
-                        .multilineTextAlignment(.center)
+            // A calm wash in the app's own evening: the board recedes without
+            // smearing into a blur.
+            LinearGradient(colors: [Palette.backgroundTop.opacity(0.88), Palette.backgroundBottom.opacity(0.96)],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+            VStack(alignment: .leading, spacing: 0) {
+                // What happened, in a line.
+                HStack(spacing: 14) {
+                    FinishEmblem(outcome: finish.outcome, king: king)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(finish.title).font(Typeface.display(24)).tracking(-0.4)
+                            .lineLimit(2).minimumScaleFactor(0.8)
+                        Text(finish.firstWin ? "Your first win · \(finish.text)" : finish.text)
+                            .font(.system(size: 14)).foregroundStyle(Palette.mist)
+                            .lineLimit(2)
+                    }
+                    Spacer(minLength: 0)
                 }
 
-                // The best move, played again.
-                if let best = finish.best {
-                    VStack(spacing: 10) {
-                        BestMoveReplay(best: best)
-                            .frame(width: 196, height: 196)
-                        VStack(spacing: 2) {
-                            HStack(spacing: 5) {
-                                if let symbol = best.kind.symbol { Image(systemName: symbol).font(.system(size: 11, weight: .bold)) }
-                                Text(best.side.map { "Best move · \($0), move \(best.moveNumber)" }
-                                     ?? "Your best move · move \(best.moveNumber)")
+                // How it went: the arc of the game, and what it says.
+                if !finish.arc.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Your chances").font(.system(size: 12, weight: .semibold)).foregroundStyle(Palette.mist)
+                        GameArc(arc: finish.arc,
+                                best: finish.best.map { $0.ply + 1 },
+                                turn: finish.turnPly.map { $0 + 1 })
+                            .frame(height: 78)
+                        HStack(spacing: 14) {
+                            if let best = finish.best {
+                                legend(Palette.great, best.san.isEmpty ? L("Best · move \(best.moveNumber)")
+                                                                       : "\(L("Best · move \(best.moveNumber)")) · \(best.san)")
                             }
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(verdictColor(best.kind))
-                            Text(best.text).font(.system(size: 13)).foregroundStyle(Palette.mist)
-                                .multilineTextAlignment(.center).lineLimit(2)
+                            if let turn = finish.turnPly {
+                                legend(Palette.blunder, L("Turned · move \(turn / 2 + 1)"))
+                            }
                         }
+                    }
+                    .padding(16)
+                    .background(Palette.statFill, in: .rect(cornerRadius: 16, style: .continuous))
+                    .padding(.top, 16)
+
+                    if let insight = finish.insight {
+                        Text(insight).font(.system(size: 15, weight: .semibold))
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 16)
                     }
                 }
 
-                // One line of numbers, and what comes next.
-                VStack(spacing: 8) {
-                    Text(numbers).font(.system(size: 13, weight: .medium)).monospacedDigit()
-                        .foregroundStyle(Palette.mist)
+                // The numbers, as tiles you can read at a glance.
+                if !stats.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        if finish.sides != nil {
+                            Text("Great moves").font(.system(size: 12, weight: .semibold)).foregroundStyle(Palette.mist)
+                        }
+                        HStack(spacing: 8) {
+                            ForEach(stats, id: \.label) { stat in
+                                VStack(spacing: 1) {
+                                    Text(stat.value).font(Typeface.display(20, .bold)).monospacedDigit()
+                                    Text(stat.label).font(.system(size: 11.5, weight: .medium)).foregroundStyle(Palette.mist)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(Palette.statFill, in: .rect(cornerRadius: 14, style: .continuous))
+                            }
+                        }
+                    }
+                    .padding(.top, 16)
+                }
+
+                // What comes next.
+                Group {
                     if let next = finish.unlocked {
                         Label("The \(next.name) is open", systemImage: "lock.open.fill")
                             .font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Palette.great)
@@ -1185,61 +1414,198 @@ private struct FinishCard: View {
                             let left = Opponent.winsToUnlock - toward.wins
                             Text(left == 1 ? L("1 more win to face the \(toward.next.name)")
                                            : L("\(left) more wins to face the \(toward.next.name)"))
+                                .foregroundStyle(Palette.mist)
                         }
                         .font(.system(size: 13.5, weight: .medium))
                     }
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 16)
 
-                // The way on: one clear next step, then Home and Share as one
-                // quiet pill below it.
-                VStack(spacing: 16) {
+                // The way on: one clear next step, then Home and Share beside
+                // each other, quiet.
+                VStack(spacing: 8) {
                     if let next = finish.unlocked, let tryNext {
                         Button("Play the \(next.name)") { tryNext() }.buttonStyle(PrimaryButtonStyle())
                     } else {
                         Button("Play again", action: again).buttonStyle(PrimaryButtonStyle())
                     }
-                    HStack(spacing: 0) {
+                    HStack(spacing: 10) {
                         Button { Haptics.tap(); home() } label: {
                             Label("Home", systemImage: "house")
-                                .frame(maxWidth: .infinity, minHeight: 46)
-                                .contentShape(.rect)
+                                .frame(maxWidth: .infinity, minHeight: 48)
+                                .contentShape(.capsule)
                         }
+                        .buttonStyle(QuietButtonStyle())
                         if let share {
-                            Rectangle().fill(Palette.mist.opacity(0.3)).frame(width: 0.5, height: 22)
                             ShareMomentButton(moment: share, label: "Share")
-                                .frame(maxWidth: .infinity, minHeight: 46)
-                                .contentShape(.rect)
+                                .buttonStyle(QuietButtonStyle())
                         }
                     }
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Palette.ink)
-                    .buttonStyle(.plain)
-                    .glassEffect(.regular.interactive(), in: .capsule)
                 }
-                .padding(.top, 4)
+                .padding(.top, 24)
             }
-            .padding(.horizontal, 24).padding(.top, 28).padding(.bottom, 26)
-            .frame(maxWidth: 460)
-            .glassEffect(.regular, in: .rect(cornerRadius: 32))
-            .overlay(alignment: .top) {
-                if finish.outcome == .won { Celebration().offset(y: 40) }
+            .padding(24)
+            .frame(maxWidth: 440)
+            .background {
+                let card = RoundedRectangle(cornerRadius: 30, style: .continuous)
+                card.fill(Palette.surface)
+                    // A faint light of the outcome's colour from the emblem's corner.
+                    .overlay {
+                        RadialGradient(colors: [FinishEmblem.tint(finish.outcome).opacity(0.16), .clear],
+                                       center: .topLeading, startRadius: 0, endRadius: 300)
+                            .clipShape(card)
+                    }
+                    .overlay(card.strokeBorder(Palette.hairline, lineWidth: 1))
+                    .shadow(color: .black.opacity(0.28), radius: 30, y: 18)
             }
-            .padding(22)
+            .overlay(alignment: .topLeading) {
+                if finish.outcome == .won { Celebration().offset(x: 54, y: 54) }
+            }
+            .padding(16)
         }
         .foregroundStyle(Palette.ink)
     }
 
-    /// "94% accuracy · 2 great · 3 good", leaving out what's zero or unknown.
-    private var numbers: String {
-        if let s = finish.sides {
-            return s.white + s.black == 0 ? L("A game for two") : L("White \(s.white) great · Black \(s.black) great")
+    private func legend(_ color: Color, _ text: String) -> some View {
+        HStack(spacing: 6) {
+            Circle().fill(color).frame(width: 7, height: 7)
+            Text(text).font(.system(size: 12, weight: .medium)).foregroundStyle(Palette.mist).lineLimit(1)
         }
-        var parts: [String] = []
-        if let a = finish.accuracy { parts.append(L("\(a)% accuracy")) }
-        if finish.great > 0 { parts.append(L("\(finish.great) great")) }
-        let good = finish.goodMoves - finish.great
-        if good > 0 { parts.append(L("\(good) good")) }
-        return parts.isEmpty ? L("Every game teaches something") : parts.joined(separator: " · ")
+    }
+
+    /// Accuracy, great moves and the game's length. Pass and play shows each
+    /// side's great moves instead.
+    private var stats: [(value: String, label: String)] {
+        if let s = finish.sides {
+            return s.white + s.black == 0 ? [] : [("\(s.white)", L("White")), ("\(s.black)", L("Black"))]
+        }
+        var out: [(value: String, label: String)] = []
+        if let a = finish.accuracy { out.append(("\(a)%", L("Accuracy"))) }
+        out.append(("\(finish.great)", L("Great")))
+        if finish.plies > 0 { out.append(("\((finish.plies + 1) / 2)", L("Moves"))) }
+        return out
+    }
+}
+
+/// The game as one line: the player's chance to win from the first move to
+/// the last, green above even and coral below, with the best move and the
+/// turning point marked. It draws itself in once.
+private struct GameArc: View {
+    let arc: [Double]
+    /// Indexes into `arc` for the two markers.
+    let best: Int?
+    let turn: Int?
+    @State private var drawn = false
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width, h = geo.size.height
+            let pts = arc.indices.map { i in
+                CGPoint(x: w * CGFloat(i) / CGFloat(max(1, arc.count - 1)), y: h * (1 - CGFloat(arc[i])))
+            }
+            let line = Self.smooth(pts)
+            let area = Path { p in
+                p.addPath(line)
+                p.addLine(to: CGPoint(x: w, y: h / 2))
+                p.addLine(to: CGPoint(x: 0, y: h / 2))
+                p.closeSubpath()
+            }
+            ZStack(alignment: .topLeading) {
+                Path { p in p.move(to: CGPoint(x: 0, y: h / 2)); p.addLine(to: CGPoint(x: w, y: h / 2)) }
+                    .stroke(Palette.mist.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [3, 4]))
+                area.fill(Palette.great.opacity(0.24))
+                    .mask(Rectangle().frame(height: h / 2).frame(maxHeight: .infinity, alignment: .top))
+                area.fill(Palette.blunder.opacity(0.24))
+                    .mask(Rectangle().frame(height: h / 2).frame(maxHeight: .infinity, alignment: .bottom))
+                    .opacity(drawn ? 1 : 0)
+                line.trim(from: 0, to: drawn ? 1 : 0)
+                    .stroke(Palette.ink.opacity(0.8), style: StrokeStyle(lineWidth: 1.75, lineCap: .round, lineJoin: .round))
+                ForEach([(best, Palette.great), (turn, Palette.blunder)].compactMap { m in m.0.map { ($0, m.1) } }, id: \.0) { i, color in
+                    if pts.indices.contains(i) {
+                        Circle().fill(color)
+                            .frame(width: 9, height: 9)
+                            .overlay(Circle().strokeBorder(Palette.surface, lineWidth: 2))
+                            .frame(width: 13, height: 13)
+                            .position(pts[i])
+                            .scaleEffect(drawn ? 1 : 0.01, anchor: UnitPoint(x: pts[i].x / w, y: pts[i].y / h))
+                            .animation(.spring(response: 0.35, dampingFraction: 0.55).delay(0.25 + 1.0 * Double(i) / Double(arc.count)), value: drawn)
+                    }
+                }
+            }
+            .animation(.easeInOut(duration: 1.1).delay(0.25), value: drawn)
+        }
+        .onAppear { drawn = true }
+        .accessibilityHidden(true)
+    }
+
+    /// A gentle curve through the points: each segment bends through the
+    /// midpoints, so the line reads as a flow, not a zigzag.
+    static func smooth(_ pts: [CGPoint]) -> Path {
+        Path { p in
+            guard let first = pts.first else { return }
+            p.move(to: first)
+            for i in 1..<pts.count {
+                let a = pts[i - 1], b = pts[i]
+                let mid = CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
+                p.addQuadCurve(to: mid, control: a)
+                if i == pts.count - 1 { p.addQuadCurve(to: b, control: b) }
+            }
+        }
+    }
+}
+
+/// The outcome at a glance: your king on a disc, standing in honey for a win,
+/// tipped over on limestone for a loss (the way a game is resigned), beside
+/// its rival on slate for a draw.
+private struct FinishEmblem: View {
+    let outcome: Finish.Outcome
+    let king: Character
+
+    static func tint(_ outcome: Finish.Outcome) -> Color {
+        switch outcome {
+        case .won: Palette.lastMove
+        case .lost: Palette.squareLight
+        case .draw: Palette.squareDark
+        }
+    }
+
+    var body: some View {
+        let tint = Self.tint(outcome)
+        ZStack {
+            Circle()
+                .fill(LinearGradient(colors: [tint.mix(with: .white, by: 0.25), tint],
+                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+            Circle().strokeBorder(.white.opacity(0.3), lineWidth: 1)
+            switch outcome {
+            case .won:
+                GlassPiece(code: king).frame(width: 40, height: 40).offset(y: -1)
+            case .lost:
+                GlassPiece(code: king, grounded: false).frame(width: 40, height: 40)
+                    .rotationEffect(.degrees(-55), anchor: UnitPoint(x: 0.5, y: 0.86))
+                    .offset(x: 10, y: -3)
+            case .draw:
+                HStack(spacing: -13) {
+                    GlassPiece(code: king).frame(width: 34, height: 34)
+                    GlassPiece(code: king == "K" ? "k" : "K").frame(width: 34, height: 34)
+                }
+                .offset(y: -1)
+            }
+        }
+        .frame(width: 60, height: 60)
+        .shadow(color: tint.opacity(0.4), radius: 12, y: 5)
+        .accessibilityHidden(true)
+    }
+}
+
+/// A secondary action: plain words that dim under the finger, no frame.
+private struct QuietButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(Palette.ink)
+            .opacity(configuration.isPressed ? 0.5 : 1)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
@@ -1248,7 +1614,7 @@ private struct FinishCard: View {
 }
 
 /// A win: glass flecks in the app's colours rise and fall once.
-private struct Celebration: View {
+struct Celebration: View {
     @State private var flown = false
     private let flecks: [(dx: CGFloat, dy: CGFloat, rot: Double, delay: Double, color: Int, size: CGFloat)] = (0..<28).map { _ in
         (CGFloat.random(in: -170...170), CGFloat.random(in: -190 ... -60), Double.random(in: -360...360),
@@ -1274,71 +1640,6 @@ private struct Celebration: View {
     }
 }
 
-/// The finish card's replay: the board before the move, then the piece glides
-/// to where it went and anything it took fades. Tap to see it again.
-private struct BestMoveReplay: View {
-    let best: BestMove
-    @State private var played = false
-
-    var body: some View {
-        GeometryReader { geo in
-            let size = geo.size.width, q = size / 8
-            let m = best.move
-            let lift = CGPoint(x: CGFloat(Squares.file(m.from) - Squares.file(m.to)) * q,
-                               y: CGFloat(Squares.row(m.from) - Squares.row(m.to)) * q)
-            ZStack(alignment: .topLeading) {
-                VStack(spacing: 0) {
-                    ForEach(0..<8, id: \.self) { r in
-                        HStack(spacing: 0) {
-                            ForEach(0..<8, id: \.self) { c in
-                                let sq = r * 8 + c
-                                ZStack {
-                                    Rectangle().fill((r + c) % 2 == 1 ? Palette.squareDark : Palette.squareLight)
-                                    if sq == m.from || sq == m.to {
-                                        Rectangle().fill(Palette.lastMove.opacity(sq == m.to ? (played ? 0.45 : 0.15) : 0.26))
-                                    }
-                                }
-                                .frame(width: q, height: q)
-                            }
-                        }
-                    }
-                }
-                // What it took, fading as the piece arrives.
-                if best.before[m.to] != "." {
-                    GlassPiece(code: best.before[m.to])
-                        .frame(width: q, height: q)
-                        .position(center(m.to, size))
-                        .opacity(played ? 0 : 1)
-                }
-                ForEach(0..<64, id: \.self) { i in
-                    if best.after[i] != "." {
-                        GlassPiece(code: best.after[i], lifted: i == m.to && !played)
-                            .frame(width: q, height: q)
-                            .position(center(i, size))
-                            .offset(x: i == m.to && !played ? lift.x : 0, y: i == m.to && !played ? lift.y : 0)
-                            .zIndex(i == m.to ? 20 : Double(i / 8))
-                    }
-                }
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .shadow(color: .black.opacity(0.18), radius: 8, y: 5)
-        .contentShape(Rectangle())
-        .onTapGesture { replay() }
-        .task { replay() }
-        .accessibilityLabel("Your best move, move \(best.moveNumber)")
-        .accessibilityAddTraits(.isButton)
-    }
-
-    private func replay() {
-        played = false
-        Task {
-            try? await Task.sleep(for: .seconds(0.7))
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) { played = true }
-            Haptics.tap(.soft, intensity: 0.6)
-        }
-    }
-}
 
 /// Picks a primitive button style at runtime, so a button can switch between
 /// prominent and plain glass.

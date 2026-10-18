@@ -5,21 +5,60 @@ import SwiftUI
 /// side that is ahead, and glass shards when something is taken.
 ///
 /// Nothing on it moves unless something happened.
-struct BoardView: View {
-    let model: GameModel
+/// What the board shows, and how a finger acts on it. A game provides it, and
+/// so does a Learn moment, so both are played on this very board.
+@MainActor
+protocol BoardSource: AnyObject, Observable {
+    var shownPieces: [PieceItem] { get }
+    var flipped: Bool { get }
+    var selected: Square? { get }
+    var rays: Rays? { get }
+    var bursts: [Burst] { get }
+    var toppled: Int? { get }
+    var movingPiece: Int? { get }
+    var moveSerial: Int { get }
+    /// Whose move it is, "w" or "b": the board's light rests on that side.
+    var turn: String { get }
+    var reviewing: Int? { get }
+    var shownLastMove: BoardMove? { get }
+    var sparkle: (id: Int, square: Square)? { get }
+    var nudge: Square? { get }
+    var loose: Set<Square> { get }
+    var checkSquare: Square? { get }
+    var shownMark: (entry: TrailEntry, square: Square)? { get }
+    func pickUp(_ square: Square) -> Bool
+    func drop(on square: Square?)
+    func inspect(_ square: Square) -> Bool
+    func endInspect()
+    func tap(_ square: Square)
+    func revealMark()
+    /// The square a carried piece is over, as the finger moves; nil when it's
+    /// put down. A game ignores it; the welcome's coach thinks out loud.
+    func hover(_ square: Square?)
+}
+
+extension BoardSource {
+    func hover(_ square: Square?) {}
+}
+
+extension GameModel: BoardSource {}
+
+/// One finger on the board: a tap, a drag that carries a piece, or a long
+/// press that shows what guards and attacks a piece.
+struct BoardTouch: Equatable {
+    var start: Square
+    var point: CGPoint
+    var dragging = false
+    var inspecting = false
+    var moved = false
+}
+
+struct BoardView<Model: BoardSource>: View {
+    let model: Model
     /// Draws a still board (the home screen's hero) with no interaction.
     var still = false
 
-    /// One finger on the board: a tap, a drag that carries a piece, or a
-    /// long press that shows what guards and attacks a piece.
-    struct Touch: Equatable {
-        var start: Square
-        var point: CGPoint
-        var dragging = false
-        var inspecting = false
-        var moved = false
-    }
-    @State private var touch: Touch?
+    @State private var touch: BoardTouch?
     @State private var hold: Task<Void, Never>?
 
     var body: some View {
@@ -29,8 +68,8 @@ struct BoardView: View {
             ZStack {
                 SquaresLayer(model: model, size: size)
                 Grain().blendMode(.multiply).opacity(0.35).allowsHitTesting(false)
-                // The light sits on the side that's ahead, from the player's view.
-                ScoreLight(share: flip ? 1 - model.whiteShare : model.whiteShare)
+                // The light rests on the side whose move it is, from the player's view.
+                TurnLight(bottom: (model.turn == "w") != flip)
                 if !still {
                     RaysLayer(rays: model.rays, size: size, flipped: flip)
                 }
@@ -47,9 +86,9 @@ struct BoardView: View {
                 }
             }
             .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.black.opacity(0.12), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Color.black.opacity(0.12), lineWidth: 1)
             }
             .shadow(color: .black.opacity(0.28), radius: 18, y: 14)
             .contentShape(Rectangle())
@@ -74,7 +113,7 @@ extension BoardView {
             .onChanged { v in
                 if touch == nil {
                     guard let sq = square(at: v.startLocation, size) else { return }
-                    touch = Touch(start: sq, point: v.location)
+                    touch = BoardTouch(start: sq, point: v.location)
                     hold?.cancel()
                     hold = Task { @MainActor in
                         try? await Task.sleep(for: .milliseconds(420))
@@ -84,6 +123,7 @@ extension BoardView {
                 }
                 guard var t = touch else { return }
                 t.point = v.location
+                if t.dragging { model.hover(square(at: v.location, size)) }
                 if !t.dragging && !t.inspecting && !t.moved && hypot(v.translation.width, v.translation.height) > size / 8 * 0.2 {
                     hold?.cancel()
                     if model.pickUp(t.start) { t.dragging = true } else { t.moved = true }
@@ -92,6 +132,7 @@ extension BoardView {
             }
             .onEnded { v in
                 hold?.cancel()
+                model.hover(nil)
                 guard let t = touch else { return }
                 if t.inspecting {
                     model.endInspect()
@@ -127,8 +168,8 @@ func center(_ sq: Square, _ size: CGFloat, flipped: Bool = false) -> CGPoint {
     return CGPoint(x: (CGFloat(Squares.file(s)) + 0.5) * q, y: (CGFloat(Squares.row(s)) + 0.5) * q)
 }
 
-private struct SquaresLayer: View {
-    let model: GameModel
+private struct SquaresLayer<Model: BoardSource>: View {
+    let model: Model
     let size: CGFloat
 
     var body: some View {
@@ -178,23 +219,21 @@ private struct SquaresLayer: View {
     @ViewBuilder
     private func coordinates(row: Int, col: Int, q: CGFloat) -> some View {
         let font = Font.system(size: q * 0.15, weight: .bold, design: .rounded)
-        // The board's rounded corners would clip the labels on a8 and h1, so
-        // those two sit further in.
         if col == 0 {
-            Text("\(model.flipped ? row + 1 : 8 - row)").font(font).foregroundStyle(Palette.coordinate.opacity(0.85))
+            Text("\(model.flipped ? row + 1 : 8 - row)").font(font).foregroundStyle(Palette.coordinate.opacity(0.6))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(q * (row == 0 ? 0.12 : 0.035))
+                .padding(q * 0.035)
         }
         if row == 7 {
-            Text(String(Character(UnicodeScalar(UInt8(model.flipped ? 104 - col : 97 + col))))).font(font).foregroundStyle(Palette.coordinate.opacity(0.85))
+            Text(String(Character(UnicodeScalar(UInt8(model.flipped ? 104 - col : 97 + col))))).font(font).foregroundStyle(Palette.coordinate.opacity(0.6))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                .padding(q * (col == 7 ? 0.12 : 0.035))
+                .padding(q * 0.035)
         }
     }
 }
 
 /// A fine stone grain, the same every time.
-private struct Grain: View {
+struct Grain: View {
     var body: some View {
         Canvas { ctx, size in
             var seed: UInt64 = 0x9E3779B97F4A7C15
@@ -213,17 +252,28 @@ private struct Grain: View {
     }
 }
 
-/// The score as light: a warm wash that settles on the side that is ahead.
-private struct ScoreLight: View {
-    let share: Double // White's share; White is at the bottom
+/// Whose move it is, as light: a soft wash of daylight resting on the side to
+/// move, gliding across as turns change. It comes on once the board has
+/// settled, so a board carried in from home arrives unlit and then lights up.
+private struct TurnLight: View {
+    /// The side at the bottom of the board is to move.
+    let bottom: Bool
+    @State private var lit = false
 
     var body: some View {
-        // daylight, not a colour: the board is simply brighter on the side that is ahead
-        RadialGradient(colors: [Color.white.opacity(0.6), Color.white.opacity(0.14), .clear],
-                       center: UnitPoint(x: 0.5, y: 0.15 + share * 0.7), startRadius: 0, endRadius: 260)
+        // daylight, not a colour: the board is simply brighter where the move is
+        // Soft enough to sit at the edge of attention: there if you look, never
+        // pulling the eye off the pieces.
+        RadialGradient(colors: [Color.white.opacity(0.38), Color.white.opacity(0.09), .clear],
+                       center: UnitPoint(x: 0.5, y: bottom ? 0.85 : 0.15), startRadius: 0, endRadius: 260)
             .blendMode(.softLight)
+            .opacity(lit ? 1 : 0)
             .allowsHitTesting(false)
-            .animation(.easeInOut(duration: 1.2), value: share)
+            .animation(.easeInOut(duration: 0.9), value: bottom)
+            .task {
+                try? await Task.sleep(for: .seconds(0.5))
+                withAnimation(.easeOut(duration: 0.7)) { lit = true }
+            }
     }
 }
 
@@ -300,11 +350,11 @@ struct Ray: View {
     }
 }
 
-private struct PiecesLayer: View {
-    let model: GameModel
+private struct PiecesLayer<Model: BoardSource>: View {
+    let model: Model
     let size: CGFloat
     /// The piece under the finger, if one is being dragged.
-    let drag: BoardView.Touch?
+    let drag: BoardTouch?
 
     var body: some View {
         let q = size / 8
@@ -315,9 +365,9 @@ private struct PiecesLayer: View {
                 let dragged = drag?.start == piece.square && lifted
                 GlassPiece(code: piece.code, lifted: lifted)
                     .frame(width: q, height: q)
-                    .scaleEffect(dragged ? 1.28 : lifted ? 1.1 : 1, anchor: .bottom)
-                    .animation(.spring(response: 0.22, dampingFraction: 0.65), value: dragged)
-                    .offset(y: lifted ? -q * 0.09 : 0)
+                    // The piece rises inside GlassPiece, off a shadow that stays on the board.
+                    .scaleEffect(dragged ? 1.28 : lifted ? 1.06 : 1, anchor: .bottom)
+                    .animation(.spring(response: 0.22, dampingFraction: 0.7), value: dragged)
                     .rotationEffect(.degrees(toppled ? 82 : 0), anchor: UnitPoint(x: 0.5, y: 0.88))
                     .offset(x: toppled ? q * 0.15 : 0)
                     .animation(.spring(response: 0.26, dampingFraction: 0.6), value: lifted)
@@ -338,8 +388,8 @@ private struct PiecesLayer: View {
 
 /// The verdict on the last move, as a small badge on the piece that made it.
 /// It pops in once and stays put until the next move.
-private struct MarkLayer: View {
-    let model: GameModel
+private struct MarkLayer<Model: BoardSource>: View {
+    let model: Model
     let size: CGFloat
 
     var body: some View {
@@ -396,7 +446,7 @@ private struct Sparkle: View {
 }
 
 /// A taken piece breaking into glass.
-private struct ShardBurst: View {
+struct ShardBurst: View {
     let dark: Bool
     let size: CGFloat
     @State private var flown = false

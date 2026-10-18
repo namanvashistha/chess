@@ -1,3627 +1,4354 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "": {},
-    "%@ game": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Partida contra %@"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    ", with check" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ", con jaque"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ", शह के साथ"
+          }
+        }
+      }
+    },
+    ". Checkmate" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ". Jaque mate"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "। शह-मात"
+          }
+        }
+      }
+    },
+    "%@ · Cozy Chess" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Cozy Chess"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Cozy Chess"
+          }
+        }
+      }
+    },
+    "%@ game" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partida contra %@"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ के साथ खेल"
+          }
+        }
+      }
+    },
+    "%@ on %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ on %2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ en %2$@"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@ पर %1$@"
+          }
+        }
+      }
+    },
+    "%@ resigned after %lld moves." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ resigned after %2$lld moves."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ abandonó tras %2$lld jugadas."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ ने %2$lld चालों के बाद हार मान ली।"
+          }
+        }
+      }
+    },
+    "%@'s %@ on %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@'s %2$@ on %3$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@ de %1$@ en %3$@"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%3$@ पर %1$@ का %2$@"
+          }
+        }
+      }
+    },
+    "%@'s move" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Juega %@"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ की चाल"
+          }
+        }
+      }
+    },
+    "%lld" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        }
+      }
+    },
+    "%lld good" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld buenas"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld अच्छी"
+          }
+        }
+      }
+    },
+    "%lld great" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld geniales"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld शानदार"
+          }
+        }
+      }
+    },
+    "%lld more wins to face the %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld more wins to face the %2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld victorias más para enfrentarte al %2$@"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@ से खेलने के लिए %1$lld और जीत"
+          }
+        }
+      }
+    },
+    "%lld moves" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld jugadas"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld चालें"
+          }
+        }
+      }
+    },
+    "%lld moves · %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld moves · %2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld jugadas · %2$@"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld चालें · %2$@"
+          }
+        }
+      }
+    },
+    "%lld to go" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faltan %lld"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld बाकी"
+          }
+        }
+      }
+    },
+    "%lld wins to open" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld victorias para desbloquear"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "खोलने के लिए %lld जीत"
+          }
+        }
+      }
+    },
+    "%lld%%" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld%%"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld%%"
+          }
+        }
+      }
+    },
+    "%lld%% accuracy" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld%% de precisión"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld%% सटीकता"
+          }
+        }
+      }
+    },
+    "+%lld" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld"
+          }
+        }
+      }
+    },
+    "1 more win to face the %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 victoria más para enfrentarte al %@"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ से खेलने के लिए 1 और जीत"
+          }
+        }
+      }
+    },
+    "1 move" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 jugada"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 चाल"
+          }
+        }
+      }
+    },
+    "A calm game of chess" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una partida de ajedrez tranquila"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शतरंज का एक शांत खेल"
+          }
+        }
+      }
+    },
+    "A calm game of chess, one move at a time." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una partida de ajedrez tranquila, jugada a jugada."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शतरंज का एक शांत खेल, एक-एक चाल।"
+          }
+        }
+      }
+    },
+    "A calm, steady start." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un comienzo tranquilo y firme."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "एक शांत, मज़बूत शुरुआत।"
+          }
+        }
+      }
+    },
+    "A chance" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una oportunidad"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ के साथ खेल"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "एक मौका"
           }
         }
       }
     },
-    "%@ on %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$@ on %2$@"
+    "A draw" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tablas"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ en %2$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "बराबरी"
+          }
+        }
+      }
+    },
+    "A full chess board, set up" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un tablero completo, preparado"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%2$@ पर %1$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सजी हुई पूरी शतरंज बिसात"
           }
         }
       }
     },
-    "%@ resigned after %lld moves.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$@ resigned after %2$lld moves."
+    "A game for two" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una partida para dos"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ abandonó tras %2$lld jugadas."
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "दो लोगों का खेल"
+          }
+        }
+      }
+    },
+    "A good square" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una buena casilla"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ ने %2$lld चालों के बाद हार मान ली।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अच्छा खाना"
           }
         }
       }
     },
-    "%@ would have been even better.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ habría sido aún mejor."
+    "A knight on the edge reaches only half its squares." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un caballo en el borde alcanza solo la mitad de sus casillas."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ और भी बेहतर होती।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "किनारे पर घोड़ा अपने आधे ही खानों तक पहुँचता है।"
           }
         }
       }
     },
-    "%@ · Cozy Chess": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · Cozy Chess"
+    "A quiet table." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una mesa tranquila."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · Cozy Chess"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "एक शांत मेज़।"
           }
         }
       }
     },
-    "%@ · locked": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · bloqueado"
+    "A solid, sensible move." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una jugada sólida y sensata."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · बंद"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "एक मज़बूत, समझदार चाल।"
           }
         }
       }
     },
-    "%@'s %@ on %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$@'s %2$@ on %3$@"
+    "Accuracy" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Precisión"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%2$@ de %1$@ en %3$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सटीकता"
+          }
+        }
+      }
+    },
+    "Accuracy · last %lld games" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Precisión · últimas %lld partidas"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%3$@ पर %1$@ का %2$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सटीकता · पिछले %lld खेल"
           }
         }
       }
     },
-    "%@'s move": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Juega %@"
+    "Ahead in pieces? Trading down makes it simpler." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Vas ganando material? Cambiar piezas lo simplifica."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ की चाल"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "मोहरों में आगे हैं? अदला-बदली से खेल आसान होता है।"
           }
         }
       }
     },
-    "%lld": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld"
+    "Almost" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casi"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "लगभग"
           }
         }
       }
     },
-    "%lld good": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld buenas"
+    "Attack the king." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ataca al rey."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld अच्छी"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "राजा पर हमला करें।"
           }
         }
       }
     },
-    "%lld great": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld geniales"
+    "Attacked by %lld of their pieces, and nothing guards it." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo atacan %lld de sus piezas y nada lo defiende."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld शानदार"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "उनके %lld मोहरे इस पर हमला कर रहे हैं, और कोई इसे नहीं बचा रहा।"
           }
         }
       }
     },
-    "%lld more wins to face the %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$lld more wins to face the %2$@"
+    "Attacked by %lld, guarded by %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Attacked by %1$lld, guarded by %2$lld."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld victorias más para enfrentarte al %2$@"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atacado por %1$lld, defendido por %2$lld."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%2$@ से खेलने के लिए %1$lld और जीत"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld हमला कर रहे हैं, %2$lld बचा रहे हैं।"
           }
         }
       }
     },
-    "%lld moves · %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$lld moves · %2$@"
+    "Back to game" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a la partida"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld jugadas · %2$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "खेल पर लौटें"
+          }
+        }
+      }
+    },
+    "Back to home" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver al inicio"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld चालें · %2$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "होम पर लौटें"
           }
         }
       }
     },
-    "%lld played": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld jugadas"
+    "Beat the %@ %lld more times" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vence al %1$@ %2$lld veces más"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld खेले"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ को %2$lld बार और हराएँ"
           }
         }
       }
     },
-    "%lld stars to go": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Faltan %lld estrellas"
+    "Beat the %@ %lld times" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Beat the %1$@ %2$lld times"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gana al %1$@ %2$lld veces"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld सितारे बाकी"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ को %2$lld बार हराएँ"
           }
         }
       }
     },
-    "%lld to go": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Faltan %lld"
+    "Beat the %@ once more" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vence al %@ una vez más"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld बाकी"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ को एक बार और हराएँ"
           }
         }
       }
     },
-    "%lld wins to open": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld victorias para desbloquear"
+    "Before you move, ask what their last move wants." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antes de mover, pregúntate qué busca su última jugada."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "खोलने के लिए %lld जीत"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "चाल चलने से पहले सोचें कि उनकी पिछली चाल क्या चाहती है।"
           }
         }
       }
     },
-    "%lld%%": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld%%"
+    "Begin" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empezar"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld%%"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शुरू करें"
           }
         }
       }
     },
-    "%lld%% accuracy": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld%% de precisión"
+    "Beginner" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Principiante"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld%% सटीकता"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शुरुआती"
           }
         }
       }
     },
-    "%lld%% lately": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld%% últimamente"
+    "Best · move %lld" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mejor · jugada %lld"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "हाल में %lld%%"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सबसे अच्छी · चाल %lld"
           }
         }
       }
     },
-    "%lld%% lately · %lld great moves": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$lld%% lately · %2$lld great moves"
+    "Best move · %@, move %lld" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Best move · %1$@, move %2$lld"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld%% últimamente · %2$lld jugadas geniales"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mejor jugada · %1$@, jugada %2$lld"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "हाल में %1$lld%% · %2$lld शानदार चालें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सबसे अच्छी चाल · %1$@, चाल %2$lld"
           }
         }
       }
     },
-    "+%lld": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld"
+    "bishop" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "alfil"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ऊँट"
           }
         }
       }
     },
-    ", with check": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": ", con jaque"
+    "Black" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Negras"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": ", शह के साथ"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "काला"
           }
         }
       }
     },
-    ". Checkmate": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": ". Jaque mate"
+    "Black to move" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Juegan las negras"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "। शह-मात"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "काले की चाल"
           }
         }
       }
     },
-    "1 more win to face the %@": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 victoria más para enfrentarte al %@"
+    "Black wins" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ganan las negras"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ से खेलने के लिए 1 और जीत"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "काला जीता"
           }
         }
       }
     },
-    "1 star to go": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Falta 1 estrella"
+    "Black's %@ on %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Black's %1$@ on %2$@"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 सितारा बाकी"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ negro en %2$@"
           }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@ पर काले का %1$@"
+          }
         }
       }
     },
-    "A calm game of chess": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Una partida de ajedrez tranquila"
+    "Blunder" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error grave"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "शतरंज का एक शांत खेल"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "भारी गलती"
           }
         }
       }
     },
-    "A calm game of chess, one move at a time.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Una partida de ajedrez tranquila, jugada a jugada."
+    "Board, playing the %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tablero, contra el %@"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "शतरंज का एक शांत खेल, एक-एक चाल।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "बोर्ड, %@ के ख़िलाफ़"
           }
         }
       }
     },
-    "A chance": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Una oportunidad"
+    "Bring a knight or bishop toward the centre." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lleva un caballo o un alfil hacia el centro."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "एक मौका"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "किसी घोड़े या ऊँट को बीच की ओर लाएँ।"
           }
         }
       }
     },
-    "A draw": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tablas"
+    "Came back from %lld%% on move %lld." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remontaste desde el %1$lld%% en la jugada %2$lld."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "बराबरी"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "चाल %2$lld पर %1$lld%% से वापसी की।"
           }
         }
       }
     },
-    "A game for two": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Una partida para dos"
+    "Careful there" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuidado ahí"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "दो लोगों का खेल"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "वहाँ सावधान"
           }
         }
       }
     },
-    "A solid, sensible move.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Una jugada sólida y sensata."
+    "Careful: your %@ on %@ can be taken now." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Careful: your %1$@ on %2$@ can be taken now."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuidado: tu %1$@ en %2$@ puede ser capturado."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "एक मज़बूत, समझदार चाल।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सावधान: %2$@ पर आपका %1$@ अब मारा जा सकता है।"
           }
         }
       }
     },
-    "Almost": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Casi"
+    "castle to keep your king safe." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "enroca para proteger a tu rey."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "लगभग"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "राजा को सुरक्षित रखने के लिए कैसलिंग करें।"
           }
         }
       }
     },
-    "Attacked by %lld of their pieces, and nothing guards it.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lo atacan %lld de sus piezas y nada lo defiende."
+    "Castling tucks your king away and brings a rook into play." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enrocar protege a tu rey y pone una torre en juego."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "उनके %lld मोहरे इस पर हमला कर रहे हैं, और कोई इसे नहीं बचा रहा।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "कैसलिंग से आपका राजा सुरक्षित होता है और एक हाथी खेल में आता है।"
           }
         }
       }
     },
-    "Attacked by %lld, guarded by %lld.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Attacked by %1$lld, guarded by %2$lld."
+    "Check" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jaque"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Atacado por %1$lld, defendido por %2$lld."
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शह"
+          }
+        }
+      }
+    },
+    "Check, and it keeps the pressure on." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jaque, y mantiene la presión."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld हमला कर रहे हैं, %2$lld बचा रहे हैं।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शह, और दबाव बना रहता है।"
           }
         }
       }
     },
-    "Back to game": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Volver a la partida"
+    "Checkmate" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jaque mate"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "खेल पर लौटें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शह और मात"
           }
         }
       }
     },
-    "Back to home": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Volver al inicio"
+    "Checkmate after %lld moves. Next time is yours." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jaque mate tras %lld jugadas. La próxima es tuya."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "होम पर लौटें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld चालों के बाद शह-मात। अगली बार आपकी है।"
           }
         }
       }
     },
-    "Beat the %@ %lld times": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Beat the %1$@ %2$lld times"
+    "Checkmate in %lld moves." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jaque mate en %lld jugadas."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gana al %1$@ %2$lld veces"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld चालों में शह-मात।"
           }
+        }
+      }
+    },
+    "Checkmate!" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Jaque mate!"
+          }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ को %2$lld बार हराएँ"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शह-मात!"
           }
         }
       }
     },
-    "Before you move, ask what their last move wants.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Antes de mover, pregúntate qué busca su última jugada."
+    "Checkmate." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jaque mate."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "चाल चलने से पहले सोचें कि उनकी पिछली चाल क्या चाहती है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शह-मात।"
           }
         }
       }
     },
-    "Begin": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Empezar"
+    "Chess board" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tablero de ajedrez"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "शुरू करें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शतरंज का बोर्ड"
           }
         }
       }
     },
-    "Beginner": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Principiante"
+    "Claims the centre." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocupa el centro."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "शुरुआती"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "बीच पर कब्ज़ा करती है।"
           }
         }
       }
     },
-    "Best move · %@, move %lld": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Best move · %1$@, move %2$lld"
+    "Close" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mejor jugada · %1$@, jugada %2$lld"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "बंद करें"
+          }
+        }
+      }
+    },
+    "Continue" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continuar"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "सबसे अच्छी चाल · %1$@, चाल %2$lld"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "जारी रखें"
           }
         }
       }
     },
-    "Black": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Negras"
+    "Continue your game on this phone" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continúa tu partida en este teléfono"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "काला"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "इस फ़ोन पर अपना खेल जारी रखें"
           }
         }
       }
     },
-    "Black to move": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Juegan las negras"
+    "Cozy Chess" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cozy Chess"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "काले की चाल"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cozy Chess"
           }
         }
       }
     },
-    "Black wins": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ganan las negras"
+    "Develops the %@ toward the centre." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desarrolla el %@ hacia el centro."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "काला जीता"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ को बीच की ओर लाती है।"
           }
         }
       }
     },
-    "Black's %@ on %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Black's %1$@ on %2$@"
+    "Draw" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tablas"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ negro en %2$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "बराबरी"
           }
+        }
+      }
+    },
+    "Escape" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escapa"
+          }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%2$@ पर काले का %1$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "बचाव"
           }
         }
       }
     },
-    "Board, playing the %@": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tablero, contra el %@"
+    "Every game teaches me something." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada partida me enseña algo."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "बोर्ड, %@ के ख़िलाफ़"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "हर खेल मुझे कुछ सिखाता है।"
           }
         }
       }
     },
-    "Bring a knight or bishop toward the centre.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lleva un caballo o un alfil hacia el centro."
+    "Every game teaches something" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada partida enseña algo"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "किसी घोड़े या ऊँट को बीच की ओर लाएँ।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "हर खेल कुछ सिखाता है"
           }
         }
       }
     },
-    "Careful: your %@ on %@ can be taken now.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Careful: your %1$@ on %2$@ can be taken now."
+    "Every piece helping beats one piece attacking alone." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todas las piezas juntas valen más que una sola atacando."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cuidado: tu %1$@ en %2$@ puede ser capturado."
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सब मोहरों का साथ, एक अकेले हमले से बेहतर है।"
           }
+        }
+      }
+    },
+    "Exactly what the engine would play." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Justo lo que jugaría el motor."
+          }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "सावधान: %2$@ पर आपका %1$@ अब मारा जा सकता है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "बिल्कुल वही जो इंजन खेलता।"
           }
         }
       }
     },
-    "Castling tucks your king away and brings a rook into play.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enrocar protege a tu rey y pone una torre en juego."
+    "Expert" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experto"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "कैसलिंग से आपका राजा सुरक्षित होता है और एक हाथी खेल में आता है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "माहिर"
           }
         }
       }
     },
-    "Check, and it keeps the pressure on.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jaque, y mantiene la presión."
+    "Fifty moves without a capture or a pawn move." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cincuenta jugadas sin capturas ni movimientos de peón."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "शह, और दबाव बना रहता है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "पचास चालें बिना किसी मोहरे को मारे या प्यादा चलाए।"
           }
         }
       }
     },
-    "Checkmate after %lld moves. Next time is yours.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jaque mate tras %lld jugadas. La próxima es tuya."
+    "Found with Cozy Chess" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontrada con Cozy Chess"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld चालों के बाद शह-मात। अगली बार आपकी है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cozy Chess पर मिली"
           }
         }
       }
     },
-    "Checkmate in %lld moves.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jaque mate en %lld jugadas."
+    "Game options" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opciones de partida"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld चालों में शह-मात।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "खेल के विकल्प"
           }
         }
       }
     },
-    "Checkmate!": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "¡Jaque mate!"
+    "Game over" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fin de la partida"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "शह-मात!"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "खेल ख़त्म"
           }
         }
       }
     },
-    "Checkmate.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jaque mate."
+    "Good afternoon" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buenas tardes"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "शह-मात।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "नमस्कार"
           }
         }
       }
     },
-    "Chess board": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tablero de ajedrez"
+    "Good evening" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buenas noches"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "शतरंज का बोर्ड"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शुभ संध्या"
           }
         }
       }
     },
-    "Claims the centre.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ocupa el centro."
+    "Good fight" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buena lucha"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "बीच पर कब्ज़ा करती है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अच्छा मुक़ाबला"
           }
         }
       }
     },
-    "Close": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cerrar"
+    "Good game" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buena partida"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "बंद करें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अच्छा खेल"
           }
         }
       }
     },
-    "Continue": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continuar"
+    "Good morning" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buenos días"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "जारी रखें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सुप्रभात"
           }
         }
       }
     },
-    "Continue your game on this phone": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continúa tu partida en este teléfono"
+    "Good move" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buena jugada"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "इस फ़ोन पर अपना खेल जारी रखें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अच्छी चाल"
           }
         }
       }
     },
-    "Cozy Chess": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cozy Chess"
+    "Grandmaster" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gran Maestro"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cozy Chess"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ग्रैंडमास्टर"
           }
         }
       }
     },
-    "Develops the %@ toward the centre.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Desarrolla el %@ hacia el centro."
+    "Great" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geniales"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ को बीच की ओर लाती है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शानदार"
           }
         }
       }
     },
-    "Every game teaches me something.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cada partida me enseña algo."
+    "Great move" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jugada genial"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "हर खेल मुझे कुछ सिखाता है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शानदार चाल"
           }
         }
       }
     },
-    "Every game teaches something": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cada partida enseña algo"
+    "Great moves" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jugadas geniales"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "हर खेल कुछ सिखाता है"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शानदार चालें"
           }
         }
       }
     },
-    "Every game teaches something. The next one is yours.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cada partida enseña algo. La próxima es tuya."
+    "Haptics" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vibración"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "हर खेल कुछ सिखाता है। अगला आपका है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "कंपन"
           }
         }
       }
     },
-    "Exactly what the engine would play.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Justo lo que jugaría el motor."
+    "Hint" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pista"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "बिल्कुल वही जो इंजन खेलता।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "संकेत"
           }
         }
       }
     },
-    "Expert": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Experto"
+    "Hmm, maybe" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mmm, quizá"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "माहिर"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "हम्म, शायद"
           }
         }
       }
     },
-    "Fifty moves without a capture or a pawn move.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cincuenta jugadas sin capturas ni movimientos de peón."
+    "Hold any piece to see what guards it and what attacks it." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsada una pieza para ver qué la defiende y qué la ataca."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "पचास चालें बिना किसी मोहरे को मारे या प्यादा चलाए।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "किसी भी मोहरे को दबाकर रखें और देखें कि कौन उसे बचा रहा है और कौन उस पर हमला कर रहा है।"
           }
         }
       }
     },
-    "Finish": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Terminar"
+    "Hold your king to begin." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén tu rey para empezar."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "पूरा करें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शुरू करने के लिए अपने राजा को दबाकर रखें।"
           }
         }
       }
     },
-    "Found with Cozy Chess": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Encontrada con Cozy Chess"
+    "Home" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicio"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cozy Chess पर मिली"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "होम"
           }
         }
       }
     },
-    "Game options": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opciones de partida"
+    "How it works" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cómo funciona"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "खेल के विकल्प"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "यह कैसे काम करता है"
           }
         }
       }
     },
-    "Game over": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fin de la partida"
+    "I resigned. Good game!" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abandoné. ¡Buena partida!"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "खेल ख़त्म"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "मैंने हार मान ली। अच्छा खेल!"
           }
         }
       }
+    },
+    "I think out loud. Never a score." : {
+
     },
-    "Good afternoon": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buenas tardes"
+    "I'll follow along." : {
+
+    },
+    "Intermediate" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intermedio"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "नमस्कार"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "मध्यम"
           }
         }
       }
     },
-    "Good evening": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buenas noches"
+    "Invite with Game Center" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitar con Game Center"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "शुभ संध्या"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Game Center से बुलाएँ"
           }
         }
       }
     },
-    "Good fight": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buena lucha"
+    "it gives check." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "da jaque."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "अच्छा मुक़ाबला"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "यह शह देती है।"
           }
         }
       }
     },
-    "Good game": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buena partida"
+    "it improves your position the most." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "es la que más mejora tu posición."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "अच्छा खेल"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "यह आपकी स्थिति को सबसे ज़्यादा सुधारती है।"
           }
         }
       }
     },
-    "Good morning": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buenos días"
+    "it is checkmate." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "es jaque mate."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "सुप्रभात"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "यह शह-मात है।"
           }
         }
       }
     },
-    "Good move": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buena jugada"
+    "It turned on move %lld." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo cambió en la jugada %lld."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "अच्छी चाल"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "चाल %lld पर खेल पलटा।"
           }
         }
       }
     },
-    "Grandmaster": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gran Maestro"
+    "it wins the %@." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "gana el %@."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ग्रैंडमास्टर"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "यह %@ जीतती है।"
           }
         }
       }
     },
-    "Great move": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jugada genial"
+    "It's a draw" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Son tablas"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "शानदार चाल"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "बराबरी हुई"
           }
         }
       }
     },
-    "Haptics": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vibración"
+    "It's attacked and nothing guards it." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Está atacada y nada la defiende."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "कंपन"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "इस पर हमला है और कोई इसे नहीं बचा रहा।"
           }
         }
       }
     },
-    "Hold any piece to see what guards it and what attacks it.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mantén pulsada una pieza para ver qué la defiende y qué la ataca."
+    "It's guarded, but their %@ is worth less, so a trade would cost you." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Está defendida, pero su %@ vale menos, así que un cambio te costaría."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "किसी भी मोहरे को दबाकर रखें और देखें कि कौन उसे बचा रहा है और कौन उस पर हमला कर रहा है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "यह बचा हुआ है, पर उनका %@ कम क़ीमती है, इसलिए अदला-बदली में आपका नुकसान होगा।"
           }
         }
       }
     },
-    "Home": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inicio"
+    "king" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "rey"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "होम"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "राजा"
           }
         }
       }
     },
-    "I resigned. Good game!": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abandoné. ¡Buena partida!"
+    "King tucked away and the rook brought into play." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El rey a salvo y la torre en juego."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "मैंने हार मान ली। अच्छा खेल!"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "राजा सुरक्षित और हाथी खेल में।"
           }
         }
       }
     },
-    "Intermediate": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Intermedio"
+    "knight" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "caballo"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "मध्यम"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "घोड़ा"
           }
         }
       }
     },
-    "Invite with Game Center": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Invitar con Game Center"
+    "Language" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idioma"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Game Center से बुलाएँ"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "भाषा"
           }
         }
       }
     },
-    "It's a draw": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Son tablas"
+    "Learn how the pieces move · 2 minutes" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aprende cómo se mueven las piezas · 2 minutos"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "बराबरी हुई"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "मोहरों की चालें सीखें · 2 मिनट"
           }
         }
       }
     },
-    "It's attacked and nothing guards it.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Está atacada y nada la defiende."
+    "Learn the moves" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aprende los movimientos"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "इस पर हमला है और कोई इसे नहीं बचा रहा।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "चालें सीखें"
           }
         }
       }
     },
-    "It's guarded, but their %@ is worth less, so a trade would cost you.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Está defendida, pero su %@ vale menos, así que un cambio te costaría."
+    "Learning with Cozy Chess" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aprendiendo con Cozy Chess"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "यह बचा हुआ है, पर उनका %@ कम क़ीमती है, इसलिए अदला-बदली में आपका नुकसान होगा।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cozy Chess के साथ सीख रहे हैं"
           }
         }
       }
     },
-    "Jumps in an L: two squares one way, then one to the side. It leaps over anything.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salta en L: dos casillas en una dirección y una hacia el lado. Puede saltar sobre cualquier pieza."
+    "Let me look…" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déjame ver…"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "L के आकार में कूदता है: एक तरफ़ दो खाने, फिर बगल में एक। यह किसी के भी ऊपर से कूद सकता है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ज़रा देखूँ…"
           }
         }
       }
     },
-    "King tucked away and the rook brought into play.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El rey a salvo y la torre en juego."
+    "Let's play a calm game of chess." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Juguemos una partida de ajedrez tranquila."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "राजा सुरक्षित और हाथी खेल में।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "चलो शतरंज का एक शांत खेल खेलें।"
           }
         }
       }
     },
-    "Language": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Idioma"
+    "Light and dark follow your iPhone's appearance." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los modos claro y oscuro siguen la apariencia de tu iPhone."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "भाषा"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "लाइट और डार्क मोड आपके iPhone की सेटिंग के अनुसार चलते हैं।"
           }
         }
       }
     },
-    "Learn how the pieces move · 2 minutes": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aprende cómo se mueven las piezas · 2 minutos"
+    "Locked. Beat the %@ %lld times to open it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Locked. Beat the %1$@ %2$lld times to open it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueado. Gana al %1$@ %2$lld veces para desbloquearlo."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "मोहरों की चालें सीखें · 2 मिनट"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "बंद है। इसे खोलने के लिए %1$@ को %2$lld बार हराएँ।"
           }
         }
       }
     },
-    "Learn the moves": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aprende los movimientos"
+    "Look at your %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mira tu %@"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "चालें सीखें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अपने %@ को देखें"
           }
         }
       }
     },
-    "Learning with Cozy Chess": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aprendiendo con Cozy Chess"
+    "Look for a way to win it back." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca la forma de recuperarla."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cozy Chess के साथ सीख रहे हैं"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "इसे वापस जीतने का तरीका ढूँढें।"
           }
         }
       }
     },
-    "Let's play a calm game of chess.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Juguemos una partida de ajedrez tranquila."
+    "Look for checks, captures and threats, for both sides." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca jaques, capturas y amenazas, de ambos lados."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "चलो शतरंज का एक शांत खेल खेलें।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "दोनों तरफ़ के शह, मार और ख़तरे देखें।"
           }
         }
       }
     },
-    "Light and dark follow your iPhone's appearance.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Los modos claro y oscuro siguen la apariencia de tu iPhone."
+    "Lost" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perdida"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "लाइट और डार्क मोड आपके iPhone की सेटिंग के अनुसार चलते हैं।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "हार"
           }
         }
       }
     },
-    "Locked. Beat the %@ %lld times to open it.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Locked. Beat the %1$@ %2$lld times to open it."
+    "Master" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maestro"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bloqueado. Gana al %1$@ %2$lld veces para desbloquearlo."
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "मास्टर"
+          }
+        }
+      }
+    },
+    "Most chess is loud." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casi todo el ajedrez es ruidoso."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "बंद है। इसे खोलने के लिए %1$@ को %2$lld बार हराएँ।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ज़्यादातर शतरंज शोर भरा है।"
           }
         }
       }
     },
-    "Look at your %@": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mira tu %@"
+    "Move %lld" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jugada %lld"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "अपने %@ को देखें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "चाल %lld"
           }
         }
       }
     },
-    "Look for a way to win it back.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Busca la forma de recuperarla."
+    "Move %lld%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Move %1$lld%2$@ · %3$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jugada %1$lld%2$@ · %3$@"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "इसे वापस जीतने का तरीका ढूँढें।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "चाल %1$lld%2$@ · %3$@"
           }
         }
       }
     },
-    "Master": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Maestro"
+    "Move it, block the line, or take the checking piece." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muévelo, bloquea la línea o captura la pieza que da jaque."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "मास्टर"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "राजा को हटाएँ, रास्ता रोकें, या शह देने वाले मोहरे को मारें।"
           }
         }
       }
     },
-    "Move %lld": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jugada %lld"
+    "Moves" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jugadas"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "चाल %lld"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "चालें"
           }
         }
       }
     },
-    "Move %lld%@ · %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Move %1$lld%2$@ · %3$@"
+    "moves the %@ to %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "moves the %1$@ to %2$@"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jugada %1$lld%2$@ · %3$@"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "mueve el %1$@ a %2$@"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "चाल %1$lld%2$@ · %3$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ को %2$@ पर चला"
           }
         }
       }
     },
-    "Move it, block the line, or take the checking piece.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Muévelo, bloquea la línea o captura la pieza que da jaque."
+    "Neither side has enough left to mate." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A ningún bando le queda material para dar mate."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "राजा को हटाएँ, रास्ता रोकें, या शह देने वाले मोहरे को मारें।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "किसी के पास मात देने लायक मोहरे नहीं बचे।"
           }
         }
       }
     },
-    "Moves in straight lines, up, down or across, as far as it likes.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Se mueve en línea recta, arriba, abajo o de lado, tan lejos como quiera."
+    "New game" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nueva partida"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "सीधी रेखा में चलता है, ऊपर, नीचे या आड़ा, जितनी दूर चाहे।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "नया खेल"
           }
         }
       }
     },
-    "Neither side has enough left to mate.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A ningún bando le queda material para dar mate."
+    "New to chess?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Nuevo en el ajedrez?"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "किसी के पास मात देने लायक मोहरे नहीं बचे।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शतरंज में नए हैं?"
           }
         }
       }
     },
-    "New game": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nueva partida"
+    "New to chess? Learn the moves" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Nuevo en el ajedrez? Aprende los movimientos"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "नया खेल"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शतरंज में नए हैं? चालें सीखें"
           }
         }
       }
+    },
+    "Next" : {
+
     },
-    "New to chess?": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "¿Nuevo en el ajedrez?"
+    "No hints" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin pistas"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "शतरंज में नए हैं?"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "कोई संकेत नहीं"
           }
         }
       }
     },
-    "Next piece": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Siguiente pieza"
+    "Not here." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aquí no."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "अगला मोहरा"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "यहाँ नहीं।"
           }
         }
       }
     },
-    "Nicely done": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Muy bien"
+    "Not now" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora no"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "बहुत बढ़िया"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अभी नहीं"
           }
         }
       }
     },
-    "No hints": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sin pistas"
+    "Not quite" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No del todo"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "कोई संकेत नहीं"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "पूरी तरह नहीं"
           }
         }
       }
     },
-    "Not now": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ahora no"
+    "Nothing attacks it, and it's guarded by %lld of your pieces." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada la ataca y la defienden %lld de tus piezas."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "अभी नहीं"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "इस पर कोई हमला नहीं है, और आपके %lld मोहरे इसे बचा रहे हैं।"
           }
         }
       }
     },
-    "Not quite": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No del todo"
+    "Nothing attacks it, and nothing guards it." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada la ataca y nada la defiende."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "पूरी तरह नहीं"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "इस पर कोई हमला नहीं है, और कोई इसे बचा भी नहीं रहा।"
           }
         }
       }
     },
-    "Nothing attacks it, and it's guarded by %lld of your pieces.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nada la ataca y la defienden %lld de tus piezas."
+    "Nothing wrong with it. Put it down if you like it." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No tiene nada de malo. Déjala si te gusta."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "इस पर कोई हमला नहीं है, और आपके %lld मोहरे इसे बचा रहे हैं।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "इसमें कोई बुराई नहीं। पसंद हो तो रख दीजिए।"
           }
         }
       }
     },
-    "Nothing attacks it, and nothing guards it.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nada la ataca y nada la defiende."
+    "One calm move at a time." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una jugada tranquila a la vez."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "इस पर कोई हमला नहीं है, और कोई इसे बचा भी नहीं रहा।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "एक-एक शांत चाल के साथ।"
           }
         }
       }
     },
-    "Oops": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ups"
+    "Ooh, a strong square" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oh, una casilla fuerte"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "उफ़"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "वाह, मज़बूत खाना"
           }
         }
       }
     },
-    "Pass & play": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pasar y jugar"
+    "Oops" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ups"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "फ़ोन बाँटकर खेलें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "उफ़"
           }
         }
       }
     },
-    "Play a friend": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jugar con un amigo"
+    "Pass & play" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pasar y jugar"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "दोस्त के साथ खेलें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "फ़ोन बाँटकर खेलें"
           }
         }
       }
     },
-    "Play again": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jugar de nuevo"
+    "pawn" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "peón"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "फिर से खेलें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "प्यादा"
           }
         }
       }
     },
-    "Play on this FaceTime call": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jugar en esta llamada de FaceTime"
+    "Pawns can't move back, so push them with a purpose." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los peones no retroceden: avánzalos con un plan."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "इस FaceTime कॉल पर खेलें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "प्यादे पीछे नहीं जाते, इसलिए सोचकर आगे बढ़ाएँ।"
           }
         }
       }
     },
-    "Play on this phone": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jugar en este teléfono"
+    "Pick up any piece" : {
+
+    },
+    "Pick up any piece." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toma cualquier pieza."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "इसी फ़ोन पर खेलें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "कोई भी मोहरा उठाइए।"
           }
         }
       }
     },
-    "Play the %@": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jugar contra el %@"
+    "piece" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pieza"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ से खेलें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "मोहरा"
           }
         }
       }
     },
-    "Play the Rookie": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jugar contra el Novato"
+    "Pieces in the centre reach the most squares." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las piezas en el centro alcanzan más casillas."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "नौसिखिए से खेलें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "बीच के मोहरे सबसे ज़्यादा खानों तक पहुँचते हैं।"
           }
         }
       }
     },
-    "Played %@": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jugó %@"
+    "Play a friend" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jugar con un amigo"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ चली"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "दोस्त के साथ खेलें"
           }
         }
       }
     },
-    "Played on Cozy Chess": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jugado en Cozy Chess"
+    "Play again" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jugar de nuevo"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cozy Chess पर खेला"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "फिर से खेलें"
           }
         }
       }
     },
-    "Resign": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abandonar"
+    "Play on this FaceTime call" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jugar en esta llamada de FaceTime"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "हार मानें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "इस FaceTime कॉल पर खेलें"
           }
         }
       }
     },
-    "Rewound": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deshecho"
+    "Play on this phone" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jugar en este teléfono"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "वापस लिया"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "इसी फ़ोन पर खेलें"
           }
         }
       }
     },
-    "Rookie": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Novato"
+    "Play the %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jugar contra el %@"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "नौसिखिया"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ से खेलें"
           }
         }
       }
     },
-    "Settings": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajustes"
+    "Play the Rookie" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jugar contra el Novato"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "सेटिंग्स"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "नौसिखिए से खेलें"
           }
         }
       }
     },
-    "Share": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Compartir"
+    "Played %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jugó %@"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "शेयर करें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ चली"
           }
         }
       }
     },
-    "Show me": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Muéstrame"
+    "Played on Cozy Chess" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jugado en Cozy Chess"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "मुझे दिखाएँ"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cozy Chess पर खेला"
           }
         }
       }
     },
-    "Show the move": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Muestra la jugada"
+    "Promotion" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coronación"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "चाल दिखाएँ"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "प्रमोशन"
           }
         }
       }
     },
-    "Slides diagonally. It always stays on squares of one colour.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Se desliza en diagonal. Siempre se queda en casillas de un mismo color."
+    "queen" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dama"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "तिरछा चलता है। यह हमेशा एक ही रंग के खानों पर रहता है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "वज़ीर"
           }
         }
       }
     },
-    "Sound": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sonido"
+    "Rated · 3 min" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clasificatoria · 3 min"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आवाज़"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "रेटेड · 3 मिनट"
           }
         }
       }
     },
-    "Stalemate: no legal moves, and no check.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ahogado: no hay jugadas legales y no hay jaque."
+    "Reach the far side." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llega al otro lado."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "स्टेलमेट: कोई वैध चाल नहीं, और शह भी नहीं।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "दूसरे छोर तक पहुँचें।"
           }
         }
       }
     },
-    "Start a game": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Empezar una partida"
+    "Resign" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abandonar"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "खेल शुरू करें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "हार मानें"
           }
         }
       }
     },
-    "Steps forward, two squares on its first move. It takes pieces diagonally.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Avanza hacia delante, dos casillas en su primer movimiento. Captura en diagonal."
+    "Resigned on move %lld" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abandonaste en la jugada %lld"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आगे बढ़ता है, पहली चाल में दो खाने। यह तिरछा मारता है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "चाल %lld पर हार मानी"
           }
         }
       }
     },
-    "Steps one square in any direction. Keep him safe: that's the whole game.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Avanza una casilla en cualquier dirección. Protégelo: de eso trata todo."
+    "Rewound" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deshecho"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "किसी भी दिशा में एक खाना चलता है। इसे सुरक्षित रखें: यही पूरा खेल है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "वापस लिया"
           }
         }
       }
     },
-    "Swipe for another opponent": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Desliza para otro rival"
+    "rook" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "torre"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "दूसरे विरोधी के लिए स्वाइप करें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "हाथी"
           }
         }
       }
     },
-    "Swipe this card to look back at your earlier moves.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Desliza esta tarjeta para repasar tus jugadas anteriores."
+    "Rookie" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novato"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "अपनी पिछली चालें देखने के लिए इस कार्ड को स्वाइप करें।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "नौसिखिया"
           }
         }
       }
     },
-    "That's the game.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Se acabó la partida."
+    "Rooks love open lines with no pawns in the way." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las torres aman las columnas abiertas, sin peones."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "खेल ख़त्म।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "हाथी को खुली लाइनें पसंद हैं, जहाँ प्यादे न हों।"
           }
         }
       }
     },
-    "The %@ is open": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El %@ está desbloqueado"
+    "See the game." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mira el juego."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ खुल गया"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "खेल को देखिए।"
           }
         }
       }
     },
-    "The bishop": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El alfil"
+    "Settings" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ऊँट"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सेटिंग्स"
           }
         }
       }
     },
-    "The game is drawn.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La partida es tablas."
+    "Share" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "खेल बराबरी पर ख़त्म।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शेयर करें"
           }
         }
       }
+    },
+    "Show me the game" : {
+
     },
-    "The king": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El rey"
+    "Show the move" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muestra la jugada"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "राजा"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "चाल दिखाएँ"
           }
         }
       }
     },
-    "The knight": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El caballo"
+    "Skip" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omitir"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "घोड़ा"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "छोड़ें"
           }
         }
       }
     },
-    "The pawn": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El peón"
+    "Someone looks with you." : {
+
+    },
+    "Sound" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sonido"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "प्यादा"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आवाज़"
           }
         }
       }
     },
-    "The queen": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La dama"
+    "Stalemate: no legal moves, and no check." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahogado: no hay jugadas legales y no hay jaque."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "वज़ीर"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "स्टेलमेट: कोई वैध चाल नहीं, और शह भी नहीं।"
           }
         }
       }
     },
-    "The rest you'll learn by playing. The coach will help along the way.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lo demás lo aprenderás jugando. El entrenador te ayudará por el camino."
+    "Start a game" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empezar una partida"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "बाकी आप खेलते-खेलते सीख जाएँगे। कोच रास्ते में मदद करेगा।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "खेल शुरू करें"
           }
         }
       }
     },
-    "The rook": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La torre"
+    "Step out of check." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sal del jaque."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "हाथी"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शह से बाहर निकलें।"
           }
         }
       }
     },
-    "The same position came up three times.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La misma posición se repitió tres veces."
+    "Swipe for another opponent" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desliza para otro rival"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "एक ही स्थिति तीन बार आई।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "दूसरे विरोधी के लिए स्वाइप करें"
           }
         }
       }
     },
-    "The strongest piece: she moves like a rook and a bishop together.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La pieza más fuerte: se mueve como una torre y un alfil juntos."
+    "Swipe this card to look back at your earlier moves." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desliza esta tarjeta para repasar tus jugadas anteriores."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "सबसे ताक़तवर मोहरा: यह हाथी और ऊँट दोनों की तरह चलता है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अपनी पिछली चालें देखने के लिए इस कार्ड को स्वाइप करें।"
           }
         }
       }
+    },
+    "Take a seat." : {
+
     },
-    "Their %@ eyes your %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Their %1$@ eyes your %2$@"
+    "Take the pawn." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Captura el peón."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Su %1$@ apunta a tu %2$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "प्यादे को मारें।"
+          }
+        }
+      }
+    },
+    "Take the pawns." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Captura los peones."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "उनके %1$@ की नज़र आपके %2$@ पर है"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "प्यादों को मारें।"
           }
         }
       }
     },
-    "Their %@ is under attack and unguarded.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Su %@ está atacado y sin defensa."
+    "takes your %@ on %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "takes your %1$@ on %2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "captura tu %1$@ en %2$@"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "उनके %@ पर हमला है और वह बचा नहीं है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@ पर आपका %1$@ मार लिया"
           }
         }
       }
     },
-    "Their %@ now attacks it, and nothing guards it.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Su %@ ahora la ataca y nada la defiende."
+    "Tap a square to move, or drag over one and I'll think out loud." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca una casilla para mover, o arrástrala sobre una y pensaré en voz alta."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "अब उनका %@ इस पर हमला कर रहा है, और कोई इसे नहीं बचा रहा।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "चलने के लिए किसी खाने पर टैप करें, या ऊपर से ले जाइए, मैं ज़ोर से सोचूँगा।"
           }
         }
       }
     },
-    "Their move": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les toca"
+    "Tap a square, or drag" : {
+
+    },
+    "That's the game." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se acabó la partida."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "उनकी चाल"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "खेल ख़त्म।"
           }
         }
       }
     },
-    "There was an even better move here.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Había una jugada aún mejor."
+    "That's the whole game. Time to play." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ese es todo el juego. A jugar."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "यहाँ इससे भी बेहतर चाल थी।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "यही पूरा खेल है। अब खेलिए।"
           }
         }
       }
     },
-    "They took your %@": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Te capturaron el %@"
+    "The %@ is open" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El %@ está desbloqueado"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "उन्होंने आपका %@ मार लिया"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ खुल गया"
           }
         }
       }
     },
-    "Thinking": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pensando"
+    "The bishop" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El alfil"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "सोच रहा है"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ऊँट"
           }
         }
       }
     },
-    "Try this": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prueba esto"
+    "The game is drawn." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La partida es tablas."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "यह आज़माएँ"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "खेल बराबरी पर ख़त्म।"
           }
         }
       }
     },
-    "Undo": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deshacer"
+    "The king" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El rey"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "वापस लें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "राजा"
           }
         }
       }
     },
-    "Undo and try again.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deshaz y vuelve a intentarlo."
+    "The knight" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El caballo"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "वापस लेकर फिर कोशिश करें।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "घोड़ा"
           }
         }
       }
     },
-    "Waiting for %@": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esperando a %@"
+    "The pawn" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El peón"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ का इंतज़ार"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "प्यादा"
           }
         }
       }
     },
-    "Watch your %@": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cuidado con tu %@"
+    "The queen" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La dama"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "अपने %@ का ध्यान रखें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "वज़ीर"
           }
         }
       }
     },
-    "Welcome back": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bienvenido de nuevo"
+    "The rook" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La torre"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "फिर से स्वागत है"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "हाथी"
           }
         }
       }
     },
-    "White": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Blancas"
+    "The same position came up three times." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La misma posición se repitió tres veces."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "सफ़ेद"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "एक ही स्थिति तीन बार आई।"
           }
         }
       }
     },
-    "White %lld great · Black %lld great": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "White %1$lld great · Black %2$lld great"
+    "Their %@ eyes your %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Their %1$@ eyes your %2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su %1$@ apunta a tu %2$@"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Blancas %1$lld geniales · Negras %2$lld geniales"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "उनके %1$@ की नज़र आपके %2$@ पर है"
+          }
+        }
+      }
+    },
+    "Their %@ is under attack and unguarded." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su %@ está atacado y sin defensa."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "सफ़ेद %1$lld शानदार · काला %2$lld शानदार"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "उनके %@ पर हमला है और वह बचा नहीं है।"
           }
         }
       }
     },
-    "White starts. Pass the phone after each move.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Empiezan las blancas. Pasa el teléfono después de cada jugada."
+    "Their %@ now attacks it, and nothing guards it." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su %@ ahora la ataca y nada la defiende."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "सफ़ेद शुरू करता है। हर चाल के बाद फ़ोन आगे दें।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अब उनका %@ इस पर हमला कर रहा है, और कोई इसे नहीं बचा रहा।"
           }
         }
       }
     },
-    "White to move": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Juegan las blancas"
+    "Their move" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les toca"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "सफ़ेद की चाल"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "उनकी चाल"
           }
         }
       }
     },
-    "White wins": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ganan las blancas"
+    "There was an even better move here." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Había una jugada aún mejor."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "सफ़ेद जीता"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "यहाँ इससे भी बेहतर चाल थी।"
           }
         }
       }
     },
-    "White's %@ on %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "White's %1$@ on %2$@"
+    "They took your %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te capturaron el %@"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ blanco en %2$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "उन्होंने आपका %@ मार लिया"
+          }
+        }
+      }
+    },
+    "Thinking" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pensando"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%2$@ पर सफ़ेद का %1$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सोच रहा है"
           }
         }
       }
     },
-    "Win %lld more against the %@ to sit down here": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Win %1$lld more against the %2$@ to sit down here"
+    "Time's up" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se acabó el tiempo"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gana %1$lld más contra el %2$@ para sentarte aquí"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "समय ख़त्म"
+          }
+        }
+      }
+    },
+    "Today" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "यहाँ बैठने के लिए %2$@ के ख़िलाफ़ %1$lld और जीतें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आज"
           }
         }
       }
     },
-    "With friends": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Con amigos"
+    "Trap the king." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atrapa al rey."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "दोस्तों के साथ"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "राजा को घेर लें।"
           }
         }
       }
     },
-    "Won": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ganada"
+    "Try this" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba esto"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "जीते"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "यह आज़माएँ"
           }
         }
       }
     },
-    "You beat %@!": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "¡Le ganaste a %@!"
+    "Turned · move %lld" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giro · jugada %lld"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपने %@ को हरा दिया!"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "मोड़ · चाल %lld"
           }
         }
       }
     },
-    "You beat the %@!": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "¡Le ganaste al %@!"
+    "Undo" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deshacer"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपने %@ को हरा दिया!"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "वापस लें"
           }
         }
       }
     },
-    "You can drag pieces as well as tap them.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "También puedes arrastrar las piezas, además de tocarlas."
+    "Undo and try again." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deshaz y vuelve a intentarlo."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आप मोहरों को टैप करने के साथ खींच भी सकते हैं।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "वापस लेकर फिर कोशिश करें।"
           }
         }
       }
     },
-    "You can take back on %@.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Puedes recapturar en %@."
+    "vs" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आप %@ पर वापस मार सकते हैं।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "बनाम"
           }
         }
       }
     },
-    "You know the moves": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ya conoces los movimientos"
+    "vs %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "contra %@"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आप चालें जान गए"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ के ख़िलाफ़"
           }
         }
       }
     },
-    "You play Black against %@.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Juegas con negras contra %@."
+    "Waiting for %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esperando a %@"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आप %@ के ख़िलाफ़ काले से खेल रहे हैं।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ का इंतज़ार"
           }
         }
       }
     },
-    "You play White against %@.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Juegas con blancas contra %@."
+    "Watch your %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuidado con tu %@"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आप %@ के ख़िलाफ़ सफ़ेद से खेल रहे हैं।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अपने %@ का ध्यान रखें"
           }
         }
       }
     },
-    "You play White. Tap a piece to see where it can go.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Juegas con blancas. Toca una pieza para ver adónde puede ir."
+    "Welcome back" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bienvenido de nuevo"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आप सफ़ेद से खेल रहे हैं। किसी मोहरे को टैप करें और देखें कि वह कहाँ जा सकता है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "फिर से स्वागत है"
           }
         }
       }
     },
-    "You win the %@. Clean.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ganas el %@. Limpio."
+    "White" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blancas"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपने %@ जीत लिया। साफ़।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सफ़ेद"
           }
         }
       }
     },
-    "You won!": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "¡Ganaste!"
+    "White %lld great · Black %lld great" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "White %1$lld great · Black %2$lld great"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blancas %1$lld geniales · Negras %2$lld geniales"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आप जीत गए!"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सफ़ेद %1$lld शानदार · काला %2$lld शानदार"
           }
         }
       }
     },
-    "You'll get a notification when they've played.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Te avisaremos cuando haya jugado."
+    "White starts. Pass the phone after each move." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empiezan las blancas. Pasa el teléfono después de cada jugada."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "उनकी चाल होते ही आपको सूचना मिलेगी।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सफ़ेद शुरू करता है। हर चाल के बाद फ़ोन आगे दें।"
           }
         }
       }
     },
-    "You, playing White": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tú, con blancas"
+    "White to move" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Juegan las blancas"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आप, सफ़ेद से"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सफ़ेद की चाल"
           }
         }
       }
     },
-    "Your %@ is loose": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu %@ está sin defensa"
+    "White wins" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ganan las blancas"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपका %@ असुरक्षित है"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सफ़ेद जीता"
           }
         }
       }
     },
-    "Your %@ on %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Your %1$@ on %2$@"
+    "White's %@ on %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "White's %1$@ on %2$@"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu %1$@ en %2$@"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ blanco en %2$@"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@ पर सफ़ेद का %1$@"
+          }
+        }
+      }
+    },
+    "With friends" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con amigos"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%2$@ पर आपका %1$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "दोस्तों के साथ"
           }
         }
       }
     },
-    "Your %@ on %@ has a good move. Find it, or tap Show the move.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Your %1$@ on %2$@ has a good move. Find it, or tap Show the move."
+    "Won" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ganada"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu %1$@ en %2$@ tiene una buena jugada. Encuéntrala o toca Muestra la jugada."
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "जीते"
+          }
+        }
+      }
+    },
+    "Yesterday" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayer"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%2$@ पर आपके %1$@ के पास एक अच्छी चाल है। उसे ढूँढें, या चाल दिखाएँ पर टैप करें।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "कल"
           }
         }
       }
     },
-    "Your best move · move %lld": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu mejor jugada · jugada %lld"
+    "You beat %@!" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Le ganaste a %@!"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपकी सबसे अच्छी चाल · चाल %lld"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपने %@ को हरा दिया!"
           }
         }
       }
     },
-    "Your best move, move %lld": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu mejor jugada, jugada %lld"
+    "You beat the %@!" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Le ganaste al %@!"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपकी सबसे अच्छी चाल, चाल %lld"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपने %@ को हरा दिया!"
           }
         }
       }
     },
-    "Your finished games will show up here, with how accurately you played.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tus partidas terminadas aparecerán aquí, con tu precisión."
+    "You can drag pieces as well as tap them." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "También puedes arrastrar las piezas, además de tocarlas."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपके पूरे हुए खेल यहाँ दिखेंगे, आपकी सटीकता के साथ।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आप मोहरों को टैप करने के साथ खींच भी सकते हैं।"
           }
         }
       }
     },
-    "Your friend": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu amigo"
+    "You can take back on %@." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedes recapturar en %@."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपका दोस्त"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आप %@ पर वापस मार सकते हैं।"
           }
         }
       }
     },
-    "Your game is where you left it.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu partida sigue donde la dejaste."
+    "You know every piece" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conoces todas las piezas"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपका खेल वहीं है जहाँ आपने छोड़ा था।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आप हर मोहरा जानते हैं"
           }
         }
       }
     },
-    "Your game · move %lld": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu partida · jugada %lld"
+    "You never fell behind." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nunca fuiste por detrás."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपका खेल · चाल %lld"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आप कभी पीछे नहीं रहे।"
           }
         }
       }
     },
-    "Your games": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tus partidas"
+    "You play Black against %@." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Juegas con negras contra %@."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपके खेल"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आप %@ के ख़िलाफ़ काले से खेल रहे हैं।"
           }
         }
       }
     },
-    "Your king is in check": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu rey está en jaque"
+    "You play White against %@." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Juegas con blancas contra %@."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपके राजा को शह है"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आप %@ के ख़िलाफ़ सफ़ेद से खेल रहे हैं।"
           }
         }
       }
     },
-    "Your move": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Te toca"
+    "You play White. Tap a piece to see where it can go." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Juegas con blancas. Toca una pieza para ver adónde puede ir."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपकी चाल"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आप सफ़ेद से खेल रहे हैं। किसी मोहरे को टैप करें और देखें कि वह कहाँ जा सकता है।"
           }
         }
       }
     },
-    "Your move again. Take another look.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Te toca de nuevo. Míralo otra vez."
+    "You were winning: %lld%% on move %lld." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ibas ganando: %1$lld%% en la jugada %2$lld."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "फिर से आपकी चाल। एक बार और देखें।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आप जीत रहे थे: चाल %2$lld पर %1$lld%%।"
           }
         }
       }
     },
-    "Your opponent": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu rival"
+    "You win the %@. Clean." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ganas el %@. Limpio."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपका विरोधी"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपने %@ जीत लिया। साफ़।"
           }
         }
       }
     },
-    "Your opponent %@.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu rival %@."
+    "You won!" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Ganaste!"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपके विरोधी ने %@।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आप जीत गए!"
           }
         }
       }
     },
-    "Your opponent's %@ on %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Your opponent's %1$@ on %2$@"
+    "You'll get a notification when they've played." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te avisaremos cuando haya jugado."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ del rival en %2$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "उनकी चाल होते ही आपको सूचना मिलेगी।"
+          }
+        }
+      }
+    },
+    "Your %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu %@"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%2$@ पर विरोधी का %1$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपका %@"
           }
         }
       }
     },
-    "bishop": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "alfil"
+    "Your %@ had a better move here." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu %@ tenía una jugada mejor aquí."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ऊँट"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपके %@ के पास यहाँ बेहतर चाल थी।"
           }
         }
       }
     },
-    "castle to keep your king safe.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "enroca para proteger a tu rey."
+    "Your %@ is loose" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu %@ está sin defensa"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "राजा को सुरक्षित रखने के लिए कैसलिंग करें।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपका %@ असुरक्षित है"
           }
         }
       }
     },
-    "it gives check.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "da jaque."
+    "Your %@ on %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your %1$@ on %2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu %1$@ en %2$@"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "यह शह देती है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@ पर आपका %1$@"
           }
         }
       }
     },
-    "it improves your position the most.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "es la que más mejora tu posición."
+    "Your %@ on %@ has a good move. Find it, or tap Show the move." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your %1$@ on %2$@ has a good move. Find it, or tap Show the move."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "यह आपकी स्थिति को सबसे ज़्यादा सुधारती है।"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu %1$@ en %2$@ tiene una buena jugada. Encuéntrala o toca Muestra la jugada."
           }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@ पर आपके %1$@ के पास एक अच्छी चाल है। उसे ढूँढें, या चाल दिखाएँ पर टैप करें।"
+          }
         }
       }
     },
-    "it is checkmate.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "es jaque mate."
+    "Your best move · move %lld" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu mejor jugada · jugada %lld"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "यह शह-मात है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपकी सबसे अच्छी चाल · चाल %lld"
           }
         }
       }
     },
-    "it wins the %@.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "gana el %@."
+    "Your best move, move %lld" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu mejor jugada, jugada %lld"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "यह %@ जीतती है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपकी सबसे अच्छी चाल, चाल %lld"
           }
         }
       }
     },
-    "king": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "rey"
+    "Your chances" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus opciones"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "राजा"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपकी संभावना"
           }
         }
       }
     },
-    "knight": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "caballo"
+    "Your finished games will show up here, with how accurately you played." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus partidas terminadas aparecerán aquí, con tu precisión."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "घोड़ा"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपके पूरे हुए खेल यहाँ दिखेंगे, आपकी सटीकता के साथ।"
           }
         }
       }
     },
-    "moves the %@ to %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "moves the %1$@ to %2$@"
+    "your friend" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tu amigo"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "mueve el %1$@ a %2$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपके दोस्त"
+          }
+        }
+      }
+    },
+    "Your friend" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu amigo"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ को %2$@ पर चला"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपका दोस्त"
           }
         }
       }
     },
-    "pawn": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "peón"
+    "Your game is where you left it. They're thinking." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu partida sigue donde la dejaste. Están pensando."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "प्यादा"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपका खेल वहीं है जहाँ छोड़ा था। वे सोच रहे हैं।"
           }
         }
       }
     },
-    "piece": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "pieza"
+    "Your game is where you left it. Your move." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu partida sigue donde la dejaste. Te toca."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "मोहरा"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपका खेल वहीं है जहाँ छोड़ा था। आपकी चाल।"
           }
         }
       }
     },
-    "queen": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "dama"
+    "Your games" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus partidas"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "वज़ीर"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपके खेल"
           }
         }
       }
     },
-    "rook": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "torre"
+    "Your king is in check" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu rey está en jaque"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "हाथी"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपके राजा को शह है"
           }
         }
       }
     },
-    "takes your %@ on %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "takes your %1$@ on %2$@"
+    "Your move" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te toca"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "captura tu %1$@ en %2$@"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपकी चाल"
+          }
+        }
+      }
+    },
+    "Your move again. Take another look." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te toca de nuevo. Míralo otra vez."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%2$@ पर आपका %1$@ मार लिया"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "फिर से आपकी चाल। एक बार और देखें।"
           }
         }
       }
     },
-    "vs %@": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "contra %@"
+    "Your opponent %@." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu rival %@."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ के ख़िलाफ़"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपके विरोधी ने %@।"
           }
         }
       }
     },
-    "your friend": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "tu amigo"
+    "Your opponent's %@ on %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your opponent's %1$@ on %2$@"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपके दोस्त"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ del rival en %2$@"
           }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@ पर विरोधी का %1$@"
+          }
         }
       }
+    },
+    "Your second" : {
+
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

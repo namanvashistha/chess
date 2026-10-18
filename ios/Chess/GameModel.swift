@@ -164,6 +164,9 @@ struct BestMove {
     let moveNumber: Int
     let kind: CoachCard.Kind
     let text: String
+    /// The half-move it was, for its marker on the finish card's arc.
+    var ply = 0
+    var san = ""
 }
 
 /// A capture's glass shards.
@@ -201,6 +204,45 @@ struct Finish: Equatable {
     var firstWin = false
     /// Wins so far toward opening the next opponent, when it is still closed.
     var towardNext: (next: Opponent, wins: Int)?
+    /// Half-moves played.
+    var plies = 0
+    /// The player's chance to win, 0 to 1, from the start and after every
+    /// half-move: the story of the game, drawn on the finish card.
+    var arc: [Double] = []
+    /// The half-move where the game turned against the player, if one did.
+    var turnPly: Int?
+    /// The one thing the arc says about the game.
+    var insight: String?
+
+    /// Reads the arc: where it turned on the player's own move, and the one
+    /// sentence worth saying about it. `arc` starts before the first move.
+    func reading(_ arc: [Double], playerParity: Int, twoPlayers: Bool) -> Finish {
+        var f = self
+        guard arc.count >= 5 else { return f }
+        f.arc = arc
+        guard !twoPlayers else { return f }
+        // The biggest drop that came on the player's own move.
+        var worst: (ply: Int, drop: Double)?
+        for i in 1..<arc.count where (i - 1) % 2 == playerParity {
+            let drop = arc[i - 1] - arc[i]
+            if drop > (worst?.drop ?? 0.15) { worst = (i - 1, drop) }
+        }
+        f.turnPly = outcome == .won ? nil : worst?.ply
+        func move(_ i: Int) -> Int { (i - 1) / 2 + 1 }
+        func pct(_ v: Double) -> Int { Int((v * 100).rounded()) }
+        let played = Array(arc.indices.dropFirst())
+        let peak = played.max { arc[$0] < arc[$1] }!
+        let low = played.min { arc[$0] < arc[$1] }!
+        switch outcome {
+        case .won:
+            if arc[low] <= 0.35 { f.insight = L("Came back from \(pct(arc[low]))% on move \(move(low)).") }
+            else if played.allSatisfy({ arc[$0] >= 0.45 }) { f.insight = L("You never fell behind.") }
+        case .lost, .draw:
+            if arc[peak] >= 0.6 { f.insight = L("You were winning: \(pct(arc[peak]))% on move \(move(peak)).") }
+            else if let w = worst { f.insight = L("It turned on move \(w.ply / 2 + 1).") }
+        }
+        return f
+    }
 
     static func == (a: Finish, b: Finish) -> Bool {
         a.outcome == b.outcome && a.title == b.title && a.text == b.text && a.accuracy == b.accuracy
@@ -218,8 +260,23 @@ enum Opponent: Int, CaseIterable, Identifiable {
     var engineLevel: String { ["beginner", "easy", "medium"][rawValue] }
     var startLabel: String { L("Play the \(name)") }
 
-    /// Hints at the start of a game: the gentler the opponent, the more help.
+    /// Hints at the start of a game, before they're matched to the player.
     var hints: Int { [5, 4, 3][rawValue] }
+
+    /// Hints to start a new game with, matched to how the player has been
+    /// doing against this opponent lately: more when it's been hard, a few
+    /// fewer when it's been going well. Only ever the starting count; a hint
+    /// once given is never taken back.
+    var startingHints: Int {
+        let games = Stats.recent.filter { $0.resolvedLevel == rawValue }.prefix(5)
+        let accuracy = games.compactMap(\.accuracy)
+        guard accuracy.count >= 2 else { return hints }
+        let avg = accuracy.reduce(0, +) / accuracy.count
+        var extra = avg < 60 ? 2 : avg < 72 ? 1 : avg >= 88 ? -1 : 0
+        // Three losses in a row: a little more help, whatever the accuracy.
+        if games.count >= 3, games.prefix(3).allSatisfy({ $0.outcome == "lost" }) { extra += 1 }
+        return min(7, max(2, hints + extra))
+    }
     /// Extra hints handed out when the player falls behind, at most this many a game.
     var comebackHints: Int { [4, 2, 0][rawValue] }
     /// How far behind, in centipawns, before an extra hint is offered.
@@ -317,6 +374,8 @@ final class GameModel {
     @ObservationIgnored private var beforeInspect: CoachCard?
     /// Opponent turns with nothing to point out, for spacing out tips.
     @ObservationIgnored private var quietTurns = 0
+    /// Which general idea the coach shares next.
+    @ObservationIgnored private var ideaTurn = 0
     /// When the verdict on the player's last move appeared.
     @ObservationIgnored private var verdictShownAt: Date?
     /// The verdict on the last move, pinned to the piece that made it until the
@@ -329,6 +388,9 @@ final class GameModel {
     @ObservationIgnored private var nextID = 0
     @ObservationIgnored private var history: [(ids: [Int?], last: BoardMove?)] = []
     @ObservationIgnored private var serial = 0
+    /// Bumps whenever pending work must be dropped: a new game, or an undo
+    /// while the engine is still thinking. Background results check it.
+    @ObservationIgnored private var epoch = 0
     @ObservationIgnored private var great = 0
     @ObservationIgnored private var blunders = 0
     /// The game so far in UCI; observed, because the game line grows with it.
@@ -387,6 +449,7 @@ final class GameModel {
         self.mode = mode
         self.opponent = opponent
         game = ChesscoreNewGame()!
+        epoch += 1
         ids = Array(repeating: nil, count: 64)
         history = []
         lastMove = nil
@@ -405,7 +468,7 @@ final class GameModel {
         trail = []
         moves = []
         // Hints are the engine's help: fair against the engine, not against a friend.
-        hintsLeft = mode == .engine ? opponent.hints : mode == .friend ? 0 : 3
+        hintsLeft = mode == .engine ? opponent.startingHints : mode == .friend ? 0 : 3
         if mode != .friend { myColor = "w"; friendName = ""; link = nil }
         friendResigned = false
         comebacks = 0
@@ -518,7 +581,10 @@ final class GameModel {
         refresh()
         if let last = moves.last { lastMove = BoardMove(uci: last, board: board) }
         moveSerial += 1
-        say(.coach, "✦", L("Welcome back"), L("Your game is where you left it."))
+        // Say whose move it is, since that's the first thing you need back.
+        say(.coach, "✦", L("Welcome back"), mode == .engine && turn == "b" && !isOver
+            ? L("Your game is where you left it. They're thinking.")
+            : L("Your game is where you left it. Your move."))
         save()
         fillEvals()
         if mode == .engine, turn == "b", !isOver { engineTurn() }
@@ -631,6 +697,15 @@ final class GameModel {
         reviewMove = p.move
     }
 
+    /// A private copy of the game for work off the main thread, so an undo
+    /// can change the real one meanwhile. Replayed from the moves, so it keeps
+    /// the history repetition needs.
+    private func snapshot() -> ChesscoreGame {
+        guard let g = ChesscoreNewGame() else { return game }
+        for m in moves { _ = g.play(m) }
+        return g
+    }
+
     /// The board after a half-move, and that move.
     private func position(afterPly ply: Int) -> (board: [Character], move: BoardMove?)? {
         guard let g = ChesscoreNewGame() else { return nil }
@@ -641,6 +716,56 @@ final class GameModel {
         }
         return (Array(g.board()), moves.indices.contains(ply) ? BoardMove(uci: moves[ply], board: before) : nil)
     }
+
+    /// The game's arc from the player's side (White's, in pass and play): the
+    /// chance to win after every half-move, ending at the result on a mate.
+    private func withArc(_ f: Finish) -> Finish {
+        var f = f
+        f.plies = moves.count
+        let mine = mode == .passAndPlay ? "w" : myColor
+        var last = 0.5
+        var arc = [0.5] + moves.indices.map { i -> Double in
+            if i < evals.count, let cp = evals[i] {
+                let w = abs(cp) >= 9000 ? (cp > 0 ? 1.0 : 0.0) : 1 / (1 + exp(-Double(cp) / 220))
+                last = mine == "w" ? w : 1 - w
+            }
+            return last
+        }
+        if status == ChesscoreStatusCheckmate { arc[arc.count - 1] = f.outcome == .won ? 1 : 0 }
+        return f.reading(arc, playerParity: mine == "w" ? 0 : 1, twoPlayers: mode == .passAndPlay)
+    }
+
+    #if DEBUG
+    /// A finish card for a made-up game, to look at the card without playing
+    /// one: launched with `-finish won`, `lost` or `draw`.
+    func previewFinish(_ outcome: Finish.Outcome) {
+        let keys: [(Int, Double)] = switch outcome {
+        case .won: [(0, 0.5), (8, 0.56), (15, 0.27), (22, 0.48), (30, 0.74), (40, 0.9), (47, 1)]
+        case .lost: [(0, 0.5), (9, 0.6), (17, 0.73), (20, 0.7), (21, 0.31), (30, 0.2), (37, 0.08)]
+        case .draw: [(0, 0.5), (10, 0.62), (18, 0.44), (28, 0.58), (40, 0.5)]
+        }
+        var arc: [Double] = []
+        for (a, b) in zip(keys, keys.dropFirst()) {
+            for i in a.0..<b.0 {
+                let t = Double(i - a.0) / Double(b.0 - a.0)
+                arc.append(a.1 + (b.1 - a.1) * t + sin(Double(i) * 1.7) * 0.015)
+            }
+        }
+        arc.append(keys.last!.1)
+        let won = outcome == .won
+        var f = Finish(outcome: outcome,
+                       title: won ? L("You beat the \(opponent.name)!") : outcome == .draw ? L("A draw") : L("Good game"),
+                       text: won ? L("Checkmate in \(24) moves.") : outcome == .draw ? L("The same position came up three times.")
+                           : L("Resigned on move \(19)"),
+                       accuracy: won ? 86 : 71, great: won ? 3 : 1, blunders: won ? 0 : 2)
+        f.plies = arc.count - 1
+        f.best = BestMove(before: Array(repeating: ".", count: 64), after: Array(repeating: ".", count: 64),
+                          move: BoardMove(from: 62, to: 45), moveNumber: won ? 16 : 8, kind: .great,
+                          text: "", ply: won ? 31 : 14, san: won ? "Rxe7" : "Nf3")
+        if won { f.towardNext = (.medium, 1) }
+        finish = f.reading(arc, playerParity: 0, twoPlayers: false)
+    }
+    #endif
 
     /// The player's best move: the strongest verdict, the latest among equals.
     /// The finish card leads with it, so every game ends on something good.
@@ -653,7 +778,7 @@ final class GameModel {
               let before = position(afterPly: e.ply - 1) else { return nil }
         return BestMove(side: mode == .passAndPlay ? (e.ply % 2 == 0 ? L("White") : L("Black")) : nil,
                         before: before.board, after: after.board, move: move, moveNumber: e.ply / 2 + 1,
-                        kind: e.card.kind, text: e.card.text)
+                        kind: e.card.kind, text: e.card.text, ply: e.ply, san: e.san)
     }
 
     // MARK: - Sharing
@@ -749,8 +874,9 @@ final class GameModel {
             return (L("A chance"), L("Their \(name(sq)) is under attack and unguarded."), false)
         }
         // Nothing pressing: a quiet "Your move", with a tip only now and then.
+        // Every other quiet turn, one idea worth carrying into the game.
         quietTurns += 1
-        return (L("Your move"), quietTurns % 3 == 0 ? tip() : "", false)
+        return (L("Your move"), quietTurns % 2 == 1 ? tip() : "", false)
     }
 
     /// A tip that fits the position, or one of the app's gestures, each shown once.
@@ -774,7 +900,17 @@ final class GameModel {
             UserDefaults.standard.set(true, forKey: key)
             return text
         }
-        return L("Before you move, ask what their last move wants.")
+        // Ideas, never moves: something to look for, not something to play.
+        let ideas = [L("Before you move, ask what their last move wants."),
+                     L("Pieces in the centre reach the most squares."),
+                     L("Look for checks, captures and threats, for both sides."),
+                     L("A knight on the edge reaches only half its squares."),
+                     L("Rooks love open lines with no pawns in the way."),
+                     L("Ahead in pieces? Trading down makes it simpler."),
+                     L("Pawns can't move back, so push them with a purpose."),
+                     L("Every piece helping beats one piece attacking alone.")]
+        ideaTurn += 1
+        return ideas[(ideaTurn - 1) % ideas.count]
     }
 
     // MARK: - Touch
@@ -864,7 +1000,7 @@ final class GameModel {
         }
     }
 
-    /// True when "Show me" would repeat a hint already used in this position.
+    /// True when "Hint" would repeat a hint already used in this position.
     var hintIsFree: Bool { hintShown?.ply == moves.count }
 
     /// Hints come in two steps. The first points at the piece to move; asking
@@ -885,14 +1021,15 @@ final class GameModel {
         save()
         rays = nil
         busy = true
-        let game = self.game, ply = moves.count
+        let game = snapshot(), ply = moves.count, token = epoch
         Task.detached(priority: .userInitiated) {
             let best = game.search(3, moveTimeMs: 0)?.bestMove ?? ""
             let san = best.isEmpty ? "" : game.san(best)
             let why = best.isEmpty ? "" : EngineText.localize(game.explain(best))
             await MainActor.run {
+                guard token == self.epoch else { return }
                 self.busy = false
-                guard !best.isEmpty, game === self.game, let m = BoardMove(uci: best, board: self.board) else { return }
+                guard !best.isEmpty, let m = BoardMove(uci: best, board: self.board) else { return }
                 let text = "\(san): \(why)"
                 self.hintShown = (ply, best, text)
                 self.hintRevealed = false
@@ -912,7 +1049,11 @@ final class GameModel {
         guard mode != .friend else { return } // a sent move can't be taken back
         var steps = mode == .engine ? 2 : 1
         if mode == .engine && turn == "b" { steps = 1 } // the engine has not replied yet
-        guard !busy, status != "resigned", moves.count >= steps else { return }
+        guard status != "resigned", moves.count >= steps else { return }
+        // Undo works at any moment: whatever the engine was weighing is dropped.
+        epoch += 1
+        busy = false
+        thinking = false
         for _ in 0..<steps {
             game.undo()
             moves.removeLast()
@@ -925,8 +1066,11 @@ final class GameModel {
                 lastMove = nil
             }
         }
-        if !losses.isEmpty { losses.removeLast() }
-        if !trail.isEmpty { trail.removeLast() }
+        // Drop the verdicts on the moves taken back; one still being judged
+        // has none yet, and nothing earlier is touched.
+        let dropped = trail.filter { $0.ply >= moves.count }.count
+        trail.removeAll { $0.ply >= moves.count }
+        losses.removeLast(min(dropped, losses.count))
         evals = Array(evals.prefix(moves.count))
         hintShown = nil
         reviewing = nil
@@ -950,15 +1094,15 @@ final class GameModel {
         loose = []
         if let k = board.firstIndex(of: myColor == "w" ? "K" : "k") { toppled = ids[k] }
         if mode == .friend { link?.didResign(self) }
-        let f = Finish(outcome: .lost, title: L("Good game"), text: L("Every game teaches something. The next one is yours."),
-                       accuracy: accuracy, great: great, blunders: blunders)
         let count = (moves.count + 1) / 2
+        let f = Finish(outcome: .lost, title: L("Good game"), text: L("Resigned on move \(count)"),
+                       accuracy: accuracy, great: great, blunders: blunders)
         Task {
             try? await Task.sleep(for: .seconds(0.9))
             var shown = f
             shown.goodMoves = trail.filter { $0.card.kind == .good || $0.card.kind == .great }.count
             shown.best = bestMove()
-            finish = shown
+            finish = withArc(shown)
             emit(.lose)
             if mode == .engine {
                 Stats.record(accuracy: f.accuracy, great: f.great)
@@ -983,12 +1127,12 @@ final class GameModel {
         if mode == .friend { link?.didMove(self) }
 
         // Judge the move against the position before it, off the main thread.
-        let game = self.game
+        let game = snapshot(), token = epoch
         Task.detached(priority: .userInitiated) {
             let verdict = ChesscoreNewGameFromFEN(fenBefore)?.assess(uci)
             let eval = game.eval(2)
             await MainActor.run {
-                guard game === self.game else { return }
+                guard token == self.epoch else { return }
                 if let verdict { self.judged(verdict, ply: ply, san: san) }
                 self.setEval(eval)
                 self.busy = false
@@ -1031,26 +1175,31 @@ final class GameModel {
     private func engineTurn() {
         busy = true
         thinking = true
-        let game = self.game, level = opponent.engineLevel
+        let game = snapshot(), level = opponent.engineLevel, token = epoch
         Task.detached(priority: .userInitiated) {
             let candidates = game.candidates(4).split(separator: " ").map(String.init)
             let choice = game.botMove(level)
             let line = choice.isEmpty ? "" : EngineText.localize(game.describe(choice))
-            await MainActor.run { self.showThinking(candidates, choice, line, game) }
+            await MainActor.run {
+                guard token == self.epoch else { return }
+                self.showThinking(candidates, choice, line, token)
+            }
         }
     }
 
-    private func showThinking(_ candidates: [String], _ choice: String, _ line: String, _ game: ChesscoreGame) {
-        guard game === self.game, !choice.isEmpty else { busy = false; thinking = false; return }
+    private func showThinking(_ candidates: [String], _ choice: String, _ line: String, _ token: Int) {
+        guard !choice.isEmpty else { busy = false; thinking = false; return }
         var shown = candidates
         if !shown.contains(choice) {
             if shown.isEmpty { shown = [choice] } else { shown[shown.count - 1] = choice }
         }
         Task {
             for k in 1...shown.count {
+                guard token == epoch else { return }
                 rays = makeRays(.thinking, shown.prefix(k).compactMap { BoardMove(uci: $0, board: board) })
                 try? await Task.sleep(for: .milliseconds(260))
             }
+            guard token == epoch else { return }
             if let m = BoardMove(uci: choice, board: board) { rays = makeRays(.chosen, [m]) }
             try? await Task.sleep(for: .milliseconds(420))
             // Let the verdict on the player's move be read before it's replaced.
@@ -1058,7 +1207,7 @@ final class GameModel {
                 let left = Self.readingTime(trail.last?.card) - Date.now.timeIntervalSince(shown)
                 if left > 0 { try? await Task.sleep(for: .seconds(left)) }
             }
-            guard game === self.game else { return }
+            guard token == epoch else { return }
             rays = nil
             thinking = false
             let taken = BoardMove(uci: choice, board: board).flatMap { $0.capture ? board[$0.to] : nil }
@@ -1068,7 +1217,9 @@ final class GameModel {
                 say(.opponent, san, L("Your opponent \(line)."), L("That's the game."))
                 return
             }
-            let eval = await Task.detached { game.eval(2) }.value
+            let after = snapshot()
+            let eval = await Task.detached { after.eval(2) }.value
+            guard token == epoch else { return }
             setEval(eval)
             let tip = watchFor(lastMove, taken: taken)
             let extra = offerComebackHint(eval: eval) ? " You're behind, so here's an extra hint." : ""
@@ -1158,6 +1309,7 @@ final class GameModel {
             }
         }
         final.best = bestMove()
+        final = withArc(final)
         if mode == .passAndPlay {
             final.sides = (trail.filter { $0.ply % 2 == 0 && $0.card.kind == .great }.count,
                            trail.filter { $0.ply % 2 == 1 && $0.card.kind == .great }.count)

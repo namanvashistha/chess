@@ -58,7 +58,7 @@ private struct ShareCardView: View {
                     .lineLimit(2).fixedSize(horizontal: false, vertical: true)
             }
             board
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 .shadow(color: .black.opacity(0.18), radius: 10, y: 6)
             HStack(spacing: 6) {
                 Image(systemName: "sparkles")
@@ -118,7 +118,10 @@ struct ShareMomentButton: View {
     var body: some View {
         ShareLink(item: moment, preview: SharePreview(moment.title, image: thumbnail ?? Image(systemName: "sparkles"))) {
             if let label {
+                // With a label it is a full-width button, tappable edge to edge.
                 Label(label, systemImage: "square.and.arrow.up")
+                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .contentShape(.capsule)
             } else {
                 Image(systemName: "square.and.arrow.up")
                     .font(.system(size: 14, weight: .semibold))
