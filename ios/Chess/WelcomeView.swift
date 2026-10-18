@@ -205,14 +205,13 @@ struct WelcomeView: View {
         guard now.timeIntervalSince(asked) > 0.2 else { return }
         asked = now
         Haptics.tap(.light, intensity: 0.6)
-        // The board's own soft click, so Next feels like part of the table.
-        Sound.shared.play(.select)
         switch stage {
         case .calm:
             board.showAll()
             withAnimation { stage = .noise }
         case .noise:
             withAnimation { stage = .hush }
+            windDown()
         case .hush:
             withAnimation { stage = .coach }
             board.greet()
@@ -225,6 +224,21 @@ struct WelcomeView: View {
             settle()
         case .pick, .settle:
             break
+        }
+    }
+
+    /// The clock you felt in the loud beat doesn't stop dead: a few last
+    /// taps, slower and softer each time, and then one slow breath.
+    private func windDown() {
+        Task {
+            for (gap, level) in [(0.5, 0.25), (0.6, 0.17), (0.75, 0.1)] {
+                try? await Task.sleep(for: .seconds(gap))
+                guard stage == .hush else { return }
+                Haptics.tap(.rigid, intensity: level)
+            }
+            try? await Task.sleep(for: .seconds(0.5))
+            guard stage == .hush else { return }
+            Haptics.breath()
         }
     }
 
@@ -310,6 +324,8 @@ private struct Noise: View {
                 try? await Task.sleep(for: .seconds(0.45))
                 if Task.isCancelled { break }
                 withAnimation(.snappy(duration: 0.25)) { seconds = seconds > 0 ? seconds - 1 : 12 }
+                // The clock you can feel: a crisp, light tap each second.
+                Haptics.tap(.rigid, intensity: 0.35)
             }
         }
     }
@@ -500,8 +516,9 @@ final class WelcomeModel: BoardSource {
             withAnimation(.spring(response: 0.42, dampingFraction: 0.62)) {
                 shownPieces.append(PieceItem(id: sq, code: board[sq], square: sq))
             }
-            // One soft tick as each rank begins.
-            if k % 8 == 0 { Haptics.tap(.soft, intensity: 0.35) }
+            // A light tap as each piece is set down: a little firmer for the
+            // back rank, softer for the pawns.
+            Haptics.tap(.soft, intensity: k % 16 < 8 ? 0.5 : 0.3)
             // The back rank is placed with care, the pawns go down quicker.
             try? await Task.sleep(for: .milliseconds(k % 16 < 8 ? 70 : 38))
         }
@@ -664,9 +681,15 @@ final class WelcomeModel: BoardSource {
         touched = true
         if let selected, rays?.moves.contains(where: { $0.to == square }) == true {
             play(selected, square)
-        } else if shownPieces.contains(where: { $0.square == square && $0.code.isUppercase }), !targets(square).isEmpty {
+        } else if selected != square, shownPieces.contains(where: { $0.square == square && $0.code.isUppercase }),
+                  !targets(square).isEmpty {
             select(square)
         } else {
+            // Put back down: the quieter half of picking it up.
+            if selected != nil {
+                Sound.shared.play(.putDown)
+                Haptics.tap(.light, intensity: 0.5)
+            }
             selected = nil
             rays = nil
         }

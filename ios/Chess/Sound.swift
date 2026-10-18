@@ -1,4 +1,5 @@
 import AVFoundation
+import CoreHaptics
 import UIKit
 import os
 
@@ -9,6 +10,33 @@ enum Haptics {
     static func tap(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .light, intensity: CGFloat = 0.7) {
         guard Sound.hapticsOn else { return }
         UIImpactFeedbackGenerator(style: style).impactOccurred(intensity: intensity)
+    }
+
+    private static var engine: CHHapticEngine?
+
+    /// One slow breath: a soft, round vibration that swells in and fades out
+    /// over about two seconds. The calm counterpart to a crisp tap.
+    static func breath() {
+        guard Sound.hapticsOn, CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        do {
+            if engine == nil {
+                let e = try CHHapticEngine()
+                e.isAutoShutdownEnabled = true
+                engine = e
+            }
+            try engine?.start()
+            let swell = CHHapticEvent(eventType: .hapticContinuous, parameters: [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: 1),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.05),
+            ], relativeTime: 0, duration: 2.0)
+            let curve = CHHapticParameterCurve(parameterID: .hapticIntensityControl, controlPoints: [
+                .init(relativeTime: 0, value: 0),
+                .init(relativeTime: 0.9, value: 0.32),
+                .init(relativeTime: 2.0, value: 0),
+            ], relativeTime: 0)
+            let pattern = try CHHapticPattern(events: [swell], parameterCurves: [curve])
+            try engine?.makePlayer(with: pattern).start(atTime: CHHapticTimeImmediate)
+        } catch {}
     }
 }
 
@@ -38,6 +66,8 @@ final class Sound {
         engine.mainMixerNode.outputVolume = 0.8
         buffers = [
             .select: tones([(1320, 0, 0.12, 0.05)]),
+            // Lower and softer than picking up, so the two read as a pair.
+            .putDown: tones([(990, 0, 0.1, 0.035)]),
             .move: tones([(880, 0, 0.25, 0.09), (1760, 0, 0.18, 0.03)]),
             .capture: tones([(1980, 0, 0.3, 0.05)], noise: (0.35, 0.12)),
             .check: tones([(660, 0, 0.2, 0.04), (660, 0.14, 0.2, 0.04)], square: true),

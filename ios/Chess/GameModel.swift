@@ -178,7 +178,7 @@ struct Burst: Identifiable, Equatable {
 
 /// A one-off event for haptics and sound.
 struct Feedback: Equatable {
-    enum Kind { case select, move, capture, check, great, good, bad, win, lose }
+    enum Kind { case select, putDown, move, capture, check, great, good, bad, win, lose }
     let id: Int
     let kind: Kind
 }
@@ -995,6 +995,8 @@ final class GameModel {
             rays = makeRays(.options, targets)
             emit(.select)
         } else {
+            // Put back down: the quieter half of picking it up.
+            if selected != nil { emit(.putDown) }
             selected = nil
             rays = nil
         }

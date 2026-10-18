@@ -122,6 +122,7 @@ private extension Feedback.Kind {
     var haptic: SensoryFeedback? {
         switch self {
         case .select: .selection
+        case .putDown: .impact(weight: .light, intensity: 0.5)
         case .move: .impact(weight: .light)
         case .capture: .impact(weight: .medium)
         case .check: .warning
