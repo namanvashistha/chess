@@ -1,4 +1,4 @@
-.PHONY: build uci test vet run up dev bench ios-engine ios-upload
+.PHONY: build uci test vet run up dev bench ios-engine ios-upload android-engine
 
 # This project has no cgo dependencies, and the Docker build already sets this.
 # Keeping it off locally also avoids a Go 1.22 / recent-macOS link failure
@@ -75,6 +75,18 @@ ios-engine:
 
 # Archives Calm Chess and uploads it to App Store Connect, where it shows up
 # in TestFlight. Bump CURRENT_PROJECT_VERSION in the project before each upload.
+# Builds the engine for the Android app as an AAR (needs JDK 21 and the
+# Android NDK; the paths below are the defaults on macOS). Linked for 16 KB
+# memory pages, which newer phones use and Google Play requires.
+android-engine: export PATH := $(shell go env GOPATH)/bin:$(PATH)
+android-engine: export JAVA_HOME ?= /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
+android-engine: export ANDROID_HOME ?= $(HOME)/Library/Android/sdk
+android-engine:
+	cd mobile && CGO_ENABLED=0 go test ./... && ANDROID_NDK_HOME=$$(ls -d $(ANDROID_HOME)/ndk/* | tail -1) CGO_ENABLED=1 \
+		gomobile bind -target=android -androidapi 31 -javapkg=com.namanvashistha.calmchess.engine \
+		-ldflags='-extldflags=-Wl,-z,max-page-size=16384' \
+		-o ../android/app/libs/chesscore.aar ./chesscore
+
 ios-upload: ios-engine
 	cd ios && xcodebuild -project Chess.xcodeproj -scheme Chess -configuration Release \
 		-destination 'generic/platform=iOS' -archivePath build/CalmChess.xcarchive -allowProvisioningUpdates archive
