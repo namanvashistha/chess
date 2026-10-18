@@ -476,6 +476,7 @@ final class GameModel {
         hintShown = nil
         nudge = nil
         mark = nil
+        sparkle = nil
         hintRevealed = false
         // A friend game lives with its link; it never replaces the saved game.
         if !keepingSave && mode != .friend { SavedGame.clear() }
@@ -1051,6 +1052,7 @@ final class GameModel {
 
     func undo() {
         mark = nil
+        sparkle = nil
         nudge = nil
         hintRevealed = false
         guard mode != .friend else { return } // a sent move can't be taken back
@@ -1173,7 +1175,15 @@ final class GameModel {
             trail.append(entry)
             if let to = lastMove?.to {
                 mark = (entry, to)
-                if kind == .great { sparkle = (entry.id, to) }
+                if kind == .great {
+                    sparkle = (entry.id, to)
+                    // A one-time burst: gone once it has played, so the board
+                    // never replays it when the game screen is shown again.
+                    Task {
+                        try? await Task.sleep(for: .seconds(1.2))
+                        if sparkle?.id == entry.id { sparkle = nil }
+                    }
+                }
             }
         }
         reviewing = nil
