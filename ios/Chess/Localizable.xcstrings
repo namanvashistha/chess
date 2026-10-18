@@ -1812,22 +1812,6 @@
         }
       }
     },
-    "Learn how the pieces move · 2 minutes" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aprende cómo se mueven las piezas · 2 minutos"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "मोहरों की चालें सीखें · 2 मिनट"
-          }
-        }
-      }
-    },
     "Learn the moves" : {
       "localizations" : {
         "es" : {
@@ -2150,22 +2134,6 @@
         }
       }
     },
-    "New to chess?" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Nuevo en el ajedrez?"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "शतरंज में नए हैं?"
-          }
-        }
-      }
-    },
     "New to chess? Learn the moves" : {
       "localizations" : {
         "es" : {
@@ -2210,22 +2178,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "कोई संकेत नहीं"
-          }
-        }
-      }
-    },
-    "Not now" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ahora no"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "अभी नहीं"
           }
         }
       }

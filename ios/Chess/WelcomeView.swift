@@ -233,12 +233,12 @@ struct WelcomeView: View {
     /// taps, slower and softer each time, and then one slow breath.
     private func windDown() {
         Task {
-            for (gap, level) in [(0.5, 0.25), (0.6, 0.17), (0.75, 0.1)] {
+            for (gap, level) in [(0.25, 0.22), (0.3, 0.12)] {
                 try? await Task.sleep(for: .seconds(gap))
                 guard stage == .hush else { return }
                 Haptics.tap(.rigid, intensity: level)
             }
-            try? await Task.sleep(for: .seconds(0.5))
+            try? await Task.sleep(for: .seconds(0.25))
             guard stage == .hush else { return }
             Haptics.breath()
         }

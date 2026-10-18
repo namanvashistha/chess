@@ -98,6 +98,7 @@ struct RootView: View {
                 withAnimation(Self.carry) { playing = true }
             }
         }
+        .onChange(of: welcoming) { _, on in if !on { GameCenter.shared.authenticate() } }
         // Settings' "How it works" clears the flag to play it again.
         .onChange(of: welcomed) { _, seen in
             if !seen { withAnimation(.easeOut(duration: 0.35)) { welcoming = true } }
@@ -106,7 +107,8 @@ struct RootView: View {
         .task {
             GameCenter.shared.model = model
             GameCenter.shared.showGame = { withAnimation(Self.carry) { playing = true } }
-            GameCenter.shared.authenticate()
+            // Game Center's sign-in banner waits for home, not the intro.
+            if !welcoming { GameCenter.shared.authenticate() }
             SharePlay.shared.model = model
             SharePlay.shared.showGame = { withAnimation(Self.carry) { playing = true } }
             SharePlay.shared.listen()
@@ -158,8 +160,6 @@ private struct HomeScreen: View {
     @State private var settings = false
     @State private var history = false
     @State private var learn = false
-    @AppStorage("learn.done") private var learned = false
-    @AppStorage("learn.cardClosed") private var cardClosed = false
     @State private var seat: Opponent = .easy
     @State private var swipe: CGFloat = 0
     /// The swipe hint shows until the first swipe, then never again.
@@ -181,11 +181,6 @@ private struct HomeScreen: View {
         ScrollView {
             VStack(spacing: 0) {
                 bar.chrome(shown, from: .top, delay: 0.1)
-                if !learned && !cardClosed && saved == nil {
-                    learnCard
-                        .padding(.top, 16)
-                        .chrome(shown, from: .top, delay: 0.12)
-                }
                 table
                     .padding(.top, 24)
                 cta
@@ -238,30 +233,6 @@ private struct HomeScreen: View {
                 .presentationBackground(Palette.surface)
                 .presentationDragIndicator(.visible)
         }
-    }
-
-    // MARK: New to chess
-
-    private var learnCard: some View {
-        HStack(spacing: 12) {
-            GlassPiece(code: "N").frame(width: 40, height: 40)
-            VStack(alignment: .leading, spacing: 1) {
-                Text("New to chess?").font(.system(size: 15.5, weight: .semibold))
-                Text("Learn how the pieces move · 2 minutes").font(.system(size: 13)).foregroundStyle(Palette.mist)
-            }
-            Spacer(minLength: 0)
-            Button { Haptics.tap(); withAnimation { cardClosed = true } } label: {
-                Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Palette.mist)
-                    .frame(width: 28, height: 28).contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Not now")
-        }
-        .padding(.leading, 12).padding(.trailing, 6).padding(.vertical, 10)
-        .contentShape(.rect)
-        .onTapGesture { Haptics.tap(); learn = true }
-        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 18))
-        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: Bar
