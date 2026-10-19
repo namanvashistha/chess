@@ -8,6 +8,8 @@ splashscreen = "1.2.0"
 lifecycle = "2.11.0"
 # Compose pulls in 1.0.1, whose native library is not 16 KB aligned.
 graphicsPath = "1.1.0"
+# The icon set is no longer in the Compose BOM; 1.7.8 is its final release.
+materialIcons = "1.7.8"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -15,6 +17,7 @@ androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", versi
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-graphics-path = { module = "androidx.graphics:graphics-path", version.ref = "graphicsPath" }
+compose-material-icons = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIcons" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-ui = { module = "androidx.compose.ui:ui" }
 compose-foundation = { module = "androidx.compose.foundation:foundation" }
