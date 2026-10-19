@@ -20,6 +20,7 @@ enum Reel {
     static func play(_ scene: String, _ model: GameModel) async {
         switch scene {
         case "mate-in-one": await mateInOne(model)
+        case "three-seconds": await threeSeconds(model)
         default: log.error("no scene \(scene, privacy: .public)")
         }
     }
@@ -40,6 +41,35 @@ enum Reel {
         await wait(0.9)
         beat("mate"); model.tap(sq("f7"))
         await wait(5.2)
+        beat("end")
+    }
+
+    /// "Only 3% see it in 3 seconds": the Petrov trap, where Nc6+ is a
+    /// discovered check that wins the queen. A held countdown, the app's own
+    /// two-step hint, the move, and the knight taking the queen.
+    private static func threeSeconds(_ model: GameModel) async {
+        model.stage(["e2e4", "e7e5", "g1f3", "g8f6", "f3e5", "f6e4", "d1e2", "e4f6"])
+        beat("start")
+        await wait(3.6)
+        beat("hint"); model.hint()
+        await wait(2.2)
+        beat("hint2"); model.hint()
+        await wait(2.4)
+        beat("pick"); model.tap(sq("e5"))
+        await wait(0.8)
+        model.scriptedReplies = ["f8e7"]
+        beat("move"); model.tap(sq("c6"))
+        // Black has to answer the check: wait for the reply.
+        for _ in 0..<120 where model.turn != "w" || model.busy { await wait(0.1) }
+        beat("reply")
+        await wait(1.0)
+        // The queen is gone either way; the bishop blocks, and the knight takes it.
+        guard let queen = model.board.firstIndex(of: "q") else { beat("no-queen"); return }
+        beat("pick2"); model.tap(sq("c6"))
+        await wait(0.7)
+        model.holdReplies = true
+        beat("take"); model.tap(queen)
+        await wait(4.0)
         beat("end")
     }
 }

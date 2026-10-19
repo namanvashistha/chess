@@ -737,6 +737,13 @@ final class GameModel {
     }
 
     #if DEBUG
+    /// Reel studio: the opponent's next replies, played instead of the
+    /// engine's choice, so a scripted scene always goes the same way.
+    @ObservationIgnored var scriptedReplies: [String] = []
+    /// Reel studio: the opponent stops replying, so a scene can end on the
+    /// player's move with the board still.
+    @ObservationIgnored var holdReplies = false
+
     /// Reel studio: a game set up from a list of moves, as if they had just
     /// been played, so a scripted scene can start mid-game.
     func stage(_ list: [String]) {
@@ -1213,9 +1220,14 @@ final class GameModel {
         busy = true
         thinking = true
         let game = snapshot(), level = opponent.engineLevel, token = epoch
+        var scripted: String?
+        #if DEBUG
+        if !scriptedReplies.isEmpty { scripted = scriptedReplies.removeFirst() }
+        if holdReplies { busy = false; thinking = false; return }
+        #endif
         Task.detached(priority: .userInitiated) {
             let candidates = game.candidates(4).split(separator: " ").map(String.init)
-            let choice = game.botMove(level)
+            let choice = scripted ?? game.botMove(level)
             let line = choice.isEmpty ? "" : EngineText.localize(game.describe(choice))
             await MainActor.run {
                 guard token == self.epoch else { return }

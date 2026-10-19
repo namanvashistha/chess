@@ -6,7 +6,7 @@ composer lays captions, sound and the end card over it.
 
 ## Mate in 1. Easy.
 
-`out/mate_in_one.mp4` (1080 × 1920, 14.7 s, loops) and `out/cover.jpg`.
+`out/mate_in_one.mp4` (1080 × 1920, 14.7 s, loops) and `out/mate_in_one.cover.jpg`.
 
 The idea: a confident "Mate in 1. Easy. 😎" over the Scholar's Mate, where every
 chess player sees Qxf7 is mate, and then the queen goes to h7 instead. That
@@ -41,7 +41,7 @@ What it is built for, from what Instagram ranks on:
 
 **Hashtags (3–5 is enough):** #chess #chesspuzzle #learnchess #chesstok #chessforbeginners
 
-**Cover:** `out/cover.jpg`, the "Mate in 1. Easy. 😎" frame.
+**Cover:** `out/mate_in_one.cover.jpg`, the "Mate in 1. Easy. 😎" frame.
 
 **Audio:** post with the reel's own sound (it's original, which Instagram favours).
 To try a trending track instead, add it in Instagram at about 20% under the
@@ -57,6 +57,51 @@ Post it organically first. If after 48 hours it's clearly ahead of your other
 posts on shares and saves, boost that post (Ads Manager → Boost, or use it as an
 existing post in an App promotion campaign) rather than uploading it as a new ad,
 so its comments and likes come along. Start at ₹100–150 a day for a week.
+
+## Only 3% see it in 3 seconds
+
+`out/three_seconds.mp4` (1080 × 1920, 15.5 s, loops) and `out/three_seconds.cover.jpg`.
+
+The A/B partner of Mate in 1. Where that one shows someone failing and lets
+viewers correct them, this one challenges the viewer: a real trap (the Petrov,
+where Nc6+ is a discovered check that wins the queen), a draining three-second
+timer with a ticking clock, then "Time's up". The app's own hint circles the
+knight, then shows the move; Nc6+, "DISCOVERED CHECK", the bishop blocks, "Too
+late", and the knight takes the queen. It shows off a different strength
+(hints that teach) and ends on the same card.
+
+What it is built for: pausing to solve it (watch time), rewatching to see the
+move again, and comments with how long it took. "send this to someone who'd
+never see it 😏" invites the send.
+
+**Caption:**
+
+> only 3% find this in 3 seconds. did you? 👀
+>
+> (white to move, win the queen)
+>
+> Calm Chess shows you the move when you're stuck, then lets you find it yourself.
+>
+> Calm Chess · free, no ads, works offline · iPhone & Android
+
+**Pinned comment:** "drop your time 👇 no cheating with the hint 😏"
+
+**Hashtags:** #chess #chesspuzzle #chesstactics #learnchess #chessforbeginners
+
+## Testing the two against each other
+
+They are built to differ in one thing, the hook (someone else failing, versus
+a challenge to you): the same length, end card, sounds and posting kit.
+
+1. **Use Trial Reels** (Instagram's option when sharing a Reel: it's shown to
+   non-followers first, not your followers). Post one, then the other, a day
+   apart at the same hour, so neither steals the other's audience.
+2. **After 48 hours, compare per view**, not raw totals: shares and sends per
+   view, then average watch time, then comments per view. Sends matter most for
+   reach beyond your followers.
+3. **The winner gets the boost** (₹100–150 a day for a week), and its format
+   gets the next three reels. If they're close, make one of each again with a
+   new position before deciding: one pair of posts is a hint, not a result.
 
 ## Making another
 
@@ -75,11 +120,21 @@ so its comments and likes come along. Start at ₹100–150 a day for a week.
    xcrun simctl launch booted com.namanvashistha.cozychess -reel mate-in-one
    ```
 
-3. Read the beat times off the frames (the first frame each shows), and compose:
+3. Read the beat times off the frames (the first frame each shows; they shift by
+   a few tenths between takes), and compose:
 
    ```bash
    python mate_in_one.py raw.mov out/mate_in_one.mp4 --start 5.3 --pick 7.0 --blunder 8.0 --undo 11.0 --pick2 12.3 --mate 13.3 --won 14.5
    ```
+
+   ```bash
+   python three_seconds.py raw.mov out/three_seconds.mp4 --start 5.6 --hint 9.6 --hint2 11.65 --pick 14.1 --move 14.85 --reply 17.8 --pick2 18.8 --take 19.5 --stop 20.35
+   ```
+
+   Both are built on `reelkit.py`: captions, the app's sounds, tap marks, the
+   end card, and a timeline that cuts and freezes the recording on exact frames.
+   A scene can script the opponent's replies (`scriptedReplies`) or stop it
+   replying (`holdReplies`), so a take always goes the same way.
 
    The composer needs Pillow and ffmpeg, and uses macOS's SF Rounded and Apple
    Color Emoji fonts.
