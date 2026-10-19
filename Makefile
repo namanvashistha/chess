@@ -1,4 +1,4 @@
-.PHONY: build uci test vet run up dev bench ios-engine ios-upload android-engine android-strings
+.PHONY: build uci test vet run up dev bench ios-engine ios-upload android-engine android-strings android-release
 
 # This project has no cgo dependencies, and the Docker build already sets this.
 # Keeping it off locally also avoids a Go 1.22 / recent-macOS link failure
@@ -90,6 +90,11 @@ android-engine:
 # Rebuilds the Android app's translations from the iPhone app's string catalog.
 android-strings:
 	python3 android/tools/strings.py
+
+# Builds the Android App Bundle for Google Play, signed with the upload key in
+# android/keystore.properties: android/app/build/outputs/bundle/release/app-release.aab.
+android-release: android-engine android-strings
+	cd android && JAVA_HOME=$${JAVA_HOME:-/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home} ./gradlew bundleRelease
 
 ios-upload: ios-engine
 	cd ios && xcodebuild -project Chess.xcodeproj -scheme Chess -configuration Release \

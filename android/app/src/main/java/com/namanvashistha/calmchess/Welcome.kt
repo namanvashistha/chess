@@ -157,6 +157,8 @@ fun WelcomeScreen(enter: () -> Unit, learn: () -> Unit) {
     Box(
         Modifier.fillMaxSize().zIndex(10f).onSizeChanged { height = it.height + 300 }
             .graphicsLayer { alpha = fade; translationY = fall * height }
+            // It covers home completely: touches never reach what's underneath.
+            .clickable(remember { MutableInteractionSource() }, null) {}
     ) {
         AppBackground {
             Column(

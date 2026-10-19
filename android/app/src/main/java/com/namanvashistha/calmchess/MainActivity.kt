@@ -31,6 +31,7 @@ class MainActivity : ComponentActivity() {
         Strings.init(this)
         Haptics.init(this)
         Sound.init(this)
+        IconRenderer.renderIfAsked(this, intent.getBooleanExtra("renderIcon", false))
         setContent { CalmTheme { Root() } }
     }
 }

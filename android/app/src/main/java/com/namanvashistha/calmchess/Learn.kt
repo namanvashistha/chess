@@ -141,6 +141,8 @@ fun LearnScreen(close: () -> Unit, play: () -> Unit) {
     LaunchedEffect(Unit) { lesson.onMove = { f, t -> move(f, t) }; load() }
     BackHandler { if (moment == null) setStep(0); close() }
 
+    // It covers everything while open: touches never reach what's underneath.
+    Box(Modifier.fillMaxSize().clickable(remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, null) {}) {
     AppBackground {
         Column(
             Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 20.dp).padding(bottom = 16.dp)
@@ -174,6 +176,7 @@ fun LearnScreen(close: () -> Unit, play: () -> Unit) {
                 )
             }
         }
+    }
     }
 }
 
