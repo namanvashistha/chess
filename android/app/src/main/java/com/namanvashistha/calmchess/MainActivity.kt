@@ -32,14 +32,16 @@ class MainActivity : ComponentActivity() {
         Haptics.init(this)
         Sound.init(this)
         IconRenderer.renderIfAsked(this, intent.getBooleanExtra("renderIcon", false))
-        setContent { CalmTheme { Root() } }
+        // The reel studio, for recording marketing reels: debug builds only.
+        val reel = intent.getStringExtra("reel")?.takeIf { applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0 }
+        setContent { CalmTheme { Root(reel) } }
     }
 }
 
 /** The app: home, and the game it starts or resumes. The board carries across between them. */
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-private fun Root() {
+private fun Root(reel: String? = null) {
     val scope = rememberCoroutineScope()
     val model = remember { GameModel(scope) }
     var playing by remember { mutableStateOf(false) }
@@ -49,6 +51,12 @@ private fun Root() {
     var welcoming by remember { mutableStateOf(firstRun()) }
     var learning by remember { mutableStateOf(false) }
     fun startGame(mode: Mode, opponent: Opponent) { model.start(mode, opponent); playing = true }
+    if (reel != null) androidx.compose.runtime.LaunchedEffect(Unit) {
+        welcoming = false
+        playing = true
+        kotlinx.coroutines.delay(1200)
+        Reel.play(reel, model)
+    }
     SharedTransitionLayout {
         CompositionLocalProvider(LocalSharedScope provides this) {
             // A screen arrives without fading (its board carries across fully drawn;

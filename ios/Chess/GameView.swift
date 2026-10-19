@@ -115,6 +115,15 @@ struct RootView: View {
         }
         #if DEBUG
         .task {
+            let args = ProcessInfo.processInfo.arguments
+            if let i = args.firstIndex(of: "-reel"), i + 1 < args.count {
+                welcoming = false
+                playing = true
+                try? await Task.sleep(for: .seconds(1.2))
+                await Reel.play(args[i + 1], model)
+            }
+        }
+        .task {
             if ProcessInfo.processInfo.arguments.contains("-friendTest") {
                 DebugLink.shared.start(model)
                 playing = true

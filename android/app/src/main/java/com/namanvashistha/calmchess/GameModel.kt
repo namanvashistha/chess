@@ -171,6 +171,22 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
             else L("White starts. Pass the phone after each move."))
     }
 
+    /**
+     * Reel studio (debug builds only): a game set up from a list of moves, as
+     * if they had just been played, so a scene can start mid-game.
+     */
+    fun stage(list: List<String>) {
+        start(Mode.Engine, Opponent.Easy)
+        var before = board
+        for (uci in list) { before = game.board().toList(); if (!game.play(uci)) break }
+        moves = list
+        ids = arrayOfNulls(64)
+        refresh()
+        lastMove = list.lastOrNull()?.let { BoardMove.of(it, before) }
+        moveSerial++
+        say(CoachCard.Kind.Coach, "✦", L("Your move"), "")
+    }
+
     /** Picks up the saved game, if there is one. */
     fun resume(): Boolean {
         val saved = SavedGame.load() ?: return false

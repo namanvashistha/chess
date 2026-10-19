@@ -737,6 +737,23 @@ final class GameModel {
     }
 
     #if DEBUG
+    /// Reel studio: a game set up from a list of moves, as if they had just
+    /// been played, so a scripted scene can start mid-game.
+    func stage(_ list: [String]) {
+        start(.engine, opponent: .easy)
+        var before = board
+        for uci in list {
+            before = Array(game.board())
+            guard game.play(uci) else { break }
+        }
+        moves = list
+        ids = Array(repeating: nil, count: 64)
+        refresh()
+        lastMove = list.last.flatMap { BoardMove(uci: $0, board: before) }
+        moveSerial += 1
+        say(.coach, "✦", L("Your move"), "")
+    }
+
     /// A finish card for a made-up game, to look at the card without playing
     /// one: launched with `-finish won`, `lost` or `draw`.
     func previewFinish(_ outcome: Finish.Outcome) {
