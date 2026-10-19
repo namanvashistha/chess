@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         Prefs.init(this)
         Haptics.init(this)
+        Sound.init(this)
         setContent { CalmTheme { Root() } }
     }
 }
@@ -42,6 +43,10 @@ private fun Root() {
     var playing by remember { mutableStateOf(false) }
     // Refreshes home's saved game and history on return.
     var homeId by remember { mutableIntStateOf(0) }
+    // Decided before the first frame, so a first run never glimpses home.
+    var welcoming by remember { mutableStateOf(firstRun()) }
+    var learning by remember { mutableStateOf(false) }
+    fun startGame(mode: Mode, opponent: Opponent) { model.start(mode, opponent); playing = true }
     SharedTransitionLayout {
         CompositionLocalProvider(LocalSharedScope provides this) {
             // A screen arrives without fading (its board carries across fully drawn;
@@ -51,12 +56,26 @@ private fun Root() {
                     if (inGame) GameScreen(model) { homeId++; playing = false }
                     else key(homeId) {
                         HomeScreen(
-                            start = { mode, opponent -> model.start(mode, opponent); playing = true },
+                            start = { mode, opponent -> startGame(mode, opponent) },
                             resume = { if (model.resume()) playing = true },
+                            learn = { learning = true },
+                            welcome = { Prefs.p.edit().putBoolean("welcome.seen", false).apply(); welcoming = true },
                         )
                     }
                 }
             }
         }
     }
+    // The welcome sits on top from the first frame; Learn covers everything while it's open.
+    if (learning) LearnScreen(close = { learning = false; homeId++ }, play = { startGame(Mode.Engine, Opponent.Easy) })
+    if (welcoming) WelcomeScreen(enter = { welcoming = false }, learn = { learning = true })
+}
+
+/** A true first run. Someone who has already played doesn't need the welcome and is marked as having seen it. */
+private fun firstRun(): Boolean {
+    val p = Prefs.p
+    if (!p.getBoolean("welcome.seen", false) && (Stats.recent.isNotEmpty() || SavedGame.load() != null)) {
+        p.edit().putBoolean("welcome.seen", true).apply()
+    }
+    return !p.getBoolean("welcome.seen", false)
 }

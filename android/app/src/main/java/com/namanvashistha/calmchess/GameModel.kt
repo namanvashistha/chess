@@ -21,7 +21,7 @@ enum class Feedback { Select, PutDown, Move, Capture, Check, Great, Good, Bad, W
  * engine owns the rules and the coaching; this keeps what the screen needs on
  * top and runs the engine off the main thread.
  */
-class GameModel(private val scope: CoroutineScope) {
+class GameModel(private val scope: CoroutineScope) : BoardSource {
     var mode by mutableStateOf(Mode.Engine); private set
     /** Always White against the engine. */
     val myColor = "w"
@@ -29,18 +29,18 @@ class GameModel(private val scope: CoroutineScope) {
 
     var board by mutableStateOf(List(64) { '.' }); private set
     var pieces by mutableStateOf(listOf<PieceItem>()); private set
-    var turn by mutableStateOf("w"); private set
+    override var turn by mutableStateOf("w"); private set
     var status by mutableStateOf(""); private set
     var inCheck by mutableStateOf(false); private set
     var lastMove by mutableStateOf<BoardMove?>(null); private set
-    var loose by mutableStateOf(setOf<Square>()); private set
-    var selected by mutableStateOf<Square?>(null); private set
-    var rays by mutableStateOf<Rays?>(null); private set
+    override var loose by mutableStateOf(setOf<Square>()); private set
+    override var selected by mutableStateOf<Square?>(null); private set
+    override var rays by mutableStateOf<Rays?>(null); private set
     var coach by mutableStateOf<CoachCard?>(null); private set
-    var bursts by mutableStateOf(listOf<Burst>()); private set
-    var toppled by mutableStateOf<Int?>(null); private set
+    override var bursts by mutableStateOf(listOf<Burst>()); private set
+    override var toppled by mutableStateOf<Int?>(null); private set
     var finish by mutableStateOf<Finish?>(null); private set
-    var movingPiece by mutableStateOf<Int?>(null); private set
+    override var movingPiece by mutableStateOf<Int?>(null); private set
     var moveSerial by mutableStateOf(0); private set
     /** White's share of the position, 0 to 1. */
     var whiteShare by mutableStateOf(0.5); private set
@@ -51,15 +51,15 @@ class GameModel(private val scope: CoroutineScope) {
     /** The game so far in UCI. */
     var moves by mutableStateOf(listOf<String>()); private set
     /** The trail entry the coach card is showing, if the player stepped back to one. */
-    var reviewing by mutableStateOf<Int?>(null); private set
+    override var reviewing by mutableStateOf<Int?>(null); private set
     var reviewBoard by mutableStateOf<List<Char>?>(null); private set
     var reviewMove by mutableStateOf<BoardMove?>(null); private set
     /** The verdict on the last move, pinned to the piece that made it. */
     var mark by mutableStateOf<Pair<TrailEntry, Square>?>(null); private set
     /** A great move's sparkle: an id and where it landed. */
-    var sparkle by mutableStateOf<Pair<Int, Square>?>(null); private set
+    override var sparkle by mutableStateOf<Pair<Int, Square>?>(null); private set
     /** The piece a hint is pointing at, before it shows the whole move. */
-    var nudge by mutableStateOf<Square?>(null); private set
+    override var nudge by mutableStateOf<Square?>(null); private set
     var hintRevealed by mutableStateOf(false); private set
     /** The engine is looking for a hint; the Hint button stays as it is meanwhile. */
     var findingHint by mutableStateOf(false); private set
@@ -110,17 +110,17 @@ class GameModel(private val scope: CoroutineScope) {
             return legal.filter { it.startsWith(from) }.mapNotNull { BoardMove.of(it, board) }.distinctBy { it.to }
         }
 
-    val checkSquare: Square?
+    override val checkSquare: Square?
         get() = if (!inCheck) null else board.indexOf(if (turn == "w") 'K' else 'k').takeIf { it >= 0 }
 
     /** The pieces to draw: the live game's, or the reviewed position's. */
-    val shownPieces: List<PieceItem>
+    override val shownPieces: List<PieceItem>
         get() = reviewBoard?.let { b -> b.indices.filter { b[it] != '.' }.map { PieceItem(-1 - it, b[it], it) } } ?: pieces
 
-    val shownLastMove get() = if (reviewBoard == null) lastMove else reviewMove
+    override val shownLastMove get() = if (reviewBoard == null) lastMove else reviewMove
 
     /** The mark to draw: hidden while reviewing, or once its piece is gone. */
-    val shownMark: Pair<TrailEntry, Square>?
+    override val shownMark: Pair<TrailEntry, Square>?
         get() {
             val m = mark ?: return null
             if (reviewing != null) return null
@@ -232,7 +232,7 @@ class GameModel(private val scope: CoroutineScope) {
 
     // Touch
 
-    fun pickUp(square: Square): Boolean {
+    override fun pickUp(square: Square): Boolean {
         if (!playerToMove || reviewing != null) return false
         val piece = board[square]
         if (piece == '.' || (if (piece.isUpperCase()) "w" else "b") != turn) return false
@@ -245,13 +245,13 @@ class GameModel(private val scope: CoroutineScope) {
     }
 
     /** Drops the dragged piece: a legal square plays it; anywhere else it stays selected. */
-    fun drop(on: Square?) {
+    override fun drop(on: Square?) {
         val from = selected ?: return
         if (on != null && on != from && targets.any { it.to == on }) play(from, on)
     }
 
     /** Long-press: lines from every piece guarding this one and every piece attacking it. */
-    fun inspect(square: Square): Boolean {
+    override fun inspect(square: Square): Boolean {
         if (reviewing != null || busy || board[square] == '.') return false
         val name = Squares.name(square)
         fun lines(list: String, danger: Boolean) =
@@ -281,13 +281,13 @@ class GameModel(private val scope: CoroutineScope) {
         return true
     }
 
-    fun endInspect() {
+    override fun endInspect() {
         rays = null
         beforeInspect?.let { coach = it }
         beforeInspect = null
     }
 
-    fun tap(square: Square) {
+    override fun tap(square: Square) {
         if (reviewing != null) { endReview(); return }
         if (!playerToMove) return
         val from = selected
@@ -836,6 +836,7 @@ class GameModel(private val scope: CoroutineScope) {
     private fun emit(kind: Feedback) {
         feedback = ++serial to kind
         Haptics.play(kind)
+        Sound.play(kind)
     }
 
     companion object {

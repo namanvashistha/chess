@@ -65,6 +65,37 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
 
+/**
+ * What the board needs from whatever drives it: a game, the welcome, or a
+ * Learn moment. The same board plays all three.
+ */
+interface BoardSource {
+    val shownPieces: List<PieceItem>
+    val selected: Square?
+    val rays: Rays?
+    val bursts: List<Burst>
+    val toppled: Int?
+    val movingPiece: Int?
+    /** Whose move it is, "w" or "b": the board's light rests on that side. */
+    val turn: String
+    val reviewing: Int?
+    val shownLastMove: BoardMove?
+    val sparkle: Pair<Int, Square>?
+    val nudge: Square?
+    val loose: Set<Square>
+    val checkSquare: Square?
+    val shownMark: Pair<TrailEntry, Square>?
+    fun pickUp(square: Square): Boolean
+    fun drop(on: Square?)
+    fun inspect(square: Square): Boolean
+    fun endInspect()
+    fun tap(square: Square)
+    /** The square a carried piece is over; nil when it's put down. The welcome's coach thinks out loud. */
+    fun hover(square: Square?) {}
+    /** Pieces arriving are set down by hand rather than appearing. The welcome lays its table this way. */
+    val placesPieces: Boolean get() = false
+}
+
 /** Square centre in board coordinates. */
 fun center(sq: Square, size: Float): Offset {
     val q = size / 8
@@ -87,7 +118,7 @@ fun verdictColor(p: Palette, k: CoachCard.Kind) = when (k) {
  * piece to see what guards and attacks it.
  */
 @Composable
-fun BoardView(model: GameModel, modifier: Modifier = Modifier) {
+fun BoardView(model: BoardSource, modifier: Modifier = Modifier) {
     val palette = LocalPalette.current
     val shape = RoundedCornerShape(6.dp)
     BoxWithConstraints(
@@ -147,9 +178,11 @@ fun BoardView(model: GameModel, modifier: Modifier = Modifier) {
                             }
                             if (dragging) {
                                 dragPoint = change.position
+                                model.hover(squareAt(change.position))
                                 if (change.positionChange() != Offset.Zero) change.consume()
                             }
                         }
+                        model.hover(null)
                         dragPoint = null
                         dragFrom = null
                     }
@@ -163,6 +196,9 @@ fun BoardView(model: GameModel, modifier: Modifier = Modifier) {
                     val glide by animateOffsetAsState(center(piece.square, sizePx), swiftSpring(0.42f, 0.72f), label = "glide")
                     val scale by animateFloatAsState(if (dragged) 1.28f else if (lifted) 1.06f else 1f, swiftSpring(0.22f, 0.7f), label = "scale")
                     val tip by animateFloatAsState(if (toppled) 1f else 0f, swiftSpring(0.9f, 0.55f), label = "topple")
+                    // Set down by hand: from just above, a little large and clear, settling into place.
+                    val placed = remember { Animatable(if (model.placesPieces) 0f else 1f) }
+                    LaunchedEffect(Unit) { placed.animateTo(1f, swiftSpring(0.42f, 0.62f)) }
                     // Held a little above the finger so the finger doesn't hide it.
                     val at = if (dragged) dragPoint!! + Offset(0f, -q * 0.25f) else glide
                     GlassPiece(
@@ -170,9 +206,11 @@ fun BoardView(model: GameModel, modifier: Modifier = Modifier) {
                         lifted = lifted,
                         modifier = Modifier
                             .size(qDp)
-                            .offset { IntOffset((at.x - q / 2 + q * 0.15f * tip).roundToInt(), (at.y - q / 2).roundToInt()) }
+                            .offset { IntOffset((at.x - q / 2 + q * 0.15f * tip).roundToInt(), (at.y - q / 2 - q * 0.5f * (1 - placed.value)).roundToInt()) }
                             .graphicsLayer {
-                                scaleX = scale; scaleY = scale
+                                val drop = 1f + 0.18f * (1 - placed.value)
+                                scaleX = scale * drop; scaleY = scale * drop
+                                alpha = placed.value.coerceIn(0f, 1f)
                                 rotationZ = 82f * tip
                                 transformOrigin = TransformOrigin(0.5f, if (tip > 0f) 0.88f else 1f)
                             }
@@ -189,7 +227,7 @@ fun BoardView(model: GameModel, modifier: Modifier = Modifier) {
 
 /** The squares, the last move's honey wash, check, a hint's nudge, loose pieces, coordinates, grain and the turn light. */
 @Composable
-private fun SquaresLayer(model: GameModel, palette: Palette) {
+private fun SquaresLayer(model: BoardSource, palette: Palette) {
     val measurer = rememberTextMeasurer()
     val last = model.shownLastMove
     val check = model.checkSquare
@@ -291,7 +329,7 @@ private fun RaysLayer(rays: Rays?, size: Float, palette: Palette) {
 
 /** The verdict on the last move, as a small badge on the piece that made it. */
 @Composable
-private fun MarkLayer(model: GameModel, size: Float, palette: Palette) {
+private fun MarkLayer(model: BoardSource, size: Float, palette: Palette) {
     val m = model.shownMark ?: return
     val icon = verdictIcon(m.first.card.kind) ?: return
     key(m.first.id) {

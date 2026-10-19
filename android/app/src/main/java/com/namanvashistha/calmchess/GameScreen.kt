@@ -570,7 +570,7 @@ private fun GameArc(arc: List<Double>, best: Int?, turn: Int?, modifier: Modifie
 
 /** A win: glass flecks in the app's colours rise and fall once. */
 @Composable
-private fun Celebration(modifier: Modifier) {
+fun Celebration(modifier: Modifier) {
     val p = LocalPalette.current
     val flecks = remember {
         List(28) {

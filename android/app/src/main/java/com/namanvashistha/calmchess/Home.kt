@@ -38,6 +38,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.School
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material.icons.rounded.Add
@@ -98,7 +101,7 @@ private const val SETUP = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(start: (Mode, Opponent) -> Unit, resume: () -> Unit) {
+fun HomeScreen(start: (Mode, Opponent) -> Unit, resume: () -> Unit, learn: () -> Unit, welcome: () -> Unit) {
     val p = LocalPalette.current
     val scope = rememberCoroutineScope()
     val saved = remember { SavedGame.load() }
@@ -270,7 +273,12 @@ fun HomeScreen(start: (Mode, Opponent) -> Unit, resume: () -> Unit) {
 
     if (settings) {
         ModalBottomSheet({ settings = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = p.surface, dragHandle = null) { SettingsSheet() }
+            containerColor = p.surface, dragHandle = null) {
+            SettingsSheet(
+                learn = { settings = false; scope.launch { delay(300); learn() } },
+                welcome = { settings = false; scope.launch { delay(400); welcome() } },
+            )
+        }
     }
     if (history) {
         ModalBottomSheet({ history = false }, containerColor = p.surface) {
@@ -477,7 +485,7 @@ private fun dayLabel(ms: Long): String {
 
 /** Settings: sound and haptics, and a word on appearance. */
 @Composable
-private fun SettingsSheet() {
+private fun SettingsSheet(learn: () -> Unit, welcome: () -> Unit) {
     val p = LocalPalette.current
     var sound by remember { mutableStateOf(Prefs.p.getBoolean("sound", true)) }
     var haptics by remember { mutableStateOf(Prefs.p.getBoolean("haptics", true)) }
@@ -485,7 +493,23 @@ private fun SettingsSheet() {
         Text("Settings", style = Typeface.display(22f), color = p.ink)
         Toggle("Sound", sound) { sound = it; Prefs.p.edit().putBoolean("sound", it).apply() }
         Toggle("Haptics", haptics) { haptics = it; Prefs.p.edit().putBoolean("haptics", it).apply(); if (it) Haptics.tap() }
+        SettingsRow(Icons.Outlined.School, "Learn the moves", onClick = learn)
+        SettingsRow(Icons.Rounded.AutoAwesome, "How it works", onClick = welcome)
         Text("Light and dark follow your phone's appearance.", style = Typeface.body(13f), color = p.mist)
+    }
+}
+
+@Composable
+private fun SettingsRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, trailing: String? = null,
+                        external: Boolean = false, onClick: () -> Unit) {
+    val p = LocalPalette.current
+    Row(Modifier.fillMaxWidth().heightIn(min = 32.dp).clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Icon(icon, null, tint = p.accent, modifier = Modifier.size(22.dp))
+        Text(label, style = Typeface.body(16f, FontWeight.Medium), color = p.ink, modifier = Modifier.weight(1f))
+        if (trailing != null) Text(trailing, style = Typeface.body(16f), color = p.mist)
+        Icon(if (external) Icons.AutoMirrored.Rounded.OpenInNew else Icons.AutoMirrored.Rounded.KeyboardArrowRight, null,
+            tint = p.mist, modifier = Modifier.size(if (external) 16.dp else 20.dp))
     }
 }
 
