@@ -166,9 +166,9 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
         if (!keepingSave) SavedGame.clear()
         refresh()
         moveSerial++
-        say(CoachCard.Kind.Coach, "✦", "Your move",
-            if (mode == Mode.Engine) "You play White. Tap a piece to see where it can go."
-            else "White starts. Pass the phone after each move.")
+        say(CoachCard.Kind.Coach, "✦", L("Your move"),
+            if (mode == Mode.Engine) L("You play White. Tap a piece to see where it can go.")
+            else L("White starts. Pass the phone after each move."))
     }
 
     /** Picks up the saved game, if there is one. */
@@ -190,9 +190,9 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
         refresh()
         moves.lastOrNull()?.let { lastMove = BoardMove.of(it, board) }
         moveSerial++
-        say(CoachCard.Kind.Coach, "✦", "Welcome back",
-            if (mode == Mode.Engine && turn == "b" && !isOver) "Your game is where you left it. They're thinking."
-            else "Your game is where you left it. Your move.")
+        say(CoachCard.Kind.Coach, "✦", L("Welcome back"),
+            if (mode == Mode.Engine && turn == "b" && !isOver) L("Your game is where you left it. They're thinking.")
+            else L("Your game is where you left it. Your move."))
         save()
         fillEvals()
         if (mode == Mode.Engine && turn == "b" && !isOver) engineTurn()
@@ -265,16 +265,16 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
         val what = pieceName(piece)
         val mine = (if (piece.isUpperCase()) "w" else "b") == myColor
         val title = when (mode) {
-            Mode.Engine -> if (mine) "Your $what on $name" else "Your opponent's $what on $name"
-            Mode.PassAndPlay -> if (piece.isUpperCase()) "White's $what on $name" else "Black's $what on $name"
+            Mode.Engine -> if (mine) L("Your %@ on %@", what, name) else L("Your opponent's %@ on %@", what, name)
+            Mode.PassAndPlay -> if (piece.isUpperCase()) L("White's %@ on %@", what, name) else L("Black's %@ on %@", what, name)
         }
         val g = guards.size
         val a = attackers.size
         val text = when {
-            g == 0 && a == 0 -> "Nothing attacks it, and nothing guards it."
-            a == 0 -> "Nothing attacks it, and it's guarded by $g of your pieces."
-            g == 0 -> "Attacked by $a of their pieces, and nothing guards it."
-            else -> "Attacked by $a, guarded by $g."
+            g == 0 && a == 0 -> L("Nothing attacks it, and nothing guards it.")
+            a == 0 -> L("Nothing attacks it, and it's guarded by %lld of your pieces.", g)
+            g == 0 -> L("Attacked by %lld of their pieces, and nothing guards it.", a)
+            else -> L("Attacked by %lld, guarded by %lld.", a, g)
         }
         say(CoachCard.Kind.Coach, "◎", title, text)
         emit(Feedback.Select)
@@ -325,7 +325,7 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
                 nudge = null
                 hintRevealed = true
                 rays = makeRays(Rays.Kind.Hint, listOf(m))
-                say(CoachCard.Kind.Great, "✦", "Try this", shown.third)
+                say(CoachCard.Kind.Great, "✦", L("Try this"), shown.third)
                 emit(Feedback.Good)
             }
             return
@@ -352,8 +352,8 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
             hintRevealed = false
             nudge = m.from
             val piece = pieceName(board[m.from])
-            say(CoachCard.Kind.Coach, "✦", "Look at your $piece",
-                "Your $piece on ${Squares.name(m.from)} has a good move. Find it, or tap Show the move.")
+            say(CoachCard.Kind.Coach, "✦", L("Look at your %@", piece),
+                L("Your %@ on %@ has a good move. Find it, or tap Show the move.", piece, Squares.name(m.from)))
             emit(Feedback.Select)
         }
     }
@@ -394,7 +394,7 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
         movingPiece = null
         refresh()
         moveSerial++
-        say(CoachCard.Kind.Coach, "↶", "Rewound", "Your move again. Take another look.")
+        say(CoachCard.Kind.Coach, "↶", L("Rewound"), L("Your move again. Take another look."))
         save()
     }
 
@@ -407,7 +407,7 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
         loose = emptySet()
         board.indexOf(if (myColor == "w") 'K' else 'k').takeIf { it >= 0 }?.let { toppled = ids[it] }
         val count = (moves.size + 1) / 2
-        val f = Finish(Finish.Outcome.Lost, "Good game", "Resigned on move $count", accuracy, great, blunders)
+        val f = Finish(Finish.Outcome.Lost, L("Good game"), L("Resigned on move %lld", count), accuracy, great, blunders)
         scope.launch {
             delay(900)
             f.goodMoves = trail.count { it.card.kind == CoachCard.Kind.Good || it.card.kind == CoachCard.Kind.Great }
@@ -443,7 +443,7 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
         position(entry.ply)?.let { reviewBoard = it.first; reviewMove = it.second }
         coach = CoachCard(++serial, entry.card.kind, entry.card.badge,
             "${entry.ply / 2 + 1}. ${entry.san} · ${entry.card.kind.verdict?.first ?: entry.card.title}",
-            entry.card.text.replace(" Undo and try again.", ""))
+            entry.card.text.replace(" " + L("Undo and try again."), ""))
     }
 
     fun endReview() {
@@ -482,8 +482,8 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
         val kind = CoachCard.Kind.of(rawKind)
         if (kind == CoachCard.Kind.Great) great++
         if (kind == CoachCard.Kind.Blunder) blunders++
-        val words = kind.verdict ?: ("Good move" to "✓")
-        val nudgeText = if (kind == CoachCard.Kind.Blunder) " Undo and try again." else ""
+        val words = kind.verdict ?: (L("Good move") to "✓")
+        val nudgeText = if (kind == CoachCard.Kind.Blunder) " " + L("Undo and try again.") else ""
         // A calm coach: a good move is the norm, so it gets the badge and a word, no explanation.
         val reason = EngineText.localize(rawText)
         say(kind, words.second, words.first, if (kind == CoachCard.Kind.Good) "" else reason + nudgeText)
@@ -542,7 +542,7 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
             val san = apply(choice)
             busy = false
             if (endIfOver()) {
-                say(CoachCard.Kind.Opponent, san, "Your opponent $line.", "That's the game.")
+                say(CoachCard.Kind.Opponent, san, L("Your opponent %@.", line), L("That's the game."))
                 return@launch
             }
             val after = snapshot()
@@ -550,7 +550,7 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
             if (token != epoch) return@launch
             setEval(eval)
             val tip = watchFor(lastMove, taken)
-            val extra = if (offerComebackHint(eval)) " You're behind, so here's an extra hint." else ""
+            val extra = if (offerComebackHint(eval)) " " + L("You're behind, so here's an extra hint.") else ""
             say(if (tip.third) CoachCard.Kind.Warning else CoachCard.Kind.Opponent, san, tip.first, tip.second + extra)
             verdictShownAt = null
         }
@@ -604,19 +604,19 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
         val count = (moves.size + 1) / 2
         var f: Finish = if (mate) {
             val whiteWon = turn == "b"
-            if (mode == Mode.PassAndPlay) Finish(Finish.Outcome.Won, if (whiteWon) "White wins" else "Black wins",
-                "Checkmate in $count moves.", accuracy, great, blunders)
-            else Finish(if (whiteWon) Finish.Outcome.Won else Finish.Outcome.Lost, if (whiteWon) "You won!" else "Good fight",
-                if (whiteWon) "Checkmate in $count moves." else "Checkmate after $count moves. Next time is yours.",
+            if (mode == Mode.PassAndPlay) Finish(Finish.Outcome.Won, if (whiteWon) L("White wins") else L("Black wins"),
+                L("Checkmate in %lld moves.", count), accuracy, great, blunders)
+            else Finish(if (whiteWon) Finish.Outcome.Won else Finish.Outcome.Lost, if (whiteWon) L("You won!") else L("Good fight"),
+                if (whiteWon) L("Checkmate in %lld moves.", count) else L("Checkmate after %lld moves. Next time is yours.", count),
                 accuracy, great, blunders)
         } else {
             val why = mapOf(
-                Chesscore.StatusStalemate to "Stalemate: no legal moves, and no check.",
-                Chesscore.StatusRepetition to "The same position came up three times.",
-                Chesscore.StatusFiftyMove to "Fifty moves without a capture or a pawn move.",
-                Chesscore.StatusInsufficient to "Neither side has enough left to mate.",
-            )[status] ?: "The game is drawn."
-            Finish(Finish.Outcome.Draw, "A draw", why, accuracy, great, blunders)
+                Chesscore.StatusStalemate to L("Stalemate: no legal moves, and no check."),
+                Chesscore.StatusRepetition to L("The same position came up three times."),
+                Chesscore.StatusFiftyMove to L("Fifty moves without a capture or a pawn move."),
+                Chesscore.StatusInsufficient to L("Neither side has enough left to mate."),
+            )[status] ?: L("The game is drawn.")
+            Finish(Finish.Outcome.Draw, L("A draw"), why, accuracy, great, blunders)
         }
         f.goodMoves = trail.count { it.card.kind == CoachCard.Kind.Good || it.card.kind == CoachCard.Kind.Great }
         if (mode == Mode.Engine && f.outcome == Finish.Outcome.Won) {
@@ -624,7 +624,7 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
             val wasLocked = next?.let { !it.isUnlocked } ?: false
             val firstWin = Stats.wins(opponent) == 0
             Stats.addWin(opponent)
-            f = f.copy(title = "You beat the ${opponent.title}!", firstWin = firstWin)
+            f = f.copy(title = L("You beat the %@!", opponent.title), firstWin = firstWin)
             if (next != null && wasLocked) {
                 if (next.isUnlocked) f.unlocked = next else f.towardNext = next to Stats.wins(opponent)
             }
@@ -655,36 +655,36 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
     private fun watchFor(m: BoardMove?, taken: Char?): Triple<String, String, Boolean> {
         val me = if (mode == Mode.PassAndPlay) turn else myColor
         val them = if (me == "w") "b" else "w"
-        fun name(sq: Square) = "${pieceName(board[sq])} on ${Squares.name(sq)}"
+        fun name(sq: Square) = L("%@ on %@", pieceName(board[sq]), Squares.name(sq))
         fun squares(s: String) = s.split(" ").mapNotNull { Squares.parse(it) }
         fun isMine(sq: Square) = board[sq] != '.' && (if (board[sq].isUpperCase()) "w" else "b") == me
         fun value(sq: Square) = VALUE[board[sq].lowercaseChar()] ?: 0
 
-        if (inCheck) return Triple("Your king is in check", "Move it, block the line, or take the checking piece.", true)
+        if (inCheck) return Triple(L("Your king is in check"), L("Move it, block the line, or take the checking piece."), true)
         if (m != null) {
             val mover = pieceName(board[m.to])
             val hit = (0 until 64).filter { isMine(it) && board[it] != 'K' && m.to in squares(game.attackers(Squares.name(it))) }
                 .sortedByDescending { value(it) }
             hit.firstOrNull { game.guards(Squares.name(it)).isEmpty() }?.let {
-                return Triple("Watch your ${name(it)}", "Their $mover now attacks it, and nothing guards it.", true)
+                return Triple(L("Watch your %@", name(it)), L("Their %@ now attacks it, and nothing guards it.", mover), true)
             }
             if (taken != null) {
                 val back = game.attackers(Squares.name(m.to)).isNotEmpty()
-                return Triple("They took your ${pieceName(taken)}",
-                    if (back) "You can take back on ${Squares.name(m.to)}." else "Look for a way to win it back.", false)
+                return Triple(L("They took your %@", pieceName(taken)),
+                    if (back) L("You can take back on %@.", Squares.name(m.to)) else L("Look for a way to win it back."), false)
             }
             hit.firstOrNull()?.let { sq ->
-                if (value(sq) > value(m.to)) return Triple("Their $mover eyes your ${pieceName(board[sq])}",
-                    "It's guarded, but their $mover is worth less, so a trade would cost you.", true)
+                if (value(sq) > value(m.to)) return Triple(L("Their %@ eyes your %@", mover, pieceName(board[sq])),
+                    L("It's guarded, but their %@ is worth less, so a trade would cost you.", mover), true)
             }
         }
-        loose.minOrNull()?.let { return Triple("Your ${name(it)} is loose", "It's attacked and nothing guards it.", true) }
+        loose.minOrNull()?.let { return Triple(L("Your %@ is loose", name(it)), L("It's attacked and nothing guards it."), true) }
         squares(game.loose(them)).firstOrNull()?.let {
-            return Triple("A chance", "Their ${name(it)} is under attack and unguarded.", false)
+            return Triple(L("A chance"), L("Their %@ is under attack and unguarded.", name(it)), false)
         }
         // Nothing pressing: a quiet "Your move", with a tip only every other time.
         quietTurns++
-        return Triple("Your move", if (quietTurns % 2 == 1) tip() else "", false)
+        return Triple(L("Your move"), if (quietTurns % 2 == 1) tip() else "", false)
     }
 
     /** A tip that fits the position, or one of the app's gestures, each shown once. */
@@ -692,14 +692,14 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
         val castling = game.fen().split(" ").getOrElse(2) { "" }
         val white = (if (mode == Mode.PassAndPlay) turn else myColor) == "w"
         val home = if (white) listOf(57 to 'N', 62 to 'N', 58 to 'B', 61 to 'B') else listOf(1 to 'n', 6 to 'n', 2 to 'b', 5 to 'b')
-        if (moves.size < 16 && home.count { board[it.first] == it.second } >= 2) return "Bring a knight or bishop toward the centre."
+        if (moves.size < 16 && home.count { board[it.first] == it.second } >= 2) return L("Bring a knight or bishop toward the centre.")
         if (moves.size < 30 && board[if (white) 60 else 4] == (if (white) 'K' else 'k') &&
             castling.any { if (white) it == 'K' || it == 'Q' else it == 'k' || it == 'q' }
-        ) return "Castling tucks your king away and brings a rook into play."
+        ) return L("Castling tucks your king away and brings a rook into play.")
         val gestures = listOf(
-            "tip.hold" to "Hold any piece to see what guards it and what attacks it.",
-            "tip.drag" to "You can drag pieces as well as tap them.",
-            "tip.swipe" to "Swipe this card to look back at your earlier moves.",
+            "tip.hold" to L("Hold any piece to see what guards it and what attacks it."),
+            "tip.drag" to L("You can drag pieces as well as tap them."),
+            "tip.swipe" to L("Swipe this card to look back at your earlier moves."),
         )
         gestures.firstOrNull { !Prefs.p.getBoolean(it.first, false) }?.let {
             Prefs.p.edit().putBoolean(it.first, true).apply()
@@ -707,14 +707,14 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
         }
         // Ideas, never moves: something to look for, not something to play.
         val ideas = listOf(
-            "Before you move, ask what their last move wants.",
-            "Pieces in the centre reach the most squares.",
-            "Look for checks, captures and threats, for both sides.",
-            "A knight on the edge reaches only half its squares.",
-            "Rooks love open lines with no pawns in the way.",
-            "Ahead in pieces? Trading down makes it simpler.",
-            "Pawns can't move back, so push them with a purpose.",
-            "Every piece helping beats one piece attacking alone.",
+            L("Before you move, ask what their last move wants."),
+            L("Pieces in the centre reach the most squares."),
+            L("Look for checks, captures and threats, for both sides."),
+            L("A knight on the edge reaches only half its squares."),
+            L("Rooks love open lines with no pawns in the way."),
+            L("Ahead in pieces? Trading down makes it simpler."),
+            L("Pawns can't move back, so push them with a purpose."),
+            L("Every piece helping beats one piece attacking alone."),
         )
         ideaTurn++
         return ideas[(ideaTurn - 1) % ideas.size]
@@ -797,9 +797,29 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
         val after = position(e.ply) ?: return null
         val move = after.second ?: return null
         val before = position(e.ply - 1) ?: return null
-        return BestMove(if (mode == Mode.PassAndPlay) (if (e.ply % 2 == 0) "White" else "Black") else null,
+        return BestMove(if (mode == Mode.PassAndPlay) (if (e.ply % 2 == 0) L("White") else L("Black")) else null,
             before.first, after.first, move, e.ply / 2 + 1, e.card.kind, e.card.text, e.ply, e.san)
     }
+
+    /**
+     * What the game-over card shares: a win against the engine, or otherwise
+     * the game's best move, so every game has something to show. Warmly, about
+     * what went well, never the loss.
+     */
+    val finishMoment: ShareMoment?
+        get() {
+            val f = finish ?: return null
+            if (mode != Mode.PassAndPlay && f.outcome == Finish.Outcome.Won) {
+                val acc = f.accuracy?.let { " · $it% accuracy" } ?: ""
+                return ShareMoment(board, lastMove, "I beat the ${opponent.title}", f.text + acc, L("Played on Calm Chess"))
+            }
+            val against = if (mode == Mode.Engine) " against the ${opponent.title}" else ""
+            val best = f.best ?: return ShareMoment(board, lastMove,
+                if (mode == Mode.Engine) "I played the ${opponent.title}" else f.title,
+                L("Every game teaches me something."), L("Learning with Calm Chess"))
+            return ShareMoment(best.after, best.move, best.side?.let { "$it's best move" } ?: "A move I'm proud of",
+                L("Move %lld%@ · %@", best.moveNumber, against, best.text), L("Learning with Calm Chess"))
+        }
 
     /** Pieces each side has taken, biggest first. */
     fun captured(by: String): List<Char> {
@@ -844,7 +864,7 @@ class GameModel(private val scope: CoroutineScope) : BoardSource {
         const val ACCURACY_AFTER = 3
         private val VALUE = mapOf('p' to 1, 'n' to 3, 'b' to 3, 'r' to 5, 'q' to 9, 'k' to 0)
 
-        fun pieceName(c: Char) = mapOf('p' to "pawn", 'n' to "knight", 'b' to "bishop", 'r' to "rook", 'q' to "queen", 'k' to "king")[c.lowercaseChar()] ?: "piece"
+        fun pieceName(c: Char) = L(mapOf('p' to L("pawn"), 'n' to L("knight"), 'b' to L("bishop"), 'r' to L("rook"), 'q' to L("queen"), 'k' to L("king"))[c.lowercaseChar()] ?: L("piece"))
 
         /** How long the coach's verdict needs on screen to be read, in ms: never under 2 s or over 4 s. */
         private fun readingTime(card: CoachCard?): Long {

@@ -1,0 +1,1010 @@
+{
+ "%@ game": {
+  "es": "Partida contra %@",
+  "hi": "%@ के साथ खेल"
+ },
+ "%@ on %@": {
+  "es": "%1$@ en %2$@",
+  "hi": "%2$@ पर %1$@"
+ },
+ "%@ resigned after %lld moves.": {
+  "es": "%1$@ abandonó tras %2$lld jugadas.",
+  "hi": "%1$@ ने %2$lld चालों के बाद हार मान ली।"
+ },
+ "%@ · Calm Chess": {
+  "es": "%@ · Calm Chess",
+  "hi": "%@ · Calm Chess"
+ },
+ "%@'s %@ on %@": {
+  "es": "%2$@ de %1$@ en %3$@",
+  "hi": "%3$@ पर %1$@ का %2$@"
+ },
+ "%@'s move": {
+  "es": "Juega %@",
+  "hi": "%@ की चाल"
+ },
+ "%lld": {
+  "es": "%lld",
+  "hi": "%lld"
+ },
+ "%lld more wins to face the %@": {
+  "es": "%1$lld victorias más para enfrentarte al %2$@",
+  "hi": "%2$@ से खेलने के लिए %1$lld और जीत"
+ },
+ "%lld moves": {
+  "es": "%lld jugadas",
+  "hi": "%lld चालें"
+ },
+ "%lld wins to open": {
+  "es": "%lld victorias para desbloquear",
+  "hi": "खोलने के लिए %lld जीत"
+ },
+ "%lld%%": {
+  "es": "%lld%%",
+  "hi": "%lld%%"
+ },
+ "+%lld": {
+  "es": "+%lld",
+  "hi": "+%lld"
+ },
+ ", with check": {
+  "es": ", con jaque",
+  "hi": ", शह के साथ"
+ },
+ ". Checkmate": {
+  "es": ". Jaque mate",
+  "hi": "। शह-मात"
+ },
+ "1 more win to face the %@": {
+  "es": "1 victoria más para enfrentarte al %@",
+  "hi": "%@ से खेलने के लिए 1 और जीत"
+ },
+ "1 move": {
+  "es": "1 jugada",
+  "hi": "1 चाल"
+ },
+ "A calm game of chess": {
+  "es": "Una partida de ajedrez tranquila",
+  "hi": "शतरंज का एक शांत खेल"
+ },
+ "A calm game of chess, one move at a time.": {
+  "es": "Una partida de ajedrez tranquila, jugada a jugada.",
+  "hi": "शतरंज का एक शांत खेल, एक-एक चाल।"
+ },
+ "A calm, steady start.": {
+  "es": "Un comienzo tranquilo y firme.",
+  "hi": "एक शांत, मज़बूत शुरुआत।"
+ },
+ "A chance": {
+  "es": "Una oportunidad",
+  "hi": "एक मौका"
+ },
+ "A draw": {
+  "es": "Tablas",
+  "hi": "बराबरी"
+ },
+ "A friend at your side.": {
+  "es": "Un amigo a tu lado.",
+  "hi": "आपके साथ एक दोस्त।"
+ },
+ "A full chess board, set up": {
+  "es": "Un tablero completo, preparado",
+  "hi": "सजी हुई पूरी शतरंज बिसात"
+ },
+ "A good square": {
+  "es": "Una buena casilla",
+  "hi": "अच्छा खाना"
+ },
+ "A knight on the edge reaches only half its squares.": {
+  "es": "Un caballo en el borde alcanza solo la mitad de sus casillas.",
+  "hi": "किनारे पर घोड़ा अपने आधे ही खानों तक पहुँचता है।"
+ },
+ "A solid, sensible move.": {
+  "es": "Una jugada sólida y sensata.",
+  "hi": "एक मज़बूत, समझदार चाल।"
+ },
+ "Accuracy": {
+  "es": "Precisión",
+  "hi": "सटीकता"
+ },
+ "Accuracy · last %lld games": {
+  "es": "Precisión · últimas %lld partidas",
+  "hi": "सटीकता · पिछले %lld खेल"
+ },
+ "Ahead in pieces? Trading down makes it simpler.": {
+  "es": "¿Vas ganando material? Cambiar piezas lo simplifica.",
+  "hi": "मोहरों में आगे हैं? अदला-बदली से खेल आसान होता है।"
+ },
+ "Almost": {
+  "es": "Casi",
+  "hi": "लगभग"
+ },
+ "Attack the king.": {
+  "es": "Ataca al rey.",
+  "hi": "राजा पर हमला करें।"
+ },
+ "Attacked by %lld of their pieces, and nothing guards it.": {
+  "es": "Lo atacan %lld de sus piezas y nada lo defiende.",
+  "hi": "उनके %lld मोहरे इस पर हमला कर रहे हैं, और कोई इसे नहीं बचा रहा।"
+ },
+ "Attacked by %lld, guarded by %lld.": {
+  "es": "Atacado por %1$lld, defendido por %2$lld.",
+  "hi": "%1$lld हमला कर रहे हैं, %2$lld बचा रहे हैं।"
+ },
+ "Back to game": {
+  "es": "Volver a la partida",
+  "hi": "खेल पर लौटें"
+ },
+ "Back to home": {
+  "es": "Volver al inicio",
+  "hi": "होम पर लौटें"
+ },
+ "Beat the %@ %lld more times": {
+  "es": "Vence al %1$@ %2$lld veces más",
+  "hi": "%1$@ को %2$lld बार और हराएँ"
+ },
+ "Beat the %@ %lld times": {
+  "es": "Gana al %1$@ %2$lld veces",
+  "hi": "%1$@ को %2$lld बार हराएँ"
+ },
+ "Beat the %@ once more": {
+  "es": "Vence al %@ una vez más",
+  "hi": "%@ को एक बार और हराएँ"
+ },
+ "Before you move, ask what their last move wants.": {
+  "es": "Antes de mover, pregúntate qué busca su última jugada.",
+  "hi": "चाल चलने से पहले सोचें कि उनकी पिछली चाल क्या चाहती है।"
+ },
+ "Begin": {
+  "es": "Empezar",
+  "hi": "शुरू करें"
+ },
+ "Beginner": {
+  "es": "Principiante",
+  "hi": "शुरुआती"
+ },
+ "Best · move %lld": {
+  "es": "Mejor · jugada %lld",
+  "hi": "सबसे अच्छी · चाल %lld"
+ },
+ "Black": {
+  "es": "Negras",
+  "hi": "काला"
+ },
+ "Black wins": {
+  "es": "Ganan las negras",
+  "hi": "काला जीता"
+ },
+ "Black's %@ on %@": {
+  "es": "%1$@ negro en %2$@",
+  "hi": "%2$@ पर काले का %1$@"
+ },
+ "Blunder": {
+  "es": "Error grave",
+  "hi": "भारी गलती"
+ },
+ "Board, playing the %@": {
+  "es": "Tablero, contra el %@",
+  "hi": "बोर्ड, %@ के ख़िलाफ़"
+ },
+ "Bring a knight or bishop toward the centre.": {
+  "es": "Lleva un caballo o un alfil hacia el centro.",
+  "hi": "किसी घोड़े या ऊँट को बीच की ओर लाएँ।"
+ },
+ "Calm Chess": {
+  "es": "Calm Chess",
+  "hi": "Calm Chess"
+ },
+ "Came back from %lld%% on move %lld.": {
+  "es": "Remontaste desde el %1$lld%% en la jugada %2$lld.",
+  "hi": "चाल %2$lld पर %1$lld%% से वापसी की।"
+ },
+ "Cancel": {
+  "es": "Cancelar",
+  "hi": "रद्द करें"
+ },
+ "Careful there": {
+  "es": "Cuidado ahí",
+  "hi": "वहाँ सावधान"
+ },
+ "Careful: your %@ on %@ can be taken now.": {
+  "es": "Cuidado: tu %1$@ en %2$@ puede ser capturado.",
+  "hi": "सावधान: %2$@ पर आपका %1$@ अब मारा जा सकता है।"
+ },
+ "Castling tucks your king away and brings a rook into play.": {
+  "es": "Enrocar protege a tu rey y pone una torre en juego.",
+  "hi": "कैसलिंग से आपका राजा सुरक्षित होता है और एक हाथी खेल में आता है।"
+ },
+ "Check": {
+  "es": "Jaque",
+  "hi": "शह"
+ },
+ "Check, and it keeps the pressure on.": {
+  "es": "Jaque, y mantiene la presión.",
+  "hi": "शह, और दबाव बना रहता है।"
+ },
+ "Checkmate": {
+  "es": "Jaque mate",
+  "hi": "शह और मात"
+ },
+ "Checkmate after %lld moves. Next time is yours.": {
+  "es": "Jaque mate tras %lld jugadas. La próxima es tuya.",
+  "hi": "%lld चालों के बाद शह-मात। अगली बार आपकी है।"
+ },
+ "Checkmate in %lld moves.": {
+  "es": "Jaque mate en %lld jugadas.",
+  "hi": "%lld चालों में शह-मात।"
+ },
+ "Checkmate!": {
+  "es": "¡Jaque mate!",
+  "hi": "शह-मात!"
+ },
+ "Checkmate.": {
+  "es": "Jaque mate.",
+  "hi": "शह-मात।"
+ },
+ "Chess board": {
+  "es": "Tablero de ajedrez",
+  "hi": "शतरंज का बोर्ड"
+ },
+ "Claims the centre.": {
+  "es": "Ocupa el centro.",
+  "hi": "बीच पर कब्ज़ा करती है।"
+ },
+ "Close": {
+  "es": "Cerrar",
+  "hi": "बंद करें"
+ },
+ "Continue": {
+  "es": "Continuar",
+  "hi": "जारी रखें"
+ },
+ "Continue your game on this phone": {
+  "es": "Continúa tu partida en este teléfono",
+  "hi": "इस फ़ोन पर अपना खेल जारी रखें"
+ },
+ "Develops the %@ toward the centre.": {
+  "es": "Desarrolla el %@ hacia el centro.",
+  "hi": "%@ को बीच की ओर लाती है।"
+ },
+ "Draw": {
+  "es": "Tablas",
+  "hi": "बराबरी"
+ },
+ "Escape": {
+  "es": "Escapa",
+  "hi": "बचाव"
+ },
+ "Every game teaches me something.": {
+  "es": "Cada partida me enseña algo.",
+  "hi": "हर खेल मुझे कुछ सिखाता है।"
+ },
+ "Every piece helping beats one piece attacking alone.": {
+  "es": "Todas las piezas juntas valen más que una sola atacando.",
+  "hi": "सब मोहरों का साथ, एक अकेले हमले से बेहतर है।"
+ },
+ "Exactly what the engine would play.": {
+  "es": "Justo lo que jugaría el motor.",
+  "hi": "बिल्कुल वही जो इंजन खेलता।"
+ },
+ "Expert": {
+  "es": "Experto",
+  "hi": "माहिर"
+ },
+ "Fifty moves without a capture or a pawn move.": {
+  "es": "Cincuenta jugadas sin capturas ni movimientos de peón.",
+  "hi": "पचास चालें बिना किसी मोहरे को मारे या प्यादा चलाए।"
+ },
+ "Found with Calm Chess": {
+  "es": "Encontrada con Calm Chess",
+  "hi": "Calm Chess पर मिली"
+ },
+ "Game options": {
+  "es": "Opciones de partida",
+  "hi": "खेल के विकल्प"
+ },
+ "Good afternoon": {
+  "es": "Buenas tardes",
+  "hi": "नमस्कार"
+ },
+ "Good evening": {
+  "es": "Buenas noches",
+  "hi": "शुभ संध्या"
+ },
+ "Good fight": {
+  "es": "Buena lucha",
+  "hi": "अच्छा मुक़ाबला"
+ },
+ "Good game": {
+  "es": "Buena partida",
+  "hi": "अच्छा खेल"
+ },
+ "Good morning": {
+  "es": "Buenos días",
+  "hi": "सुप्रभात"
+ },
+ "Good move": {
+  "es": "Buena jugada",
+  "hi": "अच्छी चाल"
+ },
+ "Grandmaster": {
+  "es": "Gran Maestro",
+  "hi": "ग्रैंडमास्टर"
+ },
+ "Great": {
+  "es": "Geniales",
+  "hi": "शानदार"
+ },
+ "Great move": {
+  "es": "Jugada genial",
+  "hi": "शानदार चाल"
+ },
+ "Great moves": {
+  "es": "Jugadas geniales",
+  "hi": "शानदार चालें"
+ },
+ "Haptics": {
+  "es": "Vibración",
+  "hi": "कंपन"
+ },
+ "Hint": {
+  "es": "Pista",
+  "hi": "संकेत"
+ },
+ "Hmm, maybe": {
+  "es": "Mmm, quizá",
+  "hi": "हम्म, शायद"
+ },
+ "Hold any piece to see what guards it and what attacks it.": {
+  "es": "Mantén pulsada una pieza para ver qué la defiende y qué la ataca.",
+  "hi": "किसी भी मोहरे को दबाकर रखें और देखें कि कौन उसे बचा रहा है और कौन उस पर हमला कर रहा है।"
+ },
+ "Home": {
+  "es": "Inicio",
+  "hi": "होम"
+ },
+ "How it works": {
+  "es": "Cómo funciona",
+  "hi": "यह कैसे काम करता है"
+ },
+ "I resigned. Good game!": {
+  "es": "Abandoné. ¡Buena partida!",
+  "hi": "मैंने हार मान ली। अच्छा खेल!"
+ },
+ "I'll follow along.": {
+  "es": "Te acompaño.",
+  "hi": "मैं साथ रहूँगा।"
+ },
+ "I'll tell you what I see.": {
+  "es": "Te diré lo que veo.",
+  "hi": "जो दिखेगा, बताऊँगा।"
+ },
+ "Intermediate": {
+  "es": "Intermedio",
+  "hi": "मध्यम"
+ },
+ "Invite with Game Center": {
+  "es": "Invitar con Game Center",
+  "hi": "Game Center से बुलाएँ"
+ },
+ "It counts as a loss in your recent games.": {
+  "es": "Contará como derrota en tus partidas recientes.",
+  "hi": "यह आपके हाल के खेलों में हार के रूप में गिना जाएगा।"
+ },
+ "It turned on move %lld.": {
+  "es": "Todo cambió en la jugada %lld.",
+  "hi": "चाल %lld पर खेल पलटा।"
+ },
+ "It's a draw": {
+  "es": "Son tablas",
+  "hi": "बराबरी हुई"
+ },
+ "It's attacked and nothing guards it.": {
+  "es": "Está atacada y nada la defiende.",
+  "hi": "इस पर हमला है और कोई इसे नहीं बचा रहा।"
+ },
+ "It's guarded, but their %@ is worth less, so a trade would cost you.": {
+  "es": "Está defendida, pero su %@ vale menos, así que un cambio te costaría.",
+  "hi": "यह बचा हुआ है, पर उनका %@ कम क़ीमती है, इसलिए अदला-बदली में आपका नुकसान होगा।"
+ },
+ "King tucked away and the rook brought into play.": {
+  "es": "El rey a salvo y la torre en juego.",
+  "hi": "राजा सुरक्षित और हाथी खेल में।"
+ },
+ "Language": {
+  "es": "Idioma",
+  "hi": "भाषा"
+ },
+ "Learn the moves": {
+  "es": "Aprende los movimientos",
+  "hi": "चालें सीखें"
+ },
+ "Learning with Calm Chess": {
+  "es": "Aprendiendo con Calm Chess",
+  "hi": "Calm Chess के साथ सीख रहे हैं"
+ },
+ "Let me look…": {
+  "es": "Déjame ver…",
+  "hi": "ज़रा देखूँ…"
+ },
+ "Let's play a calm game of chess.": {
+  "es": "Juguemos una partida de ajedrez tranquila.",
+  "hi": "चलो शतरंज का एक शांत खेल खेलें।"
+ },
+ "Light and dark follow your iPhone's appearance.": {
+  "es": "Los modos claro y oscuro siguen la apariencia de tu iPhone.",
+  "hi": "लाइट और डार्क मोड आपके iPhone की सेटिंग के अनुसार चलते हैं।"
+ },
+ "Light and dark follow your phone's appearance.": {
+  "es": "Los modos claro y oscuro siguen la apariencia de tu teléfono.",
+  "hi": "लाइट और डार्क मोड आपके फ़ोन की सेटिंग के अनुसार चलते हैं।"
+ },
+ "Locked. Beat the %@ %lld times to open it.": {
+  "es": "Bloqueado. Gana al %1$@ %2$lld veces para desbloquearlo.",
+  "hi": "बंद है। इसे खोलने के लिए %1$@ को %2$lld बार हराएँ।"
+ },
+ "Look at your %@": {
+  "es": "Mira tu %@",
+  "hi": "अपने %@ को देखें"
+ },
+ "Look for a way to win it back.": {
+  "es": "Busca la forma de recuperarla.",
+  "hi": "इसे वापस जीतने का तरीका ढूँढें।"
+ },
+ "Look for checks, captures and threats, for both sides.": {
+  "es": "Busca jaques, capturas y amenazas, de ambos lados.",
+  "hi": "दोनों तरफ़ के शह, मार और ख़तरे देखें।"
+ },
+ "Lost": {
+  "es": "Perdida",
+  "hi": "हार"
+ },
+ "Master": {
+  "es": "Maestro",
+  "hi": "मास्टर"
+ },
+ "Most chess is loud.": {
+  "es": "Casi todo el ajedrez es ruidoso.",
+  "hi": "ज़्यादातर शतरंज शोर भरा है।"
+ },
+ "Move %lld": {
+  "es": "Jugada %lld",
+  "hi": "चाल %lld"
+ },
+ "Move %lld%@ · %@": {
+  "es": "Jugada %1$lld%2$@ · %3$@",
+  "hi": "चाल %1$lld%2$@ · %3$@"
+ },
+ "Move it, block the line, or take the checking piece.": {
+  "es": "Muévelo, bloquea la línea o captura la pieza que da jaque.",
+  "hi": "राजा को हटाएँ, रास्ता रोकें, या शह देने वाले मोहरे को मारें।"
+ },
+ "Moves": {
+  "es": "Jugadas",
+  "hi": "चालें"
+ },
+ "Neither side has enough left to mate.": {
+  "es": "A ningún bando le queda material para dar mate.",
+  "hi": "किसी के पास मात देने लायक मोहरे नहीं बचे।"
+ },
+ "New game": {
+  "es": "Nueva partida",
+  "hi": "नया खेल"
+ },
+ "New to chess? Learn the moves": {
+  "es": "¿Nuevo en el ajedrez? Aprende los movimientos",
+  "hi": "शतरंज में नए हैं? चालें सीखें"
+ },
+ "Next": {
+  "es": "Siguiente",
+  "hi": "आगे"
+ },
+ "No hints": {
+  "es": "Sin pistas",
+  "hi": "कोई संकेत नहीं"
+ },
+ "Not quite": {
+  "es": "No del todo",
+  "hi": "पूरी तरह नहीं"
+ },
+ "Nothing attacks it, and it's guarded by %lld of your pieces.": {
+  "es": "Nada la ataca y la defienden %lld de tus piezas.",
+  "hi": "इस पर कोई हमला नहीं है, और आपके %lld मोहरे इसे बचा रहे हैं।"
+ },
+ "Nothing attacks it, and nothing guards it.": {
+  "es": "Nada la ataca y nada la defiende.",
+  "hi": "इस पर कोई हमला नहीं है, और कोई इसे बचा भी नहीं रहा।"
+ },
+ "Nothing wrong with it. Put it down if you like it.": {
+  "es": "No tiene nada de malo. Déjala si te gusta.",
+  "hi": "इसमें कोई बुराई नहीं। पसंद हो तो रख दीजिए।"
+ },
+ "Ooh, a strong square": {
+  "es": "Oh, una casilla fuerte",
+  "hi": "वाह, मज़बूत खाना"
+ },
+ "Oops": {
+  "es": "Ups",
+  "hi": "उफ़"
+ },
+ "Pass & play": {
+  "es": "Pasar y jugar",
+  "hi": "फ़ोन बाँटकर खेलें"
+ },
+ "Pawns can't move back, so push them with a purpose.": {
+  "es": "Los peones no retroceden: avánzalos con un plan.",
+  "hi": "प्यादे पीछे नहीं जाते, इसलिए सोचकर आगे बढ़ाएँ।"
+ },
+ "Pick up any piece": {
+  "es": "Toma cualquier pieza",
+  "hi": "कोई भी मोहरा उठाइए"
+ },
+ "Pieces in the centre reach the most squares.": {
+  "es": "Las piezas en el centro alcanzan más casillas.",
+  "hi": "बीच के मोहरे सबसे ज़्यादा खानों तक पहुँचते हैं।"
+ },
+ "Play a friend": {
+  "es": "Jugar con un amigo",
+  "hi": "दोस्त के साथ खेलें"
+ },
+ "Play again": {
+  "es": "Jugar de nuevo",
+  "hi": "फिर से खेलें"
+ },
+ "Play on this FaceTime call": {
+  "es": "Jugar en esta llamada de FaceTime",
+  "hi": "इस FaceTime कॉल पर खेलें"
+ },
+ "Play on this phone": {
+  "es": "Jugar en este teléfono",
+  "hi": "इसी फ़ोन पर खेलें"
+ },
+ "Play the %@": {
+  "es": "Jugar contra el %@",
+  "hi": "%@ से खेलें"
+ },
+ "Play the Rookie": {
+  "es": "Jugar contra el Novato",
+  "hi": "नौसिखिए से खेलें"
+ },
+ "Played %@": {
+  "es": "Jugó %@",
+  "hi": "%@ चली"
+ },
+ "Played on Calm Chess": {
+  "es": "Jugado en Calm Chess",
+  "hi": "Calm Chess पर खेला"
+ },
+ "Promotion": {
+  "es": "Coronación",
+  "hi": "प्रमोशन"
+ },
+ "Rated · 3 min": {
+  "es": "Clasificatoria · 3 min",
+  "hi": "रेटेड · 3 मिनट"
+ },
+ "Reach the far side.": {
+  "es": "Llega al otro lado.",
+  "hi": "दूसरे छोर तक पहुँचें।"
+ },
+ "Resign": {
+  "es": "Abandonar",
+  "hi": "हार मानें"
+ },
+ "Resign this game?": {
+  "es": "¿Abandonar esta partida?",
+  "hi": "यह खेल हार मान लें?"
+ },
+ "Resigned on move %lld": {
+  "es": "Abandonaste en la jugada %lld",
+  "hi": "चाल %lld पर हार मानी"
+ },
+ "Rewound": {
+  "es": "Deshecho",
+  "hi": "वापस लिया"
+ },
+ "Rookie": {
+  "es": "Novato",
+  "hi": "नौसिखिया"
+ },
+ "Rooks love open lines with no pawns in the way.": {
+  "es": "Las torres aman las columnas abiertas, sin peones.",
+  "hi": "हाथी को खुली लाइनें पसंद हैं, जहाँ प्यादे न हों।"
+ },
+ "See the game.": {
+  "es": "Mira el juego.",
+  "hi": "खेल को देखिए।"
+ },
+ "Settings": {
+  "es": "Ajustes",
+  "hi": "सेटिंग्स"
+ },
+ "Share": {
+  "es": "Compartir",
+  "hi": "शेयर करें"
+ },
+ "Show me": {
+  "es": "Muéstrame",
+  "hi": "दिखाइए"
+ },
+ "Show the move": {
+  "es": "Muestra la jugada",
+  "hi": "चाल दिखाएँ"
+ },
+ "Skip": {
+  "es": "Omitir",
+  "hi": "छोड़ें"
+ },
+ "Sound": {
+  "es": "Sonido",
+  "hi": "आवाज़"
+ },
+ "Stalemate: no legal moves, and no check.": {
+  "es": "Ahogado: no hay jugadas legales y no hay jaque.",
+  "hi": "स्टेलमेट: कोई वैध चाल नहीं, और शह भी नहीं।"
+ },
+ "Start a game": {
+  "es": "Empezar una partida",
+  "hi": "खेल शुरू करें"
+ },
+ "Start a new game?": {
+  "es": "¿Empezar una nueva partida?",
+  "hi": "नया खेल शुरू करें?"
+ },
+ "Step out of check.": {
+  "es": "Sal del jaque.",
+  "hi": "शह से बाहर निकलें।"
+ },
+ "Swipe for another opponent": {
+  "es": "Desliza para otro rival",
+  "hi": "दूसरे विरोधी के लिए स्वाइप करें"
+ },
+ "Swipe this card to look back at your earlier moves.": {
+  "es": "Desliza esta tarjeta para repasar tus jugadas anteriores.",
+  "hi": "अपनी पिछली चालें देखने के लिए इस कार्ड को स्वाइप करें।"
+ },
+ "Take a seat.": {
+  "es": "Siéntate.",
+  "hi": "बैठिए।"
+ },
+ "Take the pawn.": {
+  "es": "Captura el peón.",
+  "hi": "प्यादे को मारें।"
+ },
+ "Take the pawns.": {
+  "es": "Captura los peones.",
+  "hi": "प्यादों को मारें।"
+ },
+ "Tap a square, or drag": {
+  "es": "Toca una casilla o arrastra",
+  "hi": "किसी खाने पर टैप करें, या खींचें"
+ },
+ "That's the game.": {
+  "es": "Se acabó la partida.",
+  "hi": "खेल ख़त्म।"
+ },
+ "That's the whole game. Time to play.": {
+  "es": "Ese es todo el juego. A jugar.",
+  "hi": "यही पूरा खेल है। अब खेलिए।"
+ },
+ "The %@ is open": {
+  "es": "El %@ está desbloqueado",
+  "hi": "%@ खुल गया"
+ },
+ "The bishop": {
+  "es": "El alfil",
+  "hi": "ऊँट"
+ },
+ "The game is drawn.": {
+  "es": "La partida es tablas.",
+  "hi": "खेल बराबरी पर ख़त्म।"
+ },
+ "The king": {
+  "es": "El rey",
+  "hi": "राजा"
+ },
+ "The knight": {
+  "es": "El caballo",
+  "hi": "घोड़ा"
+ },
+ "The pawn": {
+  "es": "El peón",
+  "hi": "प्यादा"
+ },
+ "The queen": {
+  "es": "La dama",
+  "hi": "वज़ीर"
+ },
+ "The rook": {
+  "es": "La torre",
+  "hi": "हाथी"
+ },
+ "The same position came up three times.": {
+  "es": "La misma posición se repitió tres veces.",
+  "hi": "एक ही स्थिति तीन बार आई।"
+ },
+ "Their %@ eyes your %@": {
+  "es": "Su %1$@ apunta a tu %2$@",
+  "hi": "उनके %1$@ की नज़र आपके %2$@ पर है"
+ },
+ "Their %@ is under attack and unguarded.": {
+  "es": "Su %@ está atacado y sin defensa.",
+  "hi": "उनके %@ पर हमला है और वह बचा नहीं है।"
+ },
+ "Their %@ now attacks it, and nothing guards it.": {
+  "es": "Su %@ ahora la ataca y nada la defiende.",
+  "hi": "अब उनका %@ इस पर हमला कर रहा है, और कोई इसे नहीं बचा रहा।"
+ },
+ "Their move": {
+  "es": "Les toca",
+  "hi": "उनकी चाल"
+ },
+ "There was an even better move here.": {
+  "es": "Había una jugada aún mejor.",
+  "hi": "यहाँ इससे भी बेहतर चाल थी।"
+ },
+ "They took your %@": {
+  "es": "Te capturaron el %@",
+  "hi": "उन्होंने आपका %@ मार लिया"
+ },
+ "This game will be lost.": {
+  "es": "Esta partida se perderá.",
+  "hi": "यह खेल खो जाएगा।"
+ },
+ "This table is calm.": {
+  "es": "Esta mesa está en calma.",
+  "hi": "यह मेज़ शांत है।"
+ },
+ "Time's up": {
+  "es": "Se acabó el tiempo",
+  "hi": "समय ख़त्म"
+ },
+ "Today": {
+  "es": "Hoy",
+  "hi": "आज"
+ },
+ "Trap the king.": {
+  "es": "Atrapa al rey.",
+  "hi": "राजा को घेर लें।"
+ },
+ "Try this": {
+  "es": "Prueba esto",
+  "hi": "यह आज़माएँ"
+ },
+ "Turned · move %lld": {
+  "es": "Giro · jugada %lld",
+  "hi": "मोड़ · चाल %lld"
+ },
+ "Undo": {
+  "es": "Deshacer",
+  "hi": "वापस लें"
+ },
+ "Undo and try again.": {
+  "es": "Deshaz y vuelve a intentarlo.",
+  "hi": "वापस लेकर फिर कोशिश करें।"
+ },
+ "Watch your %@": {
+  "es": "Cuidado con tu %@",
+  "hi": "अपने %@ का ध्यान रखें"
+ },
+ "Welcome back": {
+  "es": "Bienvenido de nuevo",
+  "hi": "फिर से स्वागत है"
+ },
+ "White": {
+  "es": "Blancas",
+  "hi": "सफ़ेद"
+ },
+ "White starts. Pass the phone after each move.": {
+  "es": "Empiezan las blancas. Pasa el teléfono después de cada jugada.",
+  "hi": "सफ़ेद शुरू करता है। हर चाल के बाद फ़ोन आगे दें।"
+ },
+ "White wins": {
+  "es": "Ganan las blancas",
+  "hi": "सफ़ेद जीता"
+ },
+ "White's %@ on %@": {
+  "es": "%1$@ blanco en %2$@",
+  "hi": "%2$@ पर सफ़ेद का %1$@"
+ },
+ "With friends": {
+  "es": "Con amigos",
+  "hi": "दोस्तों के साथ"
+ },
+ "Won": {
+  "es": "Ganada",
+  "hi": "जीते"
+ },
+ "Yesterday": {
+  "es": "Ayer",
+  "hi": "कल"
+ },
+ "You beat %@!": {
+  "es": "¡Le ganaste a %@!",
+  "hi": "आपने %@ को हरा दिया!"
+ },
+ "You beat the %@!": {
+  "es": "¡Le ganaste al %@!",
+  "hi": "आपने %@ को हरा दिया!"
+ },
+ "You can drag pieces as well as tap them.": {
+  "es": "También puedes arrastrar las piezas, además de tocarlas.",
+  "hi": "आप मोहरों को टैप करने के साथ खींच भी सकते हैं।"
+ },
+ "You can take back on %@.": {
+  "es": "Puedes recapturar en %@.",
+  "hi": "आप %@ पर वापस मार सकते हैं।"
+ },
+ "You know every piece": {
+  "es": "Conoces todas las piezas",
+  "hi": "आप हर मोहरा जानते हैं"
+ },
+ "You never fell behind.": {
+  "es": "Nunca fuiste por detrás.",
+  "hi": "आप कभी पीछे नहीं रहे।"
+ },
+ "You play Black against %@.": {
+  "es": "Juegas con negras contra %@.",
+  "hi": "आप %@ के ख़िलाफ़ काले से खेल रहे हैं।"
+ },
+ "You play White against %@.": {
+  "es": "Juegas con blancas contra %@.",
+  "hi": "आप %@ के ख़िलाफ़ सफ़ेद से खेल रहे हैं।"
+ },
+ "You play White. Tap a piece to see where it can go.": {
+  "es": "Juegas con blancas. Toca una pieza para ver adónde puede ir.",
+  "hi": "आप सफ़ेद से खेल रहे हैं। किसी मोहरे को टैप करें और देखें कि वह कहाँ जा सकता है।"
+ },
+ "You were winning: %lld%% on move %lld.": {
+  "es": "Ibas ganando: %1$lld%% en la jugada %2$lld.",
+  "hi": "आप जीत रहे थे: चाल %2$lld पर %1$lld%%।"
+ },
+ "You win the %@. Clean.": {
+  "es": "Ganas el %@. Limpio.",
+  "hi": "आपने %@ जीत लिया। साफ़।"
+ },
+ "You won!": {
+  "es": "¡Ganaste!",
+  "hi": "आप जीत गए!"
+ },
+ "You'll get a notification when they've played.": {
+  "es": "Te avisaremos cuando haya jugado.",
+  "hi": "उनकी चाल होते ही आपको सूचना मिलेगी।"
+ },
+ "You're behind, so here's an extra hint.": {
+  "es": "Vas por detrás, así que aquí tienes una pista más.",
+  "hi": "आप पीछे हैं, इसलिए एक और संकेत।"
+ },
+ "Your %@ had a better move here.": {
+  "es": "Tu %@ tenía una jugada mejor aquí.",
+  "hi": "आपके %@ के पास यहाँ बेहतर चाल थी।"
+ },
+ "Your %@ is loose": {
+  "es": "Tu %@ está sin defensa",
+  "hi": "आपका %@ असुरक्षित है"
+ },
+ "Your %@ on %@": {
+  "es": "Tu %1$@ en %2$@",
+  "hi": "%2$@ पर आपका %1$@"
+ },
+ "Your %@ on %@ has a good move. Find it, or tap Show the move.": {
+  "es": "Tu %1$@ en %2$@ tiene una buena jugada. Encuéntrala o toca Muestra la jugada.",
+  "hi": "%2$@ पर आपके %1$@ के पास एक अच्छी चाल है। उसे ढूँढें, या चाल दिखाएँ पर टैप करें।"
+ },
+ "Your chances": {
+  "es": "Tus opciones",
+  "hi": "आपकी संभावना"
+ },
+ "Your finished games will show up here, with how accurately you played.": {
+  "es": "Tus partidas terminadas aparecerán aquí, con tu precisión.",
+  "hi": "आपके पूरे हुए खेल यहाँ दिखेंगे, आपकी सटीकता के साथ।"
+ },
+ "Your first win · %@": {
+  "es": "Tu primera victoria · %@",
+  "hi": "आपकी पहली जीत · %@"
+ },
+ "Your friend": {
+  "es": "Tu amigo",
+  "hi": "आपका दोस्त"
+ },
+ "Your game is where you left it. They're thinking.": {
+  "es": "Tu partida sigue donde la dejaste. Están pensando.",
+  "hi": "आपका खेल वहीं है जहाँ छोड़ा था। वे सोच रहे हैं।"
+ },
+ "Your game is where you left it. Your move.": {
+  "es": "Tu partida sigue donde la dejaste. Te toca.",
+  "hi": "आपका खेल वहीं है जहाँ छोड़ा था। आपकी चाल।"
+ },
+ "Your games": {
+  "es": "Tus partidas",
+  "hi": "आपके खेल"
+ },
+ "Your king is in check": {
+  "es": "Tu rey está en jaque",
+  "hi": "आपके राजा को शह है"
+ },
+ "Your move": {
+  "es": "Te toca",
+  "hi": "आपकी चाल"
+ },
+ "Your move again. Take another look.": {
+  "es": "Te toca de nuevo. Míralo otra vez.",
+  "hi": "फिर से आपकी चाल। एक बार और देखें।"
+ },
+ "Your opponent %@.": {
+  "es": "Tu rival %@.",
+  "hi": "आपके विरोधी ने %@।"
+ },
+ "Your opponent's %@ on %@": {
+  "es": "%1$@ del rival en %2$@",
+  "hi": "%2$@ पर विरोधी का %1$@"
+ },
+ "Your second": {
+  "es": "Tu segundo",
+  "hi": "आपका साथी"
+ },
+ "bishop": {
+  "es": "alfil",
+  "hi": "ऊँट"
+ },
+ "castle to keep your king safe.": {
+  "es": "enroca para proteger a tu rey.",
+  "hi": "राजा को सुरक्षित रखने के लिए कैसलिंग करें।"
+ },
+ "it gives check.": {
+  "es": "da jaque.",
+  "hi": "यह शह देती है।"
+ },
+ "it improves your position the most.": {
+  "es": "es la que más mejora tu posición.",
+  "hi": "यह आपकी स्थिति को सबसे ज़्यादा सुधारती है।"
+ },
+ "it is checkmate.": {
+  "es": "es jaque mate.",
+  "hi": "यह शह-मात है।"
+ },
+ "it wins the %@.": {
+  "es": "gana el %@.",
+  "hi": "यह %@ जीतती है।"
+ },
+ "king": {
+  "es": "rey",
+  "hi": "राजा"
+ },
+ "knight": {
+  "es": "caballo",
+  "hi": "घोड़ा"
+ },
+ "moves the %@ to %@": {
+  "es": "mueve el %1$@ a %2$@",
+  "hi": "%1$@ को %2$@ पर चला"
+ },
+ "pawn": {
+  "es": "peón",
+  "hi": "प्यादा"
+ },
+ "piece": {
+  "es": "pieza",
+  "hi": "मोहरा"
+ },
+ "queen": {
+  "es": "dama",
+  "hi": "वज़ीर"
+ },
+ "rook": {
+  "es": "torre",
+  "hi": "हाथी"
+ },
+ "takes your %@ on %@": {
+  "es": "captura tu %1$@ en %2$@",
+  "hi": "%2$@ पर आपका %1$@ मार लिया"
+ },
+ "vs": {
+  "es": "vs",
+  "hi": "बनाम"
+ },
+ "your friend": {
+  "es": "tu amigo",
+  "hi": "आपके दोस्त"
+ }
+}

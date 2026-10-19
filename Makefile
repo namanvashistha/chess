@@ -1,4 +1,4 @@
-.PHONY: build uci test vet run up dev bench ios-engine ios-upload android-engine
+.PHONY: build uci test vet run up dev bench ios-engine ios-upload android-engine android-strings
 
 # This project has no cgo dependencies, and the Docker build already sets this.
 # Keeping it off locally also avoids a Go 1.22 / recent-macOS link failure
@@ -86,6 +86,10 @@ android-engine:
 		gomobile bind -target=android -androidapi 31 -javapkg=com.namanvashistha.calmchess.engine \
 		-ldflags='-extldflags=-Wl,-z,max-page-size=16384' \
 		-o ../android/app/libs/chesscore.aar ./chesscore
+
+# Rebuilds the Android app's translations from the iPhone app's string catalog.
+android-strings:
+	python3 android/tools/strings.py
 
 ios-upload: ios-engine
 	cd ios && xcodebuild -project Chess.xcodeproj -scheme Chess -configuration Release \

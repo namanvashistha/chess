@@ -22,6 +22,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -46,6 +47,7 @@ import androidx.compose.material.icons.automirrored.rounded.Redo
 import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.ChevronLeft
@@ -112,7 +114,7 @@ fun GameScreen(model: GameModel, back: () -> Unit) {
         }
         model.finish?.let { f ->
             FinishCard(
-                f, king = 'K',
+                f, king = 'K', share = model.finishMoment,
                 again = { model.start(model.mode, model.opponent) },
                 tryNext = f.unlocked?.let { next -> { Prefs.p.edit().putInt("opponent", next.ordinal).apply(); model.start(Mode.Engine, next) } },
                 home = back,
@@ -128,19 +130,23 @@ fun GameScreen(model: GameModel, back: () -> Unit) {
     }
 }
 
-enum class Confirm(val title: String, val action: String, val message: String) {
-    NewGame("Start a new game?", "New game", "This game will be lost."),
-    Resign("Resign this game?", "Resign", "It counts as a loss in your recent games."),
+enum class Confirm(private val t: String, private val a: String, private val m: String) {
+    NewGame("Start a new game?", L("New game"), "This game will be lost."),
+    Resign("Resign this game?", L("Resign"), "It counts as a loss in your recent games.");
+
+    val title get() = L(t)
+    val action get() = L(a)
+    val message get() = L(m)
 }
 
 @Composable
 private fun TopBar(model: GameModel, back: () -> Unit) {
     val p = LocalPalette.current
     Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        GlassIconButton(Icons.Rounded.ChevronLeft, "Home", circle = true) { Haptics.tap(); back() }
+        GlassIconButton(Icons.Rounded.ChevronLeft, L("Home"), circle = true) { Haptics.tap(); back() }
         if (model.mode == Mode.Engine) OpponentAvatar(model.opponent, 36f)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(if (model.mode == Mode.Engine) model.opponent.title else "Pass & play", style = Typeface.display(17f, FontWeight.Bold), color = p.ink)
+            Text(if (model.mode == Mode.Engine) model.opponent.title else L("Pass & play"), style = Typeface.display(17f, FontWeight.Bold), color = p.ink)
             AnimatedVisibility(model.thinking, enter = fadeIn(tween(200)), exit = fadeOut(tween(200))) { ThinkingDots() }
         }
     }
@@ -216,7 +222,7 @@ private fun CapturedRow(pieces: List<Char>, lead: Int) {
         Row(horizontalArrangement = Arrangement.spacedBy((-5).dp)) {
             for (c in pieces) GlassPiece(c, Modifier.size(20.dp))
         }
-        if (lead > 0) Text("+$lead", style = Typeface.body(12f, FontWeight.Bold), color = p.mist, modifier = Modifier.padding(start = 12.dp))
+        if (lead > 0) Text(L("+%lld", lead), style = Typeface.body(12f, FontWeight.Bold), color = p.mist, modifier = Modifier.padding(start = 12.dp))
     }
 }
 
@@ -243,7 +249,7 @@ private fun CoachArea(model: GameModel) {
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Icon(Icons.AutoMirrored.Rounded.Redo, null, tint = p.ink, modifier = Modifier.size(16.dp))
-                Text("Back to game", style = Typeface.body(13.5f, FontWeight.SemiBold), color = p.ink)
+                Text(L("Back to game"), style = Typeface.body(13.5f, FontWeight.SemiBold), color = p.ink)
             }
         }
     }
@@ -319,14 +325,14 @@ private fun Dock(model: GameModel, ask: (Confirm) -> Unit) {
     var menu by remember { mutableStateOf(false) }
     val canHint = model.findingHint || (model.playerToMove && (model.hintsLeft > 0 || model.hintIsFree))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        GlassIconButton(Icons.AutoMirrored.Rounded.Undo, "Undo", enabled = model.moves.isNotEmpty()) { Haptics.tap(); model.undo() }
+        GlassIconButton(Icons.AutoMirrored.Rounded.Undo, L("Undo"), enabled = model.moves.isNotEmpty()) { Haptics.tap(); model.undo() }
         Box {
-            GlassIconButton(Icons.Rounded.MoreHoriz, "Game options", enabled = !model.busy) { Haptics.tap(); menu = true }
+            GlassIconButton(Icons.Rounded.MoreHoriz, L("Game options"), enabled = !model.busy) { Haptics.tap(); menu = true }
             DropdownMenu(menu, { menu = false }, shape = RoundedCornerShape(16.dp), containerColor = p.surface) {
-                DropdownMenuItem({ Text("New game", color = p.ink) }, { menu = false; ask(Confirm.NewGame) },
+                DropdownMenuItem({ Text(L("New game"), color = p.ink) }, { menu = false; ask(Confirm.NewGame) },
                     leadingIcon = { Icon(Icons.Rounded.Add, null, tint = p.ink) })
                 if (model.mode != Mode.PassAndPlay && !model.isOver) {
-                    DropdownMenuItem({ Text("Resign", color = p.danger) }, { menu = false; ask(Confirm.Resign) },
+                    DropdownMenuItem({ Text(L("Resign"), color = p.danger) }, { menu = false; ask(Confirm.Resign) },
                         leadingIcon = { Icon(Icons.Outlined.Flag, null, tint = p.danger) })
                 }
             }
@@ -345,7 +351,7 @@ private fun Dock(model: GameModel, ask: (Confirm) -> Unit) {
             val color = if (canHint) p.onAccent else p.mist
             Icon(Icons.Rounded.AutoAwesome, null, tint = color, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))
-            Text(if (free) "Show the move" else if (model.hintsLeft > 0 || model.findingHint) "Hint" else "No hints",
+            Text(if (free) L("Show the move") else if (model.hintsLeft > 0 || model.findingHint) L("Hint") else L("No hints"),
                 style = Typeface.display(14f, FontWeight.Bold), color = color, maxLines = 1)
             if (model.hintsLeft > 0 && !free && !model.findingHint) {
                 Spacer(Modifier.width(6.dp))
@@ -381,7 +387,7 @@ private fun ConfirmSheet(c: Confirm, onCancel: () -> Unit, onConfirm: () -> Unit
                 }
                 Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(p.surface).clickable(onClick = onCancel).padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center) {
-                    Text("Cancel", style = Typeface.body(19f, FontWeight.SemiBold), color = p.accent)
+                    Text(L("Cancel"), style = Typeface.body(19f, FontWeight.SemiBold), color = p.accent)
                 }
             }
         }
@@ -390,7 +396,7 @@ private fun ConfirmSheet(c: Confirm, onCancel: () -> Unit, onConfirm: () -> Unit
 
 /** The end of a game, in one calm column: what happened, the arc, the numbers, what's next, and the way on. */
 @Composable
-private fun FinishCard(finish: Finish, king: Char, again: () -> Unit, tryNext: (() -> Unit)?, home: () -> Unit) {
+private fun FinishCard(finish: Finish, king: Char, share: ShareMoment?, again: () -> Unit, tryNext: (() -> Unit)?, home: () -> Unit) {
     val p = LocalPalette.current
     val enter = remember { Animatable(0f) }
     LaunchedEffect(finish) { enter.snapTo(0f); enter.animateTo(1f, swiftSpring(0.5f, 0.75f)) }
@@ -415,7 +421,7 @@ private fun FinishCard(finish: Finish, king: Char, again: () -> Unit, tryNext: (
                     FinishEmblem(finish.outcome, king)
                     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Text(finish.title, style = Typeface.display(24f), color = p.ink, maxLines = 2)
-                        Text(if (finish.firstWin) "Your first win · ${finish.text}" else finish.text,
+                        Text(if (finish.firstWin) L("Your first win · %@", finish.text) else finish.text,
                             style = Typeface.body(14f), color = p.mist, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
                 }
@@ -423,11 +429,11 @@ private fun FinishCard(finish: Finish, king: Char, again: () -> Unit, tryNext: (
                 if (finish.arc.isNotEmpty()) {
                     Column(Modifier.padding(top = 16.dp).fillMaxWidth().background(p.statFill, RoundedCornerShape(16.dp)).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Your chances", style = Typeface.body(12f, FontWeight.SemiBold), color = p.mist)
+                        Text(L("Your chances"), style = Typeface.body(12f, FontWeight.SemiBold), color = p.mist)
                         GameArc(finish.arc, finish.best?.let { it.ply + 1 }, finish.turnPly?.let { it + 1 }, Modifier.fillMaxWidth().height(78.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                            finish.best?.let { b -> Legend(p.great, "Best · move ${b.moveNumber}" + if (b.san.isEmpty()) "" else " · ${b.san}") }
-                            finish.turnPly?.let { Legend(p.blunder, "Turned · move ${it / 2 + 1}") }
+                            finish.best?.let { b -> Legend(p.great, L("Best · move %lld", b.moveNumber) + if (b.san.isEmpty()) "" else " · ${b.san}") }
+                            finish.turnPly?.let { Legend(p.blunder, L("Turned · move %lld", it / 2 + 1)) }
                         }
                     }
                     finish.insight?.let { Text(it, style = Typeface.body(15f, FontWeight.SemiBold), color = p.ink, modifier = Modifier.padding(top = 16.dp)) }
@@ -435,11 +441,11 @@ private fun FinishCard(finish: Finish, king: Char, again: () -> Unit, tryNext: (
                 // The numbers, as tiles you can read at a glance.
                 val stats = buildList {
                     val s = finish.sides
-                    if (s != null) { if (s.first + s.second > 0) { add("${s.first}" to "White"); add("${s.second}" to "Black") } }
+                    if (s != null) { if (s.first + s.second > 0) { add("${s.first}" to L("White")); add("${s.second}" to L("Black")) } }
                     else {
-                        finish.accuracy?.let { add("$it%" to "Accuracy") }
-                        add("${finish.great}" to "Great")
-                        if (finish.plies > 0) add("${(finish.plies + 1) / 2}" to "Moves")
+                        finish.accuracy?.let { add(L("%lld%%", it) to L("Accuracy")) }
+                        add("${finish.great}" to L("Great"))
+                        if (finish.plies > 0) add("${(finish.plies + 1) / 2}" to L("Moves"))
                     }
                 }
                 if (stats.isNotEmpty()) {
@@ -460,7 +466,7 @@ private fun FinishCard(finish: Finish, king: Char, again: () -> Unit, tryNext: (
                     Row(Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.LockOpen, null, tint = p.great, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("The ${next.title} is open", style = Typeface.body(13.5f, FontWeight.SemiBold), color = p.great)
+                        Text(L("The %@ is open", next.title), style = Typeface.body(13.5f, FontWeight.SemiBold), color = p.great)
                     }
                 } else if (toward != null) {
                     Row(Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -469,25 +475,38 @@ private fun FinishCard(finish: Finish, king: Char, again: () -> Unit, tryNext: (
                         }
                         Spacer(Modifier.width(8.dp))
                         val left = Opponent.WINS_TO_UNLOCK - toward.second
-                        Text(if (left == 1) "1 more win to face the ${toward.first.title}" else "$left more wins to face the ${toward.first.title}",
+                        Text(if (left == 1) L("1 more win to face the %@", toward.first.title) else L("%lld more wins to face the %@", left, toward.first.title),
                             style = Typeface.body(13.5f, FontWeight.Medium), color = p.mist)
                     }
                 }
                 // The way on: one clear next step, then Home, quiet.
                 Column(Modifier.padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (next != null && tryNext != null) PrimaryButton("Play the ${next.title}", onClick = tryNext)
-                    else PrimaryButton("Play again", onClick = again)
-                    val source = remember { MutableInteractionSource() }
-                    Row(Modifier.fillMaxWidth().height(48.dp).clickable(source, null) { Haptics.tap(); home() },
-                        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Home, null, tint = p.ink, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Home", style = Typeface.body(15f, FontWeight.SemiBold), color = p.ink)
+                    if (next != null && tryNext != null) PrimaryButton(L("Play the %@", next.title), onClick = tryNext)
+                    else PrimaryButton(L("Play again"), onClick = again)
+                    // Home and Share beside each other, quiet.
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        QuietButton(Icons.Outlined.Home, L("Home"), Modifier.weight(1f)) { Haptics.tap(); home() }
+                        if (share != null) QuietButton(Icons.Outlined.Share, L("Share"), Modifier.weight(1f)) { Haptics.tap(); ShareCard.share(context, share) }
                     }
                 }
             }
             if (finish.outcome == Finish.Outcome.Won) Celebration(Modifier.align(Alignment.TopStart).offset(54.dp, 54.dp))
         }
+    }
+}
+
+/** A secondary action: plain words that dim under the finger, no frame. */
+@Composable
+private fun QuietButton(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, modifier: Modifier, onClick: () -> Unit) {
+    val p = LocalPalette.current
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    Row(modifier.height(48.dp).graphicsLayer { alpha = if (pressed) 0.5f else 1f }.clickable(source, null, onClick = onClick),
+        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, tint = p.ink, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(text, style = Typeface.body(15f, FontWeight.SemiBold), color = p.ink)
     }
 }
 

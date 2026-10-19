@@ -56,7 +56,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * "Learn the moves": ten tiny moments for someone who has never played. Each
+ * L("Learn the moves"): ten tiny moments for someone who has never played. Each
  * is one idea, one short line and one thing to do, on the game's own board.
  * Solve it and the next one comes on its own: no counters, no way to fail.
  */
@@ -148,7 +148,7 @@ fun LearnScreen(close: () -> Unit, play: () -> Unit) {
         ) {
             // Close, and a thin line that fills as you go.
             Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                GlassIconButton(Icons.Rounded.Close, "Close", circle = true) { Haptics.tap(); if (moment == null) setStep(0); close() }
+                GlassIconButton(Icons.Rounded.Close, L("Close"), circle = true) { Haptics.tap(); if (moment == null) setStep(0); close() }
                 BoxWithConstraints(Modifier.weight(1f).height(6.dp)) {
                     Box(Modifier.fillMaxSize().background(p.mist.copy(alpha = 0.2f), RoundedCornerShape(50)))
                     Box(Modifier.fillMaxHeight().width(maxOf(6.dp, maxWidth * progress)).background(p.accent, RoundedCornerShape(50)))
@@ -182,15 +182,15 @@ fun LearnScreen(close: () -> Unit, play: () -> Unit) {
 private fun androidx.compose.foundation.layout.ColumnScope.Finale(play: () -> Unit, home: () -> Unit) {
     val p = LocalPalette.current
     Column(Modifier.fillMaxWidth().padding(top = 28.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text("You know every piece", style = Typeface.display(30f).copy(letterSpacing = (-0.5).sp), color = p.ink)
-        Text("That's the whole game. Time to play.", style = Typeface.body(17f), color = p.mist)
+        Text(L("You know every piece"), style = Typeface.display(30f).copy(letterSpacing = (-0.5).sp), color = p.ink)
+        Text(L("That's the whole game. Time to play."), style = Typeface.body(17f), color = p.mist)
     }
     FinaleBoard(Modifier.padding(top = 24.dp)) { Haptics.play(Feedback.Win); Sound.play(Feedback.Win) }
     Spacer(Modifier.weight(1f).heightIn(min = 16.dp))
     Column(verticalArrangement = Arrangement.spacedBy(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        PrimaryButton("Play the Rookie", onClick = play)
+        PrimaryButton(L("Play the Rookie"), onClick = play)
         Box(Modifier.heightIn(min = 44.dp).clickable(onClick = home), contentAlignment = Alignment.Center) {
-            Text("Back to home", style = Typeface.body(15f, FontWeight.SemiBold), color = p.mist)
+            Text(L("Back to home"), style = Typeface.body(15f, FontWeight.SemiBold), color = p.mist)
         }
     }
 }
@@ -344,17 +344,17 @@ data class Moment(val piece: Char, val start: Square, val others: Map<Square, Ch
         fun sq(name: String) = Squares.parse(name)!!
         private fun board(vararg list: Pair<String, Char>) = list.associate { sq(it.first) to it.second }
 
-        val all = listOf(
-            Moment('R', sq("a1"), board("a5" to 'p', "e5" to 'p', "e8" to 'p'), Goal.TakeAll, "The rook", "Take the pawns."),
-            Moment('B', sq("c1"), board("e3" to 'p', "g5" to 'p', "d8" to 'p'), Goal.TakeAll, "The bishop", "Take the pawns."),
-            Moment('Q', sq("d1"), board("d5" to 'p', "h5" to 'p', "e8" to 'p'), Goal.TakeAll, "The queen", "Take the pawns."),
-            Moment('N', sq("g1"), board("f2" to 'P', "g2" to 'P', "h2" to 'P', "f3" to 'p', "e5" to 'p', "d7" to 'p'), Goal.TakeAll, "The knight", "Take the pawns."),
-            Moment('K', sq("e1"), board("e2" to 'p', "f3" to 'p', "f4" to 'p'), Goal.TakeAll, "The king", "Take the pawns."),
-            Moment('P', sq("e2"), board("d5" to 'p'), Goal.TakeAll, "The pawn", "Take the pawn."),
-            Moment('P', sq("e7"), emptyMap(), Goal.Promote, "Promotion", "Reach the far side."),
-            Moment('R', sq("a1"), board("e8" to 'k'), Goal.Check(sq("e8")), "Check", "Attack the king."),
-            Moment('K', sq("e1"), board("e8" to 'r'), Goal.Escape(setOf(sq("d1"), sq("d2"), sq("f1"), sq("f2")), sq("e8")), "Escape", "Step out of check."),
-            Moment('R', sq("a1"), board("g8" to 'k', "f7" to 'p', "g7" to 'p', "h7" to 'p'), Goal.Mate(setOf(sq("a8")), sq("g8")), "Checkmate", "Trap the king."),
+        val all get() = listOf(
+            Moment('R', sq("a1"), board("a5" to 'p', "e5" to 'p', "e8" to 'p'), Goal.TakeAll, L("The rook"), L("Take the pawns.")),
+            Moment('B', sq("c1"), board("e3" to 'p', "g5" to 'p', "d8" to 'p'), Goal.TakeAll, L("The bishop"), L("Take the pawns.")),
+            Moment('Q', sq("d1"), board("d5" to 'p', "h5" to 'p', "e8" to 'p'), Goal.TakeAll, L("The queen"), L("Take the pawns.")),
+            Moment('N', sq("g1"), board("f2" to 'P', "g2" to 'P', "h2" to 'P', "f3" to 'p', "e5" to 'p', "d7" to 'p'), Goal.TakeAll, L("The knight"), L("Take the pawns.")),
+            Moment('K', sq("e1"), board("e2" to 'p', "f3" to 'p', "f4" to 'p'), Goal.TakeAll, L("The king"), L("Take the pawns.")),
+            Moment('P', sq("e2"), board("d5" to 'p'), Goal.TakeAll, L("The pawn"), L("Take the pawn.")),
+            Moment('P', sq("e7"), emptyMap(), Goal.Promote, L("Promotion"), L("Reach the far side.")),
+            Moment('R', sq("a1"), board("e8" to 'k'), Goal.Check(sq("e8")), L("Check"), L("Attack the king.")),
+            Moment('K', sq("e1"), board("e8" to 'r'), Goal.Escape(setOf(sq("d1"), sq("d2"), sq("f1"), sq("f2")), sq("e8")), L("Escape"), L("Step out of check.")),
+            Moment('R', sq("a1"), board("g8" to 'k', "f7" to 'p', "g7" to 'p', "h7" to 'p'), Goal.Mate(setOf(sq("a8")), sq("g8")), L("Checkmate"), L("Trap the king.")),
         )
 
         /** Where a white piece can go: slides stop at the first piece, knights jump, pawns step and take diagonally. */

@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         Prefs.init(this)
+        Strings.init(this)
         Haptics.init(this)
         Sound.init(this)
         setContent { CalmTheme { Root() } }

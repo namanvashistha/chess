@@ -37,6 +37,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.rounded.AutoAwesome
@@ -174,7 +175,7 @@ fun HomeScreen(start: (Mode, Opponent) -> Unit, resume: () -> Unit, learn: () ->
                 Row(Modifier.padding(top = 8.dp).chrome(fromTop = true, delay = 100), verticalAlignment = Alignment.CenterVertically) {
                     Text(greeting(), style = Typeface.display(26f), color = p.ink, modifier = Modifier.weight(1f))
                     Box(Modifier.size(44.dp).clip(CircleShape).clickable { Haptics.tap(); settings = true }, contentAlignment = Alignment.Center) {
-                        Icon(Icons.Outlined.Settings, "Settings", tint = p.mist, modifier = Modifier.size(24.dp))
+                        Icon(Icons.Outlined.Settings, L("Settings"), tint = p.mist, modifier = Modifier.size(24.dp))
                     }
                 }
 
@@ -183,7 +184,7 @@ fun HomeScreen(start: (Mode, Opponent) -> Unit, resume: () -> Unit, learn: () ->
                     Row(Modifier.chrome(fromTop = true), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Box(Modifier.graphicsLayer { alpha = if (seat.isUnlocked) 1f else 0.5f }) { OpponentAvatar(seat, 42f) }
                         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
-                            Text("vs", style = Typeface.body(15f, FontWeight.Medium), color = p.mist, modifier = Modifier.padding(bottom = 2.dp))
+                            Text(L("vs"), style = Typeface.body(15f, FontWeight.Medium), color = p.mist, modifier = Modifier.padding(bottom = 2.dp))
                             Text(seat.title, style = Typeface.display(19f), color = p.ink)
                         }
                         // One dot per opponent; a tap moves on to the next, like a swipe.
@@ -232,16 +233,16 @@ fun HomeScreen(start: (Mode, Opponent) -> Unit, resume: () -> Unit, learn: () ->
 
                     // Until the first swipe, a quiet word on how to change opponents.
                     AnimatedVisibility(!swiped && seat.isUnlocked, Modifier.align(Alignment.CenterHorizontally), enter = fadeIn(), exit = fadeOut()) {
-                        Text("Swipe for another opponent", style = Typeface.body(12f), color = p.mist.copy(alpha = 0.8f), modifier = Modifier.chrome(delay = 200))
+                        Text(L("Swipe for another opponent"), style = Typeface.body(12f), color = p.mist.copy(alpha = 0.8f), modifier = Modifier.chrome(delay = 200))
                     }
                 }
 
                 // The one button, and the quieter ways in.
                 Column(Modifier.padding(top = 24.dp).chrome(delay = 180), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                    if (seat.isUnlocked) PrimaryButton(if (savedHere == null) "Begin" else "Continue") { go() }
+                    if (seat.isUnlocked) PrimaryButton(if (savedHere == null) L("Begin") else L("Continue")) { go() }
                     Row(Modifier.fillMaxWidth()) {
                         if (savedHere != null) {
-                            QuietLink(Icons.Rounded.Add, "New game", Modifier.weight(1f)) { Haptics.tap(); start(Mode.Engine, seat) }
+                            QuietLink(Icons.Rounded.Add, L("New game"), Modifier.weight(1f)) { Haptics.tap(); start(Mode.Engine, seat) }
                         }
                         FriendLink(Modifier.weight(1f)) { start(Mode.PassAndPlay, seat) }
                     }
@@ -250,7 +251,7 @@ fun HomeScreen(start: (Mode, Opponent) -> Unit, resume: () -> Unit, learn: () ->
                     Row(Modifier.align(Alignment.CenterHorizontally).padding(top = 10.dp).clickable { Haptics.tap(); resume() },
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Icon(Icons.Outlined.Smartphone, null, tint = p.mist, modifier = Modifier.size(16.dp))
-                        Text("Continue your game on this phone", style = Typeface.body(14f, FontWeight.Medium), color = p.mist)
+                        Text(L("Continue your game on this phone"), style = Typeface.body(14f, FontWeight.Medium), color = p.mist)
                     }
                 }
                 // Your games: a quiet line, not a card. One abandoned on the first move doesn't count.
@@ -263,7 +264,7 @@ fun HomeScreen(start: (Mode, Opponent) -> Unit, resume: () -> Unit, learn: () ->
                     ) {
                         val trend = recent.accuracyTrend
                         if (trend.size >= 3) AccuracyTrend(trend, compact = true, modifier = Modifier.width(36.dp).height(14.dp))
-                        Text("Your games", style = Typeface.body(14f, FontWeight.SemiBold), color = p.ink)
+                        Text(L("Your games"), style = Typeface.body(14f, FontWeight.SemiBold), color = p.ink)
                         Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = p.mist, modifier = Modifier.size(18.dp))
                     }
                 }
@@ -299,9 +300,9 @@ private fun LockedCard(prev: Opponent) {
         Icon(Icons.Rounded.Lock, null, tint = p.ink, modifier = Modifier.size(24.dp))
         Text(
             when (left) {
-                Opponent.WINS_TO_UNLOCK -> "Beat the ${prev.title} $left times"
-                1 -> "Beat the ${prev.title} once more"
-                else -> "Beat the ${prev.title} $left more times"
+                Opponent.WINS_TO_UNLOCK -> L("Beat the %@ %lld times", prev.title, left)
+                1 -> L("Beat the %@ once more", prev.title)
+                else -> L("Beat the %@ %lld more times", prev.title, left)
             },
             style = Typeface.display(16f), color = p.ink,
         )
@@ -331,18 +332,18 @@ private fun FriendLink(modifier: Modifier, onPhone: () -> Unit) {
     val p = LocalPalette.current
     var open by remember { mutableStateOf(false) }
     Box(modifier) {
-        QuietLink(Icons.Outlined.People, "Play a friend", Modifier.fillMaxWidth()) { Haptics.tap(); open = true }
+        QuietLink(Icons.Outlined.People, L("Play a friend"), Modifier.fillMaxWidth()) { Haptics.tap(); open = true }
         DropdownMenu(open, { open = false }, shape = RoundedCornerShape(16.dp), containerColor = p.surface) {
-            DropdownMenuItem({ Text("Play on this phone", color = p.ink) }, { open = false; onPhone() },
+            DropdownMenuItem({ Text(L("Play on this phone"), color = p.ink) }, { open = false; onPhone() },
                 leadingIcon = { Icon(Icons.Outlined.Smartphone, null, tint = p.ink) })
         }
     }
 }
 
 private fun greeting() = when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
-    in 5..11 -> "Good morning"
-    in 12..16 -> "Good afternoon"
-    else -> "Good evening"
+    in 5..11 -> L("Good morning")
+    in 12..16 -> L("Good afternoon")
+    else -> L("Good evening")
 }
 
 /** Desaturates whatever it's applied to, for a locked opponent's board. */
@@ -410,15 +411,15 @@ private fun RecentGames(records: List<GameRecord>, limit: Int) {
     val shown = records.filter { it.moves >= 2 }.take(limit)
     val trend = records.accuracyTrend
     Column(Modifier.fillMaxWidth()) {
-        Text("Your games", style = Typeface.display(24f), color = p.ink)
+        Text(L("Your games"), style = Typeface.display(24f), color = p.ink)
         if (trend.size >= 2) {
             Row(Modifier.fillMaxWidth().padding(top = 16.dp), verticalAlignment = Alignment.Bottom) {
-                Figure("${trend.sum() / trend.size}%", "Accuracy · last ${trend.size} games", Modifier.weight(1f))
-                if (Stats.greatMoves > 0) Figure("${Stats.greatMoves}", "Great moves", trailing = true)
+                Figure(L("%lld%%", trend.sum() / trend.size), L("Accuracy · last %lld games", trend.size), Modifier.weight(1f))
+                if (Stats.greatMoves > 0) Figure("${Stats.greatMoves}", L("Great moves"), trailing = true)
             }
         }
         if (trend.size >= 3) AccuracyTrend(trend, modifier = Modifier.fillMaxWidth().height(44.dp).padding(top = 16.dp))
-        if (shown.isEmpty()) Text("Your finished games will show up here, with how accurately you played.",
+        if (shown.isEmpty()) Text(L("Your finished games will show up here, with how accurately you played."),
             style = Typeface.body(14f), color = p.mist, modifier = Modifier.padding(top = 16.dp))
         var lastDay: String? = null
         for (r in shown) {
@@ -448,12 +449,12 @@ private fun GameRow(r: GameRecord) {
     Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         ResultMark(if (twoPlayers) null else r.outcome)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(if (twoPlayers) "Pass & play" else r.opponentName, style = Typeface.body(16f, FontWeight.SemiBold), color = p.ink)
-            val moves = if (r.moves == 1) "1 move" else "${r.moves} moves"
-            val result = mapOf("won" to "Won", "lost" to "Lost", "draw" to "Draw")[r.outcome]
+            Text(if (twoPlayers) L("Pass & play") else r.opponentName, style = Typeface.body(16f, FontWeight.SemiBold), color = p.ink)
+            val moves = if (r.moves == 1) L("1 move") else L("%lld moves", r.moves)
+            val result = mapOf("won" to L("Won"), "lost" to L("Lost"), "draw" to L("Draw"))[r.outcome]
             Text(if (twoPlayers || result == null) moves else "$result · $moves", style = Typeface.body(13f), color = p.mist)
         }
-        if (!twoPlayers) r.accuracy?.let { Text("$it%", style = Typeface.display(17f), color = p.ink) }
+        if (!twoPlayers) r.accuracy?.let { Text(L("%lld%%", it), style = Typeface.display(17f), color = p.ink) }
     }
 }
 
@@ -478,8 +479,8 @@ private fun dayLabel(ms: Long): String {
     val day = Calendar.getInstance().apply { timeInMillis = ms }
     val today = Calendar.getInstance()
     fun same(a: Calendar, b: Calendar) = a.get(Calendar.YEAR) == b.get(Calendar.YEAR) && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR)
-    if (same(day, today)) return "Today"
-    if (same(day, (today.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -1) })) return "Yesterday"
+    if (same(day, today)) return L("Today")
+    if (same(day, (today.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -1) })) return L("Yesterday")
     return SimpleDateFormat("EEEE d MMM", Locale.getDefault()).format(day.time)
 }
 
@@ -490,12 +491,21 @@ private fun SettingsSheet(learn: () -> Unit, welcome: () -> Unit) {
     var sound by remember { mutableStateOf(Prefs.p.getBoolean("sound", true)) }
     var haptics by remember { mutableStateOf(Prefs.p.getBoolean("haptics", true)) }
     Column(Modifier.fillMaxWidth().padding(24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Text("Settings", style = Typeface.display(22f), color = p.ink)
-        Toggle("Sound", sound) { sound = it; Prefs.p.edit().putBoolean("sound", it).apply() }
-        Toggle("Haptics", haptics) { haptics = it; Prefs.p.edit().putBoolean("haptics", it).apply(); if (it) Haptics.tap() }
-        SettingsRow(Icons.Outlined.School, "Learn the moves", onClick = learn)
-        SettingsRow(Icons.Rounded.AutoAwesome, "How it works", onClick = welcome)
-        Text("Light and dark follow your phone's appearance.", style = Typeface.body(13f), color = p.mist)
+        Text(L("Settings"), style = Typeface.display(22f), color = p.ink)
+        Toggle(L("Sound"), sound) { sound = it; Prefs.p.edit().putBoolean("sound", it).apply() }
+        Toggle(L("Haptics"), haptics) { haptics = it; Prefs.p.edit().putBoolean("haptics", it).apply(); if (it) Haptics.tap() }
+        SettingsRow(Icons.Outlined.School, L("Learn the moves"), onClick = learn)
+        SettingsRow(Icons.Rounded.AutoAwesome, L("How it works"), onClick = welcome)
+        // Android keeps each app's language in system settings (13 and up); this opens that page.
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val here = java.util.Locale.forLanguageTag(Strings.language)
+            SettingsRow(Icons.Outlined.Language, L("Language"), trailing = here.getDisplayLanguage(here).replaceFirstChar { it.titlecase(here) }, external = true) {
+                context.startActivity(android.content.Intent(android.provider.Settings.ACTION_APP_LOCALE_SETTINGS,
+                    android.net.Uri.fromParts("package", context.packageName, null)))
+            }
+        }
+        Text(L("Light and dark follow your phone's appearance."), style = Typeface.body(13f), color = p.mist)
     }
 }
 

@@ -195,10 +195,10 @@ fun WelcomeScreen(enter: () -> Unit, learn: () -> Unit) {
                     }
                     androidx.compose.animation.AnimatedVisibility(stage == Stage.Settle, enter = fadeIn(tween(500, 250)) + slideInVertically(tween(500, 250)) { 36 }) {
                         Column(verticalArrangement = Arrangement.spacedBy(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            // "See the game." above, "Show me" here: the line and the answer to it.
-                            PrimaryButton("Show me") { begin() }
+                            // L("See the game.") above, L("Show me") here: the line and the answer to it.
+                            PrimaryButton(L("Show me")) { begin() }
                             Box(Modifier.heightIn(min = 44.dp).clickable { Haptics.tap(); finish(learn) }, contentAlignment = Alignment.Center) {
-                                Text("New to chess? Learn the moves", style = Typeface.body(15f, FontWeight.SemiBold), color = p.mist)
+                                Text(L("New to chess? Learn the moves"), style = Typeface.body(15f, FontWeight.SemiBold), color = p.mist)
                             }
                         }
                     }
@@ -207,7 +207,7 @@ fun WelcomeScreen(enter: () -> Unit, learn: () -> Unit) {
             // Skip stays above it, so the way out is never swallowed.
             AnimatedVisibility(stage != Stage.Settle, Modifier.align(Alignment.TopEnd).safeDrawingPadding().padding(end = 12.dp), exit = fadeOut()) {
                 Box(Modifier.heightIn(min = 44.dp).clickable { Haptics.tap(); finish() }.padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
-                    Text("Skip", style = Typeface.body(15f, FontWeight.SemiBold), color = p.mist)
+                    Text(L("Skip"), style = Typeface.body(15f, FontWeight.SemiBold), color = p.mist)
                 }
             }
         }
@@ -220,12 +220,12 @@ private enum class Stage {
     /** The narrator's line, until the coach takes over. */
     val title: String?
         get() = when (this) {
-            Calm -> "Take a seat."
-            Noise -> "Most chess is loud."
-            Hush -> "This table is calm."
-            Coach -> "A friend at your side."
+            Calm -> L("Take a seat.")
+            Noise -> L("Most chess is loud.")
+            Hush -> L("This table is calm.")
+            Coach -> L("A friend at your side.")
             Pick, Verdict -> null
-            Settle -> "See the game."
+            Settle -> L("See the game.")
         }
 }
 
@@ -251,7 +251,7 @@ private fun NextButton(stage: Stage, onClick: () -> Unit) {
             .padding(horizontal = 18.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
     ) {
-        Text("Next", style = Typeface.body(15f, FontWeight.SemiBold), color = p.ink)
+        Text(L("Next"), style = Typeface.body(15f, FontWeight.SemiBold), color = p.ink)
         Icon(Icons.Rounded.ChevronRight, null, tint = p.ink, modifier = Modifier.size(16.dp).offset { IntOffset(wiggle.value.dp.roundToPx(), 0) })
     }
 }
@@ -282,9 +282,9 @@ private fun Noise() {
         }
         fragment("0:%02d".format(seconds), 46f, p.danger, 0.6f, 0.15f, 0.22f, mono = true)
         fragment("1452  ▾ −12", 24f, p.mist, 1.2f, 0.48f, 0.47f, mono = true)
-        fragment("?? Blunder", 22f, p.danger, 1.8f, 0.2f, 0.68f, alpha = pulse)
-        fragment("Rated · 3 min", 16f, p.mist, 2.4f, 0.6f, 0.17f)
-        fragment("Time's up", 18f, p.mist, 2.8f, 0.58f, 0.83f)
+        fragment("?? " + L("Blunder"), 22f, p.danger, 1.8f, 0.2f, 0.68f, alpha = pulse)
+        fragment(L("Rated · 3 min"), 16f, p.mist, 2.4f, 0.6f, 0.17f)
+        fragment(L("Time's up"), 18f, p.mist, 2.8f, 0.58f, 0.83f)
     }
 }
 
@@ -403,9 +403,9 @@ class WelcomeModel(private val scope: CoroutineScope) : BoardSource {
     }
 
     /** Its first word, before anything is asked of you: it is here to think along, and keeps no score. */
-    fun greet() { if (coach == null) say(CoachCard.Kind.Coach, "Your second", "I'll tell you what I see.") }
+    fun greet() { if (coach == null) say(CoachCard.Kind.Coach, L("Your second"), L("I'll tell you what I see.")) }
 
-    fun hint() { if (!touched) say(CoachCard.Kind.Coach, "Pick up any piece", "I'll follow along.") }
+    fun hint() { if (!touched) say(CoachCard.Kind.Coach, L("Pick up any piece"), L("I'll follow along.")) }
 
     /** Until the first touch: light sweeps your pieces, a touch ripples on the king's pawn, it lifts and its lines draw out. */
     suspend fun invite() {
@@ -446,7 +446,7 @@ class WelcomeModel(private val scope: CoroutineScope) : BoardSource {
         val moves = targets(square)
         val code = shownPieces.firstOrNull { it.square == square }?.code ?: 'P'
         rays = Rays(++serial, Rays.Kind.Options, moves, knight = if (code == 'N') moves.toSet() else emptySet())
-        say(CoachCard.Kind.Coach, "Tap a square, or drag", "", keep = false)
+        say(CoachCard.Kind.Coach, L("Tap a square, or drag"), "", keep = false)
     }
 
     /** The coach, live, on the square under the carried piece. */
@@ -456,15 +456,15 @@ class WelcomeModel(private val scope: CoroutineScope) : BoardSource {
         hovered = square
         val uci = square?.let { sq -> legal.firstOrNull { it.startsWith(Squares.name(from) + Squares.name(sq)) } }
         if (uci == null) { if (square == null || square == from) select(from); return }
-        val read = reads[uci] ?: run { say(CoachCard.Kind.Coach, "Let me look…", ""); return }
+        val read = reads[uci] ?: run { say(CoachCard.Kind.Coach, L("Let me look…"), ""); return }
         val title = when (read.first) {
-            CoachCard.Kind.Great -> "Ooh, a strong square"
-            CoachCard.Kind.Good -> "A good square"
-            CoachCard.Kind.Inaccuracy -> "Hmm, maybe"
-            else -> "Careful there"
+            CoachCard.Kind.Great -> L("Ooh, a strong square")
+            CoachCard.Kind.Good -> L("A good square")
+            CoachCard.Kind.Inaccuracy -> L("Hmm, maybe")
+            else -> L("Careful there")
         }
         say(if (read.first == CoachCard.Kind.Great || read.first == CoachCard.Kind.Good) read.first else CoachCard.Kind.Coach,
-            title, read.second.ifEmpty { "Nothing wrong with it. Put it down if you like it." })
+            title, read.second.ifEmpty { L("Nothing wrong with it. Put it down if you like it.") })
     }
 
     private fun play(from: Square, to: Square) {
@@ -485,8 +485,8 @@ class WelcomeModel(private val scope: CoroutineScope) : BoardSource {
         turn = "b"
         Sound.play(Feedback.Move)
         val kind = read?.first ?: CoachCard.Kind.Good
-        val words = kind.verdict ?: ("Good move" to "✓")
-        say(kind, words.first, read?.second?.ifEmpty { null } ?: "A calm, steady start.", keep = false)
+        val words = kind.verdict ?: (L("Good move") to "✓")
+        say(kind, words.first, read?.second?.ifEmpty { null } ?: L("A calm, steady start."), keep = false)
         Sound.play(if (kind == CoachCard.Kind.Great) Feedback.Great else Feedback.Good)
         onMove?.invoke()
     }

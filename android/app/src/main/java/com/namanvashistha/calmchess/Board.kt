@@ -56,11 +56,11 @@ data class CoachCard(val id: Int, val kind: Kind, val badge: String, val title: 
         /** The app's own words for a verdict: kind, never harsh. */
         val verdict: Pair<String, String>?
             get() = when (this) {
-                Great -> "Great move" to "★"
-                Good -> "Good move" to "✓"
-                Inaccuracy -> "Almost" to "~"
-                Mistake -> "Not quite" to "?"
-                Blunder -> "Oops" to "↩"
+                Great -> L("Great move") to "★"
+                Good -> L("Good move") to "✓"
+                Inaccuracy -> L("Almost") to "~"
+                Mistake -> L("Not quite") to "?"
+                Blunder -> L("Oops") to "↩"
                 else -> null
             }
 
@@ -144,11 +144,11 @@ data class Finish(
         val low = played.minBy { arc[it] }
         when (outcome) {
             Outcome.Won ->
-                if (arc[low] <= 0.35) f.insight = "Came back from ${pct(arc[low])}% on move ${move(low)}."
-                else if (played.all { arc[it] >= 0.45 }) f.insight = "You never fell behind."
+                if (arc[low] <= 0.35) f.insight = L("Came back from %lld%% on move %lld.", pct(arc[low]), move(low))
+                else if (played.all { arc[it] >= 0.45 }) f.insight = L("You never fell behind.")
             else ->
-                if (arc[peak] >= 0.6) f.insight = "You were winning: ${pct(arc[peak])}% on move ${move(peak)}."
-                else worst?.let { f.insight = "It turned on move ${it.first / 2 + 1}." }
+                if (arc[peak] >= 0.6) f.insight = L("You were winning: %lld%% on move %lld.", pct(arc[peak]), move(peak))
+                else worst?.let { f.insight = L("It turned on move %lld.", it.first / 2 + 1) }
         }
         return f
     }
@@ -159,8 +159,8 @@ enum class Opponent {
     Easy, Medium, Hard;
 
     /** Chess titles, so each win reads as a step up. */
-    val title get() = listOf("Rookie", "Master", "Grandmaster")[ordinal]
-    val subtitle get() = listOf("Beginner", "Intermediate", "Expert")[ordinal]
+    val title get() = listOf(L("Rookie"), L("Master"), L("Grandmaster"))[ordinal]
+    val subtitle get() = listOf(L("Beginner"), L("Intermediate"), L("Expert"))[ordinal]
     val engineLevel get() = listOf("beginner", "easy", "medium")[ordinal]
     val hints get() = listOf(5, 4, 3)[ordinal]
 
@@ -192,19 +192,3 @@ enum class Opponent {
 }
 
 enum class Mode { Engine, PassAndPlay }
-
-/** The engine's sentences, tidied the way the iPhone app tidies them. */
-object EngineText {
-    private val better = Regex("""(\S+) would have been even better\.""")
-
-    fun localize(english: String): String {
-        // Name the piece, not the move: "your queen had a better move" is enough.
-        better.matchEntire(english)?.let { m ->
-            val kind = when (m.groupValues[1].first()) {
-                'K', 'O' -> "king"; 'Q' -> "queen"; 'R' -> "rook"; 'B' -> "bishop"; 'N' -> "knight"; else -> "pawn"
-            }
-            return "Your $kind had a better move here."
-        }
-        return english
-    }
-}

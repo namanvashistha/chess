@@ -52,7 +52,7 @@ fun GlassPiece(
     }
 }
 
-private fun DrawScope.contactShadow(s: Float, lift: Float, accent: Color) {
+fun DrawScope.contactShadow(s: Float, lift: Float, accent: Color) {
     fun lerp(a: Float, b: Float) = a + (b - a) * lift
     val c = Offset(s / 2, s / 2)
     // A soft pool of the accent marks the square a lifted piece came from.
@@ -78,7 +78,7 @@ private fun DrawScope.softEllipse(color: Color, center: Offset, width: Float, he
     }
 }
 
-private fun DrawScope.glass(code: Char, s: Float) {
+fun DrawScope.glass(code: Char, s: Float) {
     val white = code.isUpperCase()
     val kind = code.lowercaseChar()
     // The art box: padded, then a touch larger, standing on its plinth.
