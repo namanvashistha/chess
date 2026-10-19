@@ -1,0 +1,270 @@
+{
+ "id": "en-passant",
+ "length": 420,
+ "start": "4k3/3p4/8/4P3/8/8/8/4K3",
+ "moves": [
+  {
+   "from": "d7",
+   "to": "d5",
+   "at": 3,
+   "dur": 14,
+   "liftAt": -20,
+   "shatter": true
+  },
+  {
+   "from": "e5",
+   "to": "d6",
+   "at": 44,
+   "dur": 12,
+   "liftAt": 36,
+   "shatter": true,
+   "capture": "d5"
+  }
+ ],
+ "rays": [
+  {
+   "from": "e5",
+   "to": "d6",
+   "color": "ray",
+   "at": 26,
+   "until": 70,
+   "draw": 8
+  },
+  {
+   "from": "d7",
+   "to": "d5",
+   "color": "ray",
+   "at": 112,
+   "until": 196,
+   "draw": 14
+  }
+ ],
+ "glows": [],
+ "marks": [
+  {
+   "sq": "d6",
+   "kind": "ring",
+   "color": "ray",
+   "at": 26,
+   "until": 70
+  },
+  {
+   "sq": "d6",
+   "kind": "ring",
+   "color": "great",
+   "at": 126,
+   "until": 196
+  }
+ ],
+ "ghosts": [
+  {
+   "code": "p",
+   "from": "d7",
+   "at": 108,
+   "until": 196,
+   "to": "d5",
+   "glideAt": 112,
+   "glideDur": 14
+  }
+ ],
+ "camera": [
+  [
+   0,
+   {
+    "zoom": 1.55,
+    "x": 3.6,
+    "y": 2.6,
+    "roll": -2,
+    "tilt": 29
+   }
+  ],
+  [
+   60,
+   {
+    "zoom": 1.7,
+    "x": 3.5,
+    "y": 2.3,
+    "roll": 0,
+    "tilt": 29
+   }
+  ],
+  [
+   150,
+   {
+    "zoom": 1.4,
+    "x": 3.5,
+    "y": 2.6,
+    "roll": 1,
+    "tilt": 31
+   }
+  ],
+  [
+   262,
+   {
+    "zoom": 1.0,
+    "x": 3.5,
+    "y": 3.5,
+    "roll": 0,
+    "tilt": 36
+   }
+  ]
+ ],
+ "shakes": [
+  {
+   "at": 56,
+   "strength": 18
+  }
+ ],
+ "flashes": [
+  {
+   "at": 56,
+   "color": "white"
+  }
+ ],
+ "dim": [
+  {
+   "at": 196,
+   "until": 262
+  }
+ ],
+ "beats": [
+  {
+   "from": 0,
+   "to": 55,
+   "top": 250,
+   "lines": [
+    {
+     "text": "This capture",
+     "at": -1,
+     "size": 104,
+     "gap": 3,
+     "weight": 900
+    },
+    {
+     "text": "is LEGAL.",
+     "at": -1,
+     "size": 136,
+     "gap": 3,
+     "weight": 900,
+     "accent": "LEGAL.",
+     "accentColor": "great"
+    }
+   ]
+  },
+  {
+   "from": 57,
+   "to": 108,
+   "top": 250,
+   "lines": [
+    {
+     "text": "WAIT.",
+     "at": 58,
+     "size": 150,
+     "gap": 3,
+     "weight": 900,
+     "color": "coral"
+    },
+    {
+     "text": "WHAT?",
+     "at": 66,
+     "size": 150,
+     "gap": 3,
+     "weight": 900,
+     "color": "coral"
+    }
+   ]
+  },
+  {
+   "from": 108,
+   "to": 196,
+   "top": 250,
+   "lines": [
+    {
+     "text": "It jumped past him\u2026",
+     "at": 110,
+     "size": 84,
+     "gap": 3,
+     "weight": 900
+    },
+    {
+     "text": "so he took it anyway.",
+     "at": 140,
+     "size": 84,
+     "gap": 3,
+     "weight": 900,
+     "accent": "anyway.",
+     "accentColor": "great"
+    }
+   ]
+  },
+  {
+   "from": 196,
+   "to": 262,
+   "top": 560,
+   "lines": [
+    {
+     "text": "It's called",
+     "at": 198,
+     "size": 84,
+     "gap": 3,
+     "weight": 900
+    },
+    {
+     "text": "EN PASSANT.",
+     "at": 206,
+     "size": 128,
+     "gap": 3,
+     "weight": 900,
+     "color": "great"
+    },
+    {
+     "text": "French for \u201cin passing\u201d.",
+     "at": 226,
+     "size": 52,
+     "gap": 2,
+     "weight": 800,
+     "color": "mist"
+    }
+   ]
+  }
+ ],
+ "loop": 404,
+ "audio": "audio/en-passant.wav",
+ "brand": {
+  "at": 262,
+  "lines": [
+   {
+    "text": "Learn the rules",
+    "at": 270,
+    "size": 96,
+    "gap": 3,
+    "weight": 900
+   },
+   {
+    "text": "nobody told you.",
+    "at": 278,
+    "size": 96,
+    "gap": 3,
+    "weight": 900,
+    "accent": "nobody",
+    "accentColor": "great"
+   }
+  ],
+  "send": [
+   {
+    "text": "Send this to the friend",
+    "at": 316,
+    "size": 56,
+    "gap": 2,
+    "weight": 800
+   },
+   {
+    "text": "who'd call it cheating.",
+    "at": 322,
+    "size": 56,
+    "gap": 2,
+    "weight": 800
+   }
+  ]
+ }
+}

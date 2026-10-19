@@ -1,0 +1,385 @@
+{
+ "id": "opera",
+ "length": 480,
+ "start": "4kb1r/p2n1ppp/4q3/4p1B1/4P3/1Q6/PPP2PPP/2KR4",
+ "moves": [
+  {
+   "from": "b3",
+   "to": "b8",
+   "at": 6,
+   "dur": 12,
+   "liftAt": -20,
+   "shatter": true
+  },
+  {
+   "from": "d7",
+   "to": "b8",
+   "at": 64,
+   "dur": 9,
+   "liftAt": 56,
+   "shatter": true
+  },
+  {
+   "from": "d1",
+   "to": "d8",
+   "at": 142,
+   "dur": 10,
+   "liftAt": 132,
+   "shatter": true
+  }
+ ],
+ "rays": [
+  {
+   "from": "b3",
+   "to": "b8",
+   "color": "ray",
+   "at": -10,
+   "until": 28,
+   "draw": 8
+  },
+  {
+   "from": "b8",
+   "to": "e8",
+   "color": "danger",
+   "at": 18,
+   "until": 64,
+   "draw": 8
+  },
+  {
+   "from": "d1",
+   "to": "d8",
+   "color": "ray",
+   "at": 132,
+   "until": 158,
+   "draw": 8
+  },
+  {
+   "from": "d8",
+   "to": "e8",
+   "color": "danger",
+   "at": 152,
+   "until": 216,
+   "draw": 8
+  },
+  {
+   "from": "g5",
+   "to": "d8",
+   "color": "great",
+   "at": 162,
+   "until": 216,
+   "draw": 8
+  }
+ ],
+ "glows": [
+  {
+   "sq": "e8",
+   "color": "danger",
+   "at": 18,
+   "until": 64,
+   "opacity": 0.5,
+   "pulse": false
+  },
+  {
+   "sq": "e8",
+   "color": "danger",
+   "at": 152,
+   "until": 216,
+   "opacity": 0.6,
+   "pulse": true
+  }
+ ],
+ "marks": [],
+ "ghosts": [],
+ "camera": [
+  [
+   0,
+   {
+    "zoom": 1.2,
+    "x": 1.5,
+    "y": 3.2,
+    "roll": -2,
+    "tilt": 30
+   }
+  ],
+  [
+   18,
+   {
+    "zoom": 1.28,
+    "x": 2.6,
+    "y": 1.4,
+    "roll": -1,
+    "tilt": 30
+   }
+  ],
+  [
+   64,
+   {
+    "zoom": 1.24,
+    "x": 2.2,
+    "y": 1.2,
+    "roll": 0,
+    "tilt": 31
+   }
+  ],
+  [
+   79,
+   {
+    "zoom": 1.36,
+    "x": 1.6,
+    "y": 1.0,
+    "roll": 1,
+    "tilt": 31
+   }
+  ],
+  [
+   110,
+   {
+    "zoom": 1.2,
+    "x": 3.5,
+    "y": 4.0,
+    "roll": 0,
+    "tilt": 32
+   }
+  ],
+  [
+   142,
+   {
+    "zoom": 1.32,
+    "x": 3.5,
+    "y": 6.2,
+    "roll": 2,
+    "tilt": 32
+   }
+  ],
+  [
+   152,
+   {
+    "zoom": 1.42,
+    "x": 4.0,
+    "y": 1.2,
+    "roll": -1,
+    "tilt": 30
+   }
+  ],
+  [
+   190,
+   {
+    "zoom": 1.04,
+    "x": 3.5,
+    "y": 3.4,
+    "roll": 0,
+    "tilt": 34
+   }
+  ],
+  [
+   318,
+   {
+    "zoom": 0.92,
+    "x": 3.5,
+    "y": 3.5,
+    "roll": 0,
+    "tilt": 38
+   }
+  ]
+ ],
+ "shakes": [
+  {
+   "at": 73,
+   "strength": 14
+  },
+  {
+   "at": 152,
+   "strength": 24
+  }
+ ],
+ "flashes": [
+  {
+   "at": 152,
+   "color": "white"
+  }
+ ],
+ "dim": [
+  {
+   "at": 216,
+   "until": 318
+  }
+ ],
+ "beats": [
+  {
+   "from": 0,
+   "to": 64,
+   "top": 250,
+   "lines": [
+    {
+     "text": "He gave away",
+     "at": -1,
+     "size": 92,
+     "gap": 3,
+     "weight": 900
+    },
+    {
+     "text": "his QUEEN.",
+     "at": -1,
+     "size": 124,
+     "gap": 3,
+     "weight": 900,
+     "accent": "QUEEN."
+    },
+    {
+     "text": "On purpose.",
+     "at": 30,
+     "size": 96,
+     "gap": 4,
+     "weight": 900,
+     "color": "great"
+    }
+   ]
+  },
+  {
+   "from": 76,
+   "to": 110,
+   "top": 250,
+   "lines": [
+    {
+     "text": "Free queen?",
+     "at": 76,
+     "size": 118,
+     "gap": 3,
+     "weight": 900
+    }
+   ]
+  },
+  {
+   "from": 110,
+   "to": 152,
+   "top": 250,
+   "lines": [
+    {
+     "text": "Big mistake.",
+     "at": 112,
+     "size": 124,
+     "gap": 5,
+     "weight": 900,
+     "color": "coral"
+    }
+   ]
+  },
+  {
+   "from": 152,
+   "to": 216,
+   "top": 250,
+   "lines": [
+    {
+     "text": "CHECKMATE.",
+     "at": 152,
+     "size": 150,
+     "gap": 3,
+     "weight": 900,
+     "color": "great"
+    },
+    {
+     "text": "Two moves later.",
+     "at": 176,
+     "size": 64,
+     "gap": 3,
+     "weight": 800,
+     "color": "mist"
+    }
+   ]
+  },
+  {
+   "from": 216,
+   "to": 270,
+   "top": 620,
+   "lines": [
+    {
+     "text": "Paul Morphy.",
+     "at": 218,
+     "size": 120,
+     "gap": 3,
+     "weight": 900
+    },
+    {
+     "text": "Paris, 1858.",
+     "at": 226,
+     "size": 84,
+     "gap": 3,
+     "weight": 900,
+     "color": "honey"
+    },
+    {
+     "text": "At the opera.",
+     "at": 236,
+     "size": 84,
+     "gap": 3,
+     "weight": 900,
+     "color": "mist"
+    }
+   ]
+  },
+  {
+   "from": 270,
+   "to": 318,
+   "top": 660,
+   "lines": [
+    {
+     "text": "Still the most famous",
+     "at": 272,
+     "size": 84,
+     "gap": 2,
+     "weight": 900
+    },
+    {
+     "text": "checkmate ever played.",
+     "at": 280,
+     "size": 84,
+     "gap": 2,
+     "weight": 900
+    }
+   ]
+  }
+ ],
+ "loop": 464,
+ "audio": "audio/opera.wav",
+ "brand": {
+  "at": 318,
+  "lines": [
+   {
+    "text": "Learn to see",
+    "at": 326,
+    "size": 100,
+    "gap": 3,
+    "weight": 900
+   },
+   {
+    "text": "moves like this.",
+    "at": 334,
+    "size": 100,
+    "gap": 3,
+    "weight": 900,
+    "accent": "this.",
+    "accentColor": "great"
+   }
+  ],
+  "send": [
+   {
+    "text": "Send this to the friend",
+    "at": 372,
+    "size": 56,
+    "gap": 2,
+    "weight": 800
+   },
+   {
+    "text": "who'd take the queen.",
+    "at": 378,
+    "size": 56,
+    "gap": 2,
+    "weight": 800
+   }
+  ]
+ },
+ "topple": {
+  "sq": "e8",
+  "at": 170
+ }
+}

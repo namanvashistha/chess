@@ -1,0 +1,300 @@
+{
+ "id": "stalemate",
+ "length": 440,
+ "start": "k7/2K5/8/8/3Q4/8/8/7R",
+ "moves": [
+  {
+   "from": "d4",
+   "to": "b6",
+   "at": 8,
+   "dur": 16,
+   "liftAt": -20,
+   "shatter": true
+  }
+ ],
+ "rays": [
+  {
+   "from": "a8",
+   "to": "a7",
+   "color": "danger",
+   "at": 62,
+   "until": 150,
+   "draw": 6
+  },
+  {
+   "from": "a8",
+   "to": "b7",
+   "color": "danger",
+   "at": 76,
+   "until": 150,
+   "draw": 6
+  },
+  {
+   "from": "a8",
+   "to": "b8",
+   "color": "danger",
+   "at": 90,
+   "until": 150,
+   "draw": 6
+  },
+  {
+   "from": "h8",
+   "to": "a8",
+   "color": "danger",
+   "at": 252,
+   "until": 282,
+   "draw": 8
+  }
+ ],
+ "glows": [
+  {
+   "sq": "a8",
+   "color": "great",
+   "at": 140,
+   "until": 176,
+   "opacity": 0.35,
+   "pulse": false
+  },
+  {
+   "sq": "a8",
+   "color": "danger",
+   "at": 252,
+   "until": 282,
+   "opacity": 0.55,
+   "pulse": true
+  }
+ ],
+ "marks": [
+  {
+   "sq": "a7",
+   "kind": "x",
+   "color": "danger",
+   "at": 66,
+   "until": 150
+  },
+  {
+   "sq": "b7",
+   "kind": "x",
+   "color": "danger",
+   "at": 80,
+   "until": 150
+  },
+  {
+   "sq": "b8",
+   "kind": "x",
+   "color": "danger",
+   "at": 94,
+   "until": 150
+  }
+ ],
+ "ghosts": [
+  {
+   "code": "R",
+   "from": "h1",
+   "at": 236,
+   "until": 282,
+   "to": "h8",
+   "glideAt": 240,
+   "glideDur": 12
+  }
+ ],
+ "camera": [
+  [
+   0,
+   {
+    "zoom": 1.25,
+    "x": 2.4,
+    "y": 3.0,
+    "roll": -2,
+    "tilt": 30
+   }
+  ],
+  [
+   40,
+   {
+    "zoom": 1.55,
+    "x": 1.6,
+    "y": 1.2,
+    "roll": 0,
+    "tilt": 31
+   }
+  ],
+  [
+   176,
+   {
+    "zoom": 1.25,
+    "x": 3.5,
+    "y": 2.2,
+    "roll": 1,
+    "tilt": 32
+   }
+  ],
+  [
+   282,
+   {
+    "zoom": 1.0,
+    "x": 3.5,
+    "y": 3.5,
+    "roll": 0,
+    "tilt": 36
+   }
+  ]
+ ],
+ "shakes": [],
+ "flashes": [],
+ "dim": [
+  {
+   "at": 176,
+   "until": 232
+  }
+ ],
+ "beats": [
+  {
+   "from": 0,
+   "to": 46,
+   "top": 250,
+   "lines": [
+    {
+     "text": "He has a QUEEN",
+     "at": -1,
+     "size": 100,
+     "gap": 3,
+     "weight": 900,
+     "accent": "QUEEN"
+    },
+    {
+     "text": "and a ROOK.",
+     "at": -1,
+     "size": 100,
+     "gap": 3,
+     "weight": 900,
+     "accent": "ROOK."
+    }
+   ]
+  },
+  {
+   "from": 46,
+   "to": 120,
+   "top": 250,
+   "lines": [
+    {
+     "text": "Watch him",
+     "at": 46,
+     "size": 92,
+     "gap": 3,
+     "weight": 900
+    },
+    {
+     "text": "THROW it away.",
+     "at": 52,
+     "size": 120,
+     "gap": 3,
+     "weight": 900,
+     "color": "coral"
+    }
+   ]
+  },
+  {
+   "from": 120,
+   "to": 176,
+   "top": 250,
+   "lines": [
+    {
+     "text": "His king can't move\u2026",
+     "at": 122,
+     "size": 80,
+     "gap": 3,
+     "weight": 900
+    },
+    {
+     "text": "but it's NOT in check.",
+     "at": 140,
+     "size": 80,
+     "gap": 3,
+     "weight": 900,
+     "accent": "NOT",
+     "accentColor": "coral"
+    }
+   ]
+  },
+  {
+   "from": 176,
+   "to": 230,
+   "top": 520,
+   "lines": [
+    {
+     "text": "STALEMATE.",
+     "at": 176,
+     "size": 140,
+     "gap": 3,
+     "weight": 900,
+     "color": "mist"
+    },
+    {
+     "text": "It's a DRAW.",
+     "at": 190,
+     "size": 104,
+     "gap": 3,
+     "weight": 900,
+     "accent": "DRAW.",
+     "accentColor": "coral"
+    }
+   ]
+  },
+  {
+   "from": 232,
+   "to": 282,
+   "top": 250,
+   "lines": [
+    {
+     "text": "Rh8 was checkmate.",
+     "at": 236,
+     "size": 84,
+     "gap": 3,
+     "weight": 900,
+     "accent": "checkmate.",
+     "accentColor": "great"
+    }
+   ]
+  }
+ ],
+ "loop": 424,
+ "audio": "audio/stalemate.wav",
+ "brand": {
+  "at": 282,
+  "lines": [
+   {
+    "text": "In Calm Chess,",
+    "at": 290,
+    "size": 96,
+    "gap": 3,
+    "weight": 900
+   },
+   {
+    "text": "you'd just undo.",
+    "at": 298,
+    "size": 96,
+    "gap": 3,
+    "weight": 900,
+    "accent": "undo.",
+    "accentColor": "great"
+   }
+  ],
+  "send": [
+   {
+    "text": "Send this to the friend",
+    "at": 336,
+    "size": 56,
+    "gap": 2,
+    "weight": 800
+   },
+   {
+    "text": "who always does this.",
+    "at": 342,
+    "size": 56,
+    "gap": 2,
+    "weight": 800
+   }
+  ]
+ }
+}

@@ -1,0 +1,266 @@
+{
+ "id": "fools-mate",
+ "length": 400,
+ "start": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
+ "moves": [
+  {
+   "from": "f2",
+   "to": "f3",
+   "at": 4,
+   "dur": 9,
+   "liftAt": -20,
+   "shatter": true
+  },
+  {
+   "from": "e7",
+   "to": "e5",
+   "at": 22,
+   "dur": 9,
+   "liftAt": 14,
+   "shatter": true
+  },
+  {
+   "from": "g2",
+   "to": "g4",
+   "at": 40,
+   "dur": 9,
+   "liftAt": 32,
+   "shatter": true
+  },
+  {
+   "from": "d8",
+   "to": "h4",
+   "at": 60,
+   "dur": 10,
+   "liftAt": 52,
+   "shatter": true
+  }
+ ],
+ "rays": [
+  {
+   "from": "h4",
+   "to": "e1",
+   "color": "danger",
+   "at": 70,
+   "until": 150,
+   "draw": 8
+  }
+ ],
+ "glows": [
+  {
+   "sq": "e1",
+   "color": "danger",
+   "at": 70,
+   "until": 150,
+   "opacity": 0.6,
+   "pulse": true
+  }
+ ],
+ "marks": [],
+ "ghosts": [],
+ "camera": [
+  [
+   0,
+   {
+    "zoom": 1.12,
+    "x": 4.8,
+    "y": 4.6,
+    "roll": -2,
+    "tilt": 31
+   }
+  ],
+  [
+   60,
+   {
+    "zoom": 1.3,
+    "x": 5.6,
+    "y": 4.8,
+    "roll": 0,
+    "tilt": 31
+   }
+  ],
+  [
+   120,
+   {
+    "zoom": 1.18,
+    "x": 4.5,
+    "y": 4.0,
+    "roll": 1,
+    "tilt": 33
+   }
+  ],
+  [
+   244,
+   {
+    "zoom": 1.0,
+    "x": 3.5,
+    "y": 3.5,
+    "roll": 0,
+    "tilt": 36
+   }
+  ]
+ ],
+ "shakes": [
+  {
+   "at": 70,
+   "strength": 22
+  }
+ ],
+ "flashes": [
+  {
+   "at": 70,
+   "color": "#FF5050"
+  }
+ ],
+ "dim": [
+  {
+   "at": 150,
+   "until": 244
+  }
+ ],
+ "beats": [
+  {
+   "from": 0,
+   "to": 96,
+   "top": 250,
+   "lines": [
+    {
+     "text": "You can lose at chess",
+     "at": -1,
+     "size": 84,
+     "gap": 3,
+     "weight": 900
+    },
+    {
+     "text": "in 2 MOVES.",
+     "at": -1,
+     "size": 130,
+     "gap": 3,
+     "weight": 900,
+     "accent": "2 MOVES.",
+     "accentColor": "coral"
+    }
+   ]
+  },
+  {
+   "from": 14,
+   "to": 40,
+   "top": 600,
+   "lines": [
+    {
+     "text": "Move 1.",
+     "at": 14,
+     "size": 64,
+     "gap": 3,
+     "weight": 900,
+     "color": "mist"
+    }
+   ]
+  },
+  {
+   "from": 42,
+   "to": 64,
+   "top": 600,
+   "lines": [
+    {
+     "text": "Move 2.",
+     "at": 42,
+     "size": 64,
+     "gap": 3,
+     "weight": 900,
+     "color": "mist"
+    }
+   ]
+  },
+  {
+   "from": 96,
+   "to": 150,
+   "top": 250,
+   "lines": [
+    {
+     "text": "CHECKMATE.",
+     "at": 96,
+     "size": 140,
+     "gap": 3,
+     "weight": 900,
+     "color": "coral"
+    }
+   ]
+  },
+  {
+   "from": 150,
+   "to": 244,
+   "top": 520,
+   "lines": [
+    {
+     "text": "It's called",
+     "at": 152,
+     "size": 70,
+     "gap": 3,
+     "weight": 800,
+     "color": "mist"
+    },
+    {
+     "text": "Fool's Mate.",
+     "at": 158,
+     "size": 120,
+     "gap": 3,
+     "weight": 900
+    },
+    {
+     "text": "The fastest loss in chess.",
+     "at": 178,
+     "size": 60,
+     "gap": 2,
+     "weight": 800,
+     "color": "mist"
+    }
+   ]
+  }
+ ],
+ "loop": 384,
+ "audio": "audio/fools-mate.wav",
+ "brand": {
+  "at": 244,
+  "lines": [
+   {
+    "text": "Don't be this guy.",
+    "at": 252,
+    "size": 96,
+    "gap": 3,
+    "weight": 900,
+    "accent": "guy.",
+    "accentColor": "coral"
+   },
+   {
+    "text": "Learn calmly.",
+    "at": 260,
+    "size": 96,
+    "gap": 3,
+    "weight": 900,
+    "accent": "calmly.",
+    "accentColor": "great"
+   }
+  ],
+  "send": [
+   {
+    "text": "Send this to the friend",
+    "at": 298,
+    "size": 56,
+    "gap": 2,
+    "weight": 800
+   },
+   {
+    "text": "who'd play f3.",
+    "at": 304,
+    "size": 56,
+    "gap": 2,
+    "weight": 800
+   }
+  ]
+ },
+ "topple": {
+  "sq": "e1",
+  "at": 88
+ }
+}

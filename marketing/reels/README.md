@@ -1,5 +1,56 @@
 # Calm Chess reels
 
+Reels made from the app's own art. The current set is built with Remotion
+(`remotion/`): a 3D board in evening light with the app's glass pieces,
+lines of light, kinetic captions, a synthesized soundtrack, and a brand card
+held long enough to read. Each reel is a short script in `remotion/reels.py`,
+whose every move is checked by a chess library; `remotion/render.sh` builds,
+renders and masters them all into `out/`.
+
+Built for casual viewers: a "wait, what?" in the first seconds, a payoff that
+matches the promise, the brand last, and a line that names who to send it to.
+
+| Reel | Hook | The "wait, what?" | Send line |
+|---|---|---|---|
+| `en-passant` | This capture is LEGAL. | A pawn takes a pawn that isn't in front of it, and the pawn vanishes. | Send this to the friend who'd call it cheating. |
+| `stalemate` | He has a QUEEN and a ROOK. Watch him THROW it away. | A crushing move that's a draw; then the mate he missed. | Send this to the friend who always does this. |
+| `knights-tour` | This knight will land on EVERY square. | 64 hops, faster and faster, no square twice. | Send this to someone who needs something satisfying. |
+| `fools-mate` | You can lose at chess in 2 MOVES. | Checkmate in three seconds. | Send this to the friend who'd play f3. |
+| `opera` | He gave away his QUEEN. On purpose. | The sacrifice, then mate two moves later (Morphy, 1858). | Send this to the friend who'd take the queen. |
+
+The Opera Game also has two other hooks to test (`opera-best`, `opera-twoMoves`
+in Remotion Studio).
+
+### Captions
+
+Lead with the words people search for, then the hook, then the send:
+
+- **en-passant:** "chess rule most people don't know: en passant 🤯 this capture is completely legal. send this to the friend who'd call it cheating"
+- **stalemate:** "how to throw away a winning chess game: stalemate. a queen and a rook up… and it's a draw. send this to the friend who always does this"
+- **knights-tour:** "the knight's tour: a chess knight lands on all 64 squares, each exactly once. send this to someone who needs something satisfying"
+- **fools-mate:** "fool's mate: the fastest checkmate in chess, in just 2 moves. send this to the friend who'd play f3"
+- **opera:** "the most famous checkmate in chess history: Morphy's Opera Game, 1858. he gave away his queen on purpose. send this to the friend who'd take the queen"
+
+Pinned comments ask for an opinion, not the act of commenting: "be honest, did you know this was legal?", "how many squares did you think it'd manage?", "what would you have played?".
+
+### Making a new one
+
+Write a function in `remotion/reels.py` (see the five there: a position, moves
+with the frame each starts on, captions, rays, ghosts, the camera and sounds),
+add it to the list at the bottom, then:
+
+```bash
+remotion/render.sh my-reel
+```
+
+Preview and scrub any reel live with `npm --prefix remotion run studio`.
+
+## Earlier reels
+
+The two below were the first attempt: footage recorded from the iPhone
+simulator with captions laid over it by ffmpeg. They read as app ads, which
+is why the set above replaced them.
+
 Reels made from the real app. Nothing is faked: a debug-only reel studio in the
 app plays a scripted scene on the iPhone simulator, which is recorded, and a
 composer lays captions, sound and the end card over it.

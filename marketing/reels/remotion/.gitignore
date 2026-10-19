@@ -1,0 +1,6 @@
+node_modules/
+out/
+.DS_Store
+# Installed by `npx remotion skills add` (pinned in skills-lock.json); not ours to vendor.
+.agents/
+.claude/
