@@ -16,6 +16,10 @@ object Prefs {
     }
 }
 
+/** Accuracy in the last ten games against an opponent, oldest first. */
+val List<GameRecord>.accuracyTrend: List<Int>
+    get() = filter { it.opponent != "Pass & play" }.mapNotNull { it.accuracy }.take(10).reversed()
+
 /** A finished game, for the home screen's list. */
 data class GameRecord(
     val date: Long,
@@ -27,6 +31,7 @@ data class GameRecord(
     val great: Int?,
 ) {
     val resolvedLevel: Int? get() = level
+    val opponentName: String get() = level?.let { Opponent.entries.getOrNull(it)?.title } ?: opponent
 
     fun toJson() = JSONObject().apply {
         put("date", date); put("opponent", opponent); put("outcome", outcome)
@@ -104,6 +109,8 @@ data class SavedGame(
     val hintsLeft: Int,
     val evals: List<Int?>,
     val comebacks: Int,
+    /** The position, for home's board. */
+    val fen: String = "",
 ) {
     fun store() {
         val o = JSONObject().apply {
@@ -112,6 +119,7 @@ data class SavedGame(
             put("great", great); put("blunders", blunders); put("hintsLeft", hintsLeft); put("comebacks", comebacks)
             put("evals", JSONArray(evals.map { it ?: JSONObject.NULL }))
             put("trail", JSONArray(trail.map { it.toJson() }))
+            put("fen", fen)
         }
         Prefs.p.edit().putString(KEY, o.toString()).apply()
     }
@@ -131,6 +139,7 @@ data class SavedGame(
                 ints("losses"), o.getInt("great"), o.getInt("blunders"), o.getInt("hintsLeft"),
                 (0 until ev.length()).map { if (ev.isNull(it)) null else ev.getInt(it) },
                 o.optInt("comebacks", 0),
+                o.optString("fen", ""),
             )
         }.getOrNull()
 

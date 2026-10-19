@@ -18,7 +18,11 @@ object Haptics {
     }
 
     /** Primitives as (id, scale, delay ms); falls back to a plain tick on phones without them. */
+    /** Settings' Haptics switch; on unless turned off. */
+    val enabled get() = Prefs.p.getBoolean("haptics", true)
+
     private fun compose(vararg parts: Triple<Int, Float, Int>) {
+        if (!enabled) return
         val v = vibrator ?: return
         if (!v.areAllPrimitivesSupported(*parts.map { it.first }.toIntArray())) {
             v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))

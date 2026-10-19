@@ -227,7 +227,7 @@ class GameModel(private val scope: CoroutineScope) {
     private fun save() {
         if (isOver) { SavedGame.clear(); return }
         SavedGame(mode == Mode.PassAndPlay, opponent.ordinal, moves, trail, losses.toList(), great, blunders,
-            hintsLeft, evals.toList(), comebacks).store()
+            hintsLeft, evals.toList(), comebacks, game.fen()).store()
     }
 
     // Touch

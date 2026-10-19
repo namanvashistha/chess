@@ -101,13 +101,13 @@ fun GameScreen(model: GameModel, back: () -> Unit) {
                 Modifier.widthIn(max = width).fillMaxSize().align(Alignment.TopCenter),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                TopBar(model, back)
-                CapturedRow(model.captured("b"), model.materialLead("b"))
-                BoardView(model, Modifier.fillMaxWidth())
-                CapturedRow(model.captured("w"), model.materialLead("w"))
-                CoachArea(model)
+                Box(Modifier.chrome(fromTop = true, delay = 120)) { TopBar(model, back) }
+                Box(Modifier.chrome(fromTop = true, delay = 160)) { CapturedRow(model.captured("b"), model.materialLead("b")) }
+                BoardView(model, Modifier.heroBoard().fillMaxWidth())
+                Box(Modifier.chrome(delay = 180)) { CapturedRow(model.captured("w"), model.materialLead("w")) }
+                Box(Modifier.chrome(delay = 220)) { CoachArea(model) }
                 Spacer(Modifier.weight(1f))
-                Dock(model) { confirm = it }
+                Box(Modifier.chrome(delay = 280)) { Dock(model) { confirm = it } }
             }
         }
         model.finish?.let { f ->
