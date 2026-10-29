@@ -39,7 +39,6 @@ mode in Calm Chess.
 make test                      # Go tests, including end-to-end socket tests
 DATABASE_URL=postgres:///chess?host=/tmp make run
 cd web && npm run dev          # web app with hot reload, proxied to :9000
-make ios-engine                # build the engine framework for the iOS app
 ```
 
 `docker compose up` runs the server and Postgres together.

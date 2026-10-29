@@ -10,7 +10,6 @@
 | `app/server` | HTTP: the JSON API, sessions, the WebSocket endpoint, and the built web app. |
 | `cmd/server` | Wires the above together from environment variables. |
 | `cmd/uci` | The engine over UCI, for chess GUIs, engine matches and the lichess bot. |
-| `mobile/chesscore` | The engine for the iOS app, bound with gomobile. Its own Go module, so the server never depends on `golang.org/x/mobile`. |
 
 ## Data
 

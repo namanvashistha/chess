@@ -1,4 +1,4 @@
-.PHONY: build uci test vet run up dev bench ios-engine ios-upload android-engine android-strings android-release
+.PHONY: build uci test vet run up dev bench
 
 # This project has no cgo dependencies, and the Docker build already sets this.
 # Keeping it off locally also avoids a Go 1.22 / recent-macOS link failure
@@ -59,45 +59,3 @@ up:
 # Local dev stack with hot reload (base + dev override).
 dev:
 	docker compose -f docker-compose.yaml -f docker-compose.dev.yml up --build
-
-# Build the engine into ios/Frameworks/Chesscore.xcframework for the iOS app.
-# Needs Xcode and gomobile/gobind pinned to the same x/mobile as mobile/go.mod
-# (newer x/mobile needs a newer Go). Build them without cgo, or macOS refuses
-# to load them ("missing LC_UUID load command"):
-#   CGO_ENABLED=0 go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20240806205939-81131f6468ab
-#   CGO_ENABLED=0 go install golang.org/x/mobile/cmd/gobind@v0.0.0-20240806205939-81131f6468ab
-# The bind sets CGO_ENABLED back to 1: gomobile links the framework through cgo.
-# gomobile and gobind live in Go's bin directory, which is often not on PATH.
-ios-engine: export PATH := $(shell go env GOPATH)/bin:$(PATH)
-ios-engine:
-	cd mobile && CGO_ENABLED=0 go test ./... && CGO_ENABLED=1 gomobile bind -target=ios,iossimulator -iosversion=26.0 \
-		-o ../ios/Frameworks/Chesscore.xcframework ./chesscore
-
-# Archives Calm Chess and uploads it to App Store Connect, where it shows up
-# in TestFlight. Bump CURRENT_PROJECT_VERSION in the project before each upload.
-# Builds the engine for the Android app as an AAR (needs JDK 21 and the
-# Android NDK; the paths below are the defaults on macOS). Linked for 16 KB
-# memory pages, which newer phones use and Google Play requires.
-android-engine: export PATH := $(shell go env GOPATH)/bin:$(PATH)
-android-engine: export JAVA_HOME ?= /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
-android-engine: export ANDROID_HOME ?= $(HOME)/Library/Android/sdk
-android-engine:
-	cd mobile && CGO_ENABLED=0 go test ./... && ANDROID_NDK_HOME=$$(ls -d $(ANDROID_HOME)/ndk/* | tail -1) CGO_ENABLED=1 \
-		gomobile bind -target=android -androidapi 31 -javapkg=com.namanvashistha.calmchess.engine \
-		-ldflags='-extldflags=-Wl,-z,max-page-size=16384' \
-		-o ../android/app/libs/chesscore.aar ./chesscore
-
-# Rebuilds the Android app's translations from the iPhone app's string catalog.
-android-strings:
-	python3 android/tools/strings.py
-
-# Builds the Android App Bundle for Google Play, signed with the upload key in
-# android/keystore.properties: android/app/build/outputs/bundle/release/app-release.aab.
-android-release: android-engine android-strings
-	cd android && JAVA_HOME=$${JAVA_HOME:-/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home} ./gradlew bundleRelease
-
-ios-upload: ios-engine
-	cd ios && xcodebuild -project Chess.xcodeproj -scheme Chess -configuration Release \
-		-destination 'generic/platform=iOS' -archivePath build/CalmChess.xcarchive -allowProvisioningUpdates archive
-	cd ios && xcodebuild -exportArchive -archivePath build/CalmChess.xcarchive \
-		-exportOptionsPlist ExportOptions.plist -exportPath build/export -allowProvisioningUpdates

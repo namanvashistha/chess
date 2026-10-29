@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Only the share pictures are ever handed to other apps. -->
-<paths>
-    <cache-path name="share" path="share/" />
-</paths>

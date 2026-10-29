@@ -1,7 +1,0 @@
-# Built from mobile/ by `make ios-engine`; ~19 MB, so it is not committed.
-Frameworks/Chesscore.xcframework/
-
-xcuserdata/
-DerivedData/
-build/
-*.xcuserstate
